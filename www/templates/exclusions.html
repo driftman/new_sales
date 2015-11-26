@@ -1,0 +1,33 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50">
+    <ion-content>
+        <ion-list show-delete="false" show-reorder="false">
+
+            <ion-item collection-repeat="conflict in data.conflicts track by $index" 
+                      collection-item-width="'100%'"
+                      item="conflict">
+
+                        <ion-radio name="{{ 'conflict'+$index }}" value="1" ng-click="clicked(conflict)" ng-model="conflict.activated">
+                          <p ng-if="conflict.promotion.gratuites.length > 0" ng-repeat="gratuite in conflict.promotion.gratuites">
+                            {{ gratuite.designation}} : {{ gratuite.qty }}
+                          </p>
+                          
+                        </ion-radio>
+
+                        <ion-radio name="{{ 'conflict'+$index }}" value="0" ng-click="clicked(conflict)" ng-model="conflict.activated">
+                        <span ng-repeat="promotion in conflict.inConflictWith">
+                          <p ng-if="promotion.gratuites.length > 0" ng-repeat="gratuite in promotion.gratuite">
+                            {{ gratuite.designation}} : {{ gratuite.qty }}
+                          <p>
+                          <p ng-if="promotion.gratuites.length > 0" ng-repeat="gratuite in promotion.gratuite">
+                            {{ gratuite.designation}} : {{ gratuite.qty }}
+                          <p>
+                          <p ng-if="!promotion.gratuites.length > 0">
+                          REMISE : {{ promotion.remise }}
+                          <p>
+                        </span>
+                      </ion-radio>
+            </ion-item>
+
+        </ion-list>
+    </ion-content>
+</ion-view>

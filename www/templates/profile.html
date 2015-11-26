@@ -1,0 +1,97 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50">
+    <ion-content ng-class="{expanded:$scope.isExpanded}">
+        <div class="hero slide-up" style="
+  background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
+  background:    -moz-linear-gradient(90deg, #870000 10%, #190A05 90%); /* FF3.6+ */
+  background:     -ms-linear-gradient(90deg, #870000 10%, #190A05 90%); /* IE10 */
+  background:      -o-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Opera 11.10+ */
+  background:         linear-gradient(90deg, #870000 10%, #190A05 90%); /* W3C */
+  background:           #B71C1C; /* Ila 7madet ga3 */
+        ">
+            <div class="content">
+                <div class="avatar" style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
+                <h3><a class="light">John DOE | Vendeur</a></h3>
+                <h4 style="color: white; margin-top: 0px;
+                margin-bottom: 0px; ">C.A : {{ ca }} DHS</h4>
+                <h4 style="color: white; margin-top: 0px;
+                margin-bottom: 0px; ">Golden Points : {{ gp }} / 1200 pts</h4>
+                <h4 style="color: white; margin-top: 0px;
+                margin-bottom: 0px; ">Golden Stores : 0 / 50</h4>
+            </div>
+        </div>
+        <!-- <div class="tabs tabs-dark tabs-icon-top static" style="padding: 5px; background: white; border-bottom: 2.5px solid black; border-top: 2.5px solid black;">
+            <a ui-sref="#" class="tab-item">
+                <i class="icon ion-arrow-graph-up-right" style="color: #D50000;"></i> Missions
+            </a>
+            <a ui-sref="app.clients" class="tab-item">
+                <i class="icon ion-android-people" style="color: #D50000;"></i> Clients
+            </a>
+            <a ui-sref="#" class="tab-item">
+                <i class="icon ion-images" style="color: #D50000;"></i> Produits
+            </a>
+        </div> -->
+        <!-- <div>
+            <button class="button button-full button-assertive" ng-show="unfinished_routes.isTrue" ng-click="all()">Terminer la route précédente</button>
+            <button class="button button-full button-balanced" ng-click="today()">Commencer la route d'aujourd'hui</button>
+        </div> -->
+        <div style="padding-top: 10px;">
+          <canvas id="pie" class="chart chart-pie"
+            chart-data="data" chart-labels="labels" chart-legend="true" chart-colours="colours">
+          </canvas> 
+        </div>
+
+        <div class="card">
+          <div class="item item-divider brand-five">
+            <h2>C.A Brand Five</h2>
+          </div>
+          <div class="item item-text-wrap brand-item repeat-brand" ng-repeat="brand in brandfive | orderBy : '-somme' ">
+            <div class="row row-brand-five">
+              <div class="col col-brand-five" style="border: none;">
+                {{ brand.marque }}
+              </div>
+              <div class="col col-brand-five" style="border: none;">
+                 {{ brand.somme }} DHS
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <h4 class="content padding double-padding-x" style="color: #B71C1C;
+    font-weight: 900;">Missions précédentes :</h4>
+        <div class="key_map_container" style="margin: 0 auto;">
+            <span class="key_map" style="text-align: center;">
+                <i style="color: orange;" class="icon ion-flag"></i> Problème &nbsp;
+                <i style="color: green;" class="icon ion-flag"></i> Terminé
+            </span>
+        </div>
+        <div class="list" ng-repeat="mission in unfinishedMissions" style="border-bottom: 1px solid {{ mission.state | flag }};">
+            <a ng-click="client(mission._id)" class="item item-avatar item-icon-right">
+                <img src="img/mission.png">
+                <h2 style="font-weight: 700;">{{ mission.code_mission }}</h2>
+                <p>{{ mission.address }}</p>
+                <i style="color: {{ mission.state | flag }};" class="icon ion-flag"></i>
+            </a>
+        </div>
+        <!-- <h4 class="content padding double-padding-x">Activités récentes :</h4>
+        <div class="list animate-fade-slide-in-right">
+            <a ui-sref="#" class="item item-avatar item-icon-right">
+                <img src="img/camion.png">
+                <h2 style="font-weight: 700;">Livraison</h2>
+                <p>Livraison des commandes à notre client X ... </p>
+                <i style="color: #190A05;" class="icon ion-ios-arrow-forward"></i>
+            </a>
+            <a ui-sref="#" class="item item-avatar item-icon-right">
+              <img src="img/prize.png">
+              <h2 style="font-weight: 700;">Gain de nouveaux points</h2>
+              <p>Bonus de 10 points ... </p>
+              <i style="color: #190A05;" class="icon ion-ios-arrow-forward"></i>
+            </a>
+            <a ui-sref="#" class="item item-avatar item-icon-right">
+                <img src="img/deal.png">
+                <h2 style="font-weight: 700;">Ajout de nouveaux clients</h2>
+                <p>2 nouveaux clients ajoutés</p>
+                <i style="color: #190A05;" class="icon ion-ios-arrow-forward"></i>
+            </a>
+        </div> -->
+    </ion-content>
+</ion-view>

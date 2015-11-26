@@ -1,0 +1,64 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50">
+    <ion-content ng-class="{expanded:$scope.isExpanded}" style="background-color:#D4D4B7;">
+          <div class="list">
+            <div class="row " ng-repeat="row in rows" style="padding: 0; border: none;">
+                <div class="col brands" ng-repeat="col in row">
+                    <img src="{{ col.logo }}" ng-click="goToBrand(col.marqueArticle)" style="height: 100%; background-color: #FFFFF1; max-width: 100%;">
+                </div>
+            </div>
+          </div>
+          <script id="facture.html" type="text/ng-template">
+            <ion-modal-view>
+              <ion-header-bar style="background-color: #B71C1C;">
+                <h1 class="title">Facture</h1>
+
+              </ion-header-bar>
+              <ion-content>
+                <div class="row header">
+                <div class="col">Code Article</div>
+                <div class="col">Qté</div>
+                <div class="col">P.U H.T</div>
+                <div class="col">P.U T.T.C</div>
+            </div>
+            <div class="row" ng-repeat="ligneCommande in ligneCommandes">
+                <div class="col">{{ ligneCommande.nomArticle }}</div>
+                <div class="col">{{ ligneCommande.packet*10 + ligneCommande.unit }}</div>
+                <div class="col">{{ ligneCommande.prixVente }}</div>
+                <div class="col">{{ ligneCommande.prixAchat }}</div>
+            </div>
+            
+            <div class="row header">
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col">TOTAL H.T</div>
+            </div>
+            <div class="row">
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col">{{ ligneCommandes | cart}} DHS</div>
+            </div>
+            <div class="row header">
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col">TOTAL T.T.C</div>
+            </div>
+            <div class="row">
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col offset"></div>
+                <div class="col">{{ (ligneCommandes | cart) +( (ligneCommandes | cart) * 0.20 )}} DHS</div>
+            </div>
+              </ion-content>
+            </ion-modal-view>
+          </script>
+	</ion-content>
+     <div class="bar bar-footer bar-balanced">
+    <div class="title">
+      Total : {{totalBill}} DHS
+      <a ui-sref="app.remainings" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
+    </div>
+  </div>
+</ion-view>

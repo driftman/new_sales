@@ -1,0 +1,35 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50">
+    <ion-content>
+        <ion-list show-delete="false" show-reorder="false">
+        <ion-item class="item-thumbnail-left"
+                  collection-repeat="client in clients" 
+                  collection-item-width="'100%'"
+                  item="client"
+                  ui-sref="app.client({ id : client.id_db })"
+                  style="border-bottom : 2px solid black;">
+          <img ng-src="img/red.png">
+          <h2 style="font-weight: 700;">Adresse : {{ client.address }}</h2>
+                <p>Nom : {{ client.prenom }} {{ client.nom}}</p>
+                <p>Code Client : {{ client.code_client }}</p>
+                <p>Localisation : {{ client.lat }}, {{ client.lng }} </p>
+                <p><b>C.A : </b> {{ client.chiffreAffaire }} DHS</p>
+                <p><b>Points Golden Store </b> {{ client.golden_store }}</p>
+                <ion-option-button class="button-calm icon ion-pie-graph" style="color: #FFF;"  ui-sref="app.client({ id : client.id})"></ion-option-button>
+                <ion-option-button class="button-balanced icon ion-map" style="color: #FFF;" ng-click="openModal(route.address)"></ion-option-button>
+        </ion-item>
+
+      </ion-list>
+        <script id="my-modal.html" type="text/ng-template">
+          <ion-modal-view>
+            <ion-header-bar>
+              <h1 class="title" style="color: red;">Client</h1>
+            </ion-header-bar>
+            <ion-content>
+              <div>
+                <leaflet markers="markers2" center="client2" defaults="defaults" width="100%" height="700px"></leaflet>
+            </div>
+            </ion-content>
+          </ion-modal-view>
+        </script>
+    </ion-content>
+</ion-view>

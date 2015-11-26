@@ -1,0 +1,370 @@
+<ion-view view-title="Panier de {{ client.name }}">
+	<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C;
+	max-height: 20px;">
+       <div class="row" style="
+              margin: 0;
+              margin: 0;
+              padding: 0;">
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                text-align: left;">désignation({{ data.items.length }})</div>
+                <div class="col col-15" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">unité</div>
+                <div class="col col-15" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">caisse</div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">p.u</div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">total</div>
+              </div>
+    </div>
+    <ion-content ng-class="{expanded:$scope.isExpanded}">
+    	<div class="list" style="
+          margin: 0;
+          margin-top: 20px;
+          margin-bottom: 65px;
+          background-color: white;
+          padding: 0;">
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            border-bottom: 1px solid black;
+            min-height: 0px;
+            text-align: left;" ng-repeat="item in data.items">
+                <div class="row" style="
+                margin: 0;
+                padding: 0;
+                margin: 0;">
+                   <div class="col col-50" style="
+                  margin: 0;
+                  padding: 0;
+                  text-align: center;
+                   overflow: hidden; border: none;">
+                    <p 
+                    style="
+                    font-size: 12.5px; 
+                    font-weight: 900; 
+                    text-align: left; 
+                    margin: 0;
+                    color: #060606;">{{ item.nomArticle }}</p>
+                    <!-- <p 
+                    style="
+                    font-size: 11px; 
+                    font-weight: 900; 
+                    margin: 0;
+                    text-align: left;">AR785693</p> --></div>
+                <div class="col col-15" style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                font-weight: 900;
+                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.unit"></input>
+            </div>
+            <div class="col col-15" style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                font-weight: 900;
+                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.packet"></input>
+            </div>
+                <div class="col col-15" style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;">{{ item.prixVente }}
+                </div>
+                <div class="col"
+                style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;"><span style="color: green; font-weight: 900;" ng-bind="((item.packet*10)+(item.unit))*item.prixVente"></span></div>
+                </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+              	<div style=" width: 20px; padding: 0;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                text-align: left;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+			    border-left: 1px solid #B71C1C;
+			    border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                background-color: #B71C1C;">Total HT</div>
+              </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+              	<div style=" width: 20px; padding: 0;"></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                text-align: left;"></div>
+                <div class="col col-15" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col col-50"
+                style="
+                border: none;
+                border-bottom: 1px solid black;
+			    border-left: 1px solid black;
+			    border-right: 1px solid black;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">2000,00</div>
+              </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+              	<div style=" width: 20px; padding: 0;"></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                text-align: left;"></div>
+                <div class="col col-15" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col col-50"
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+			    border-left: 1px solid #B71C1C;
+			    border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                background-color: #B71C1C;">Total TTC</div>
+              </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+              	<div style=" width: 20px; padding: 0;"></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                text-align: left;"></div>
+                <div class="col col-15" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;"></div>
+                <div class="col col-50"
+                style="
+                border: none;
+                border-bottom: 1px solid black;
+			    border-left: 1px solid black;
+			    border-right: 1px solid black;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;">2400,00</div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+	</ion-content>
+	
+</ion-view>
+<div class="bar bar-footer bar-balanced">
+    <div class="title">
+        <a ng-click = "pay()" ng-show="recovery" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-card"></i></a>
+        Total : {{ data.items | total }} DHS 
+        <a ng-click="confirm()"> <i style="float: right; font-weight: 900; font-size: 35px;" class="icon ion-android-done-all"></i></a>
+        <a ng-click="" ng-show="!recovery"> <i style="float: left; font-weight: 900; font-size: 35px;" class="icon ion-android-print"></i></a>
+    </div> 
+	</div>

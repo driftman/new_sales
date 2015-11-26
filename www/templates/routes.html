@@ -1,0 +1,58 @@
+<ion-view view-title="Soufiane ELBAZ 1200 pts.">
+    <div class="bar bar-subheader bar-balanced" style="background-color: white; box-shadow: none; height: 18px;">
+     <!-- <div class="row stat">
+        <div class="col col-10 stat" style="
+        background-color: #00C853; 
+        border-top-left-radius: 5px; 
+        border-bottom-left-radius: 5px;"></div>
+        <div class="col col-50 stat" style="background-color: #F9A825;"></div>
+        <div class="col stat" style="
+        background-color: #D50000;
+        border-top-right-radius: 5px; 
+        border-bottom-right-radius: 5px;
+        "></div>
+      </div> -->
+      <div class="key_map_container" style="margin: 0;">
+            <span class="key_map" style=" font-size: 12px; color: black;text-align: center;">
+                <i style="color: red;" class="icon ion-flag"></i> en attente &nbsp;
+                <i style="color: orange;" class="icon ion-flag"></i> non facturé &nbsp;
+                <i style="color: green;" class="icon ion-flag"></i> facturé
+            </span>
+        </div>
+      <br>
+      
+
+    </div>
+    <ion-content ng-class="{expanded:$scope.isExpanded}"> 
+    <br>
+        <ion-list show-delete="false" can-swipe="true">
+            <ion-item
+            collection-repeat="mission in missions"
+            item="mission"
+            ng-click="goToClient(mission)" 
+            style="font-size: 25px; border-bottom: 1px solid grey; padding: 0;" 
+            class="item-no-padding">
+                <h2 style="font-weight: 900;">Etat : <i style="color: {{ mission.state | flag }}; font-size: 25
+                  px;" class="icon ion-flag"></i></h2>
+                  <h2 style="font-weight: 700; margin: 0;">{{ mission.address }}</h2>
+                <p style=" margin: 0;">Nom client : {{ mission.prenom }} {{ mission.nom }} </p>
+                <p style=" margin: 0;">Code visite : {{ mission.code_mission }}</p>
+                <p style=" margin: 0;">Localisation : {{ mission.lat }}, {{ mission.lng }} </p>
+                <ion-option-button ui-sref="app.brandfive({ mission : mission.id_db })" class="button-calm icon ion-android-walk" style="color: #FFF;"></ion-option-button>
+                <ion-option-button class="button-balanced icon ion-map" style="color: #FFF;" ng-click="openModal(route.address)"></ion-option-button>
+            </ion-item>
+        </ion-list>
+        <script id="my-modal.html" type="text/ng-template">
+          <ion-modal-view>
+            <ion-header-bar>
+              <h1 class="title" style="color: red;">Itinéraire</h1>
+            </ion-header-bar>
+            <ion-content>
+              <div>
+                <leaflet markers="markers" center="client" defaults="defaults" width="100%" height="500px"></leaflet>
+            </div>
+            </ion-content>
+          </ion-modal-view>
+        </script>
+     </ion-content>
+</ion-view>

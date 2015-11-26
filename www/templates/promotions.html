@@ -1,0 +1,16 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50">
+    <ion-content>
+        <div 
+        class="list" 
+        ng-repeat="promotion in promotions"
+        style="border-bottom: 2px solid #B71C1C; margin-bottom: 0px;">
+
+            <a class="item" style="margin: 0; padding: 0; padding-left: 15px;">
+              <h2 style="font-weight : 900; color: #B71C1C;">{{promotion.code_promotion}}</h2>
+              <p><b> type promotion : </b>{{promotion.type | promotionFilter}}</p>
+              <p><b> date lancement : </b>{{promotion.starts_at | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+              <p><b> date fin : </b>{{promotion.ends_at | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+            </a>
+        </div>
+    </ion-content>
+</ion-view>

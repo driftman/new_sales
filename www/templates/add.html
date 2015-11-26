@@ -1,0 +1,112 @@
+<ion-view view-title="MENU">
+    <ion-content>
+
+    	<div class="row">
+			<div class="col" style="border: none; color: #B71C1C; text-align: center; font-weight: 900; font-size: 20px; margin-bottom: 20px;margin-top: 20px;">
+				Ajout d'un nouveau client
+			</div>
+		</div>
+    	<!-- <div class="row form first">
+    		<div class="col col-33 form title">Nom : </div>
+    		<div class="col form"><input class="underline" type="text"></div>
+    	</div>
+    	<div class="row form">
+    		<div class="col col-33 form title">Prénom : </div>
+    		<div class="col form"><input class="underline" type="text"></div>
+    	</div>
+    	<div class="row form">
+    		<div class="col col-33 form title">Adresse : </div>
+    		<div class="col form"><input class="underline" type="text"></div>
+    	</div>
+    	<div class="row form">
+    		<div class="col col-33 form title">Téléphone : </div>
+    		<div class="col form"><input class="underline" type="number"></div>
+    	</div>
+    	<div class="row form">
+    		<div class="col col-33 form title">Catégorie : </div>
+    		<div class="col form"><input class="underline" type="number"></div>
+    	</div> -->
+    	<div class="row">
+    		<label class="item item-input item-stacked-label title first">
+			    <span class="input-label">Nom</span>
+			    <input ng-model="client.nom" class="input-content" type="text" placeholder="DOE">
+			  </label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-stacked-label title">
+			    <span class="input-label">Prénom</span>
+			    <input ng-model="client.prenom" class="input-content" type="text" placeholder="John">
+			  </label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-stacked-label title">
+			    <span class="input-label">Adresse</span>
+			    <input ng-model="client.adresse1" class="input-content" type="text" placeholder="4, rue ...">
+			  </label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-stacked-label title">
+			    <span class="input-label">Adresse 2</span>
+			    <input ng-model="client.adresse2" class="input-content" type="text" placeholder="...">
+			  </label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-stacked-label title">
+			    <span class="input-label">Téléphone</span>
+			    <input ng-model="client.telephone" class="input-content" type="number" placeholder="06 ...">
+			  </label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-select title">
+			    <div class="input-label">
+			      Route
+			    </div>
+			    <select ng-model="client.route" class="input-content">
+			      <option ng-repeat="route in routes">{{ route }}</option>
+			    </select>
+			</label>
+    	</div>
+    	<div class="row">
+    		<label class="item item-input item-select title last">
+			    <div class="input-label">
+			      Catégorie
+			    </div>
+			    <select ng-model="client.categorie" class="input-content">
+			      <option>SMALL</option>
+			      <option selected>MEDIUM</option>
+			      <option>MiniMarché</option>
+			      <option>BoundifSmall</option>
+			      <option>BoundifMedium</option>
+			      <option>BoundifLarge</option>
+			    </select>
+			</label>
+    	</div>
+    	<div class="row">
+    		<div class="col col-33" style="border: none; padding: 15px;color: #B71C1C;
+    font-weight: 900;
+    font-size: 16px;">GPS</div>
+    		<div class="col" style="border: none; padding: 15px;">
+    			<span style="
+    			font-weight: 600;
+    			color: black;">Latitude : </span> <br> {{ client.lat }} <br>
+    			<span style="
+    			font-weight: 600;
+    			color: black;">Longitude : </span> <br> {{ client.lng }}
+    		</div>
+    	</div>
+
+    	<div class="row buttons">
+    		<div class="col col-66" style="border: none;">
+    			<button ng-click="addNewClient(client)" class="button button-full button-balanced form">
+				  Sauvegarder
+				</button>
+    		</div>
+    		<div class="col" style="border: none;">
+    			<button class="button button-full button-assertive form">
+				  Annuler
+				</button>
+			</div>
+    	</div>
+                
+	</ion-content>
+</ion-view>

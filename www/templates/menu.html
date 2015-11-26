@@ -1,0 +1,61 @@
+<ion-side-menus enable-menu-with-back-views="true">
+    <ion-side-menu-content>
+        <ion-nav-bar class="bar-assertive-900" ng-class="{expanded: isExpanded, 'has-header-fab-left': hasHeaderFabLeft, 'has-header-fab-left': hasHeaderFabLeft}" align-title="left">
+            <ion-nav-back-button class="no-text">
+            </ion-nav-back-button>
+            <ion-nav-buttons side="left">
+                <button class="button button-icon button-clear ion-navicon-round" menu-toggle="left">
+                </button>
+            </ion-nav-buttons>
+        </ion-nav-bar>
+        <ion-nav-view name="fabContent"></ion-nav-view>
+        <ion-nav-view name="menuContent" ng-class="{expanded: isExpanded}" ></ion-nav-view>
+    </ion-side-menu-content>
+    <ion-side-menu side="left">
+        <ion-header-bar class="dark-bg expanded" style="background: url('img/delivery.jpg'); background-position : left;">
+            <span class="avatar" style="background: url('img/avatar.png'); background-size: cover;"></span>
+            <h2>John DOE</h2>
+        </ion-header-bar>
+        <ion-content class="stable-bg has-expanded-header">
+            <ion-list>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ui-sref="app.profile">
+                        Profile
+                        <i style="color: #870000;" class="icon ion-ios-pulse-strong red-ionicon "></i>
+                    </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ui-sref="app.routes">
+                    Routes d'aujourd'hui
+                    <i style="color: #870000;" class="icon ion-map red-ionicon "></i>
+                </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ui-sref="app.promotions">
+                    Promotions du mois
+                    <i style="color: #870000;" class="icon ion-android-bulb red-ionicon "></i>
+                </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ng-click="test()">
+                    SBD
+                    <i style="color: #870000;" class="icon ion-pricetag red-ionicon "></i>
+                </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ui-sref="app.clients">
+                    Mes clients
+                    <i style="color: #870000;" class="icon ion-ios-people red-ionicon "></i>
+                </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" nav-clear menu-close ng-click="synchronization()">
+                    Synchronisation
+                    <i style="color: #870000;" class="icon ion-ios-cloud-download red-ionicon "></i>
+                </ion-item>
+                <ion-item style="border-bottom: 1.5px solid #870000;" class="item item-icon-right" ng-click="logout()">
+                    Déconnexion
+                    <i style="color: #870000;" class="icon ion-power red-ionicon"></i>
+                </ion-item>
+                <ion-item class="item" style="
+                font-weight: 900;
+                color: #B71C1C;
+                font-size: 20px;
+                ">
+                    <span style="padding: 10px;">New Sales V0.3 ALPHA</span>
+                </ion-item>
+            </ion-list>
+        </ion-content>
+
+    </ion-side-menu>
+</ion-side-menus>
+

@@ -1,0 +1,53 @@
+<ion-view view-title="MENU">
+	<!-- <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
+		<div class="title">
+			Bonjour Mr. John DOE
+		</div>
+	</div> -->
+
+    <ion-content>
+    <div class="row">
+			<div class="col" style="
+			border: none; 
+			color: #B71C1C; 
+			text-align: center; 
+			font-weight: 900; 
+			font-size: 25px;">
+				Bonjour {{ infos.profile.name }}
+			</div>
+		</div>
+    	<div class="list" style="margin-top: 30px;">
+    		<div class="item entry">
+    			<button ui-sref="app.profile" class="button button-block button-assertive icon-left ion-ios-pulse-strong button-entry">
+				  Mon espace
+				</button>
+    		</div>
+    		<div class="item entry">
+    			<button ui-sref="app.routes({ code : 0 })" class="button button-block button-assertive icon-left ion-map button-entry">
+				  Routes d'aujourd'hui
+				</button>
+    		</div>
+    		<div class="item entry">
+    			<button ui-sref="app.routes({ code : 0 })" class="button button-block button-assertive icon-left ion-android-bulb button-entry">
+				  Promotions du mois
+				</button>
+    		</div>
+    		<div class="item entry">
+    			<button ng-click="test()" class="button button-block button-assertive icon-left ion-pricetag button-entry">
+				  SBD
+				</button>
+    		</div>
+    		<div class="item entry">
+    			<button ui-sref="app.clients" class="button button-block button-assertive icon-left ion-ios-people button-entry">
+				  Mes clients
+				</button>
+    		</div>
+    		<div class="item entry">
+    			<button ng-click="synchronization()" class="button button-block button-assertive icon-left ion-ios-cloud-download button-entry">
+				  Synchronisation
+				</button>
+    		</div>
+
+    	</div>
+	</ion-content>
+</ion-view>

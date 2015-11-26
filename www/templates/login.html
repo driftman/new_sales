@@ -1,0 +1,157 @@
+<ion-view view-title="" align-title="left">
+    <ion-content style="background-image:
+background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
+background:    -moz-linear-gradient(90deg, #870000 10%, #190A05 90%); /* FF3.6+ */
+background:     -ms-linear-gradient(90deg, #870000 10%, #190A05 90%); /* IE10 */
+background:      -o-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Opera 11.10+ */
+background:         linear-gradient(90deg, #870000 10%, #190A05 90%); /* W3C */
+background:           #B71C1C; /* Ila 7madet ga3 */
+    ">
+        <div class="hero no-header flat">
+            <div class="content">
+                <div class="app-icon">
+                    <img src="img/logo.png" style="width: 100px; height: 100px;">
+                    <p style="
+                    color: white;
+                    font-family: 'Oswald', helvetica, sans-serif;
+                    font-size: 16px;"><b>New Sales</b></p>
+                </div>
+            </div>
+        </div>
+        <div class="list" style="margin-right: 25px">
+            <ion-md-input onfocus="onFocus(this)" placeholder="Username" highlight-color="balanced" type="text" ng-model="object.username"></ion-md-input>
+            <ion-md-input onfocus="onFocus(this)" placeholder="Password" highlight-color="energized" type="password" ng-model="object.password"></ion-md-input>
+            <script>
+            function onFocus(x) {
+                x.style.border-bottom = "2px solid black";
+            }
+            </script>
+        </div>
+        
+        <div class="padding">
+            <button class="button button-full button-assertive ink" ng-click="login(object)">Login</button>
+          </div>
+        <div class="padding">
+            <button class="button button-full button-assertive ink" style="
+            text-decoration: underline;
+            border: none;
+            background-color: rgba(0,0,0,.1);
+            font-weight: bold;" ng-click="password_forgot()">Mot de passe oublié ?</button>
+        </div>
+
+        <!-- Success Modal -->
+        <script id="modal-password.html" type="text/ng-template">
+          <div class="modal">
+            <ion-header-bar>
+              <h1 style="color: black;" class="title">Mot de passe oublié</h1>
+            </ion-header-bar>
+            <ion-content>
+              <div class="list">
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Nom d utilisateur : </span>
+                  <input type="text" ng-model="username" placeholder="">
+                </label>
+                <!-- Valider le username -->
+                <button class="button button-full icon-right ion-chevron-right button-calm" 
+                  ng-click="getAccount(username)">Valider</button>
+                <!-- Importer la question secrète et y répondre -->
+
+                <label class="item item-input">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Question secrète : </span>
+                  {{ question }} 
+                </label>
+
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Réponse : </span>
+                  <input type="text" ng-model="reponse.value">
+                </label>
+              </div>
+              <div ng-show="error_forgot_password">
+                <div class="card">
+                  <div class="item item-divider">
+                    Une erreur s est produite : 
+                  </div>
+                  <div class="item item-text-wrap">
+                    Vérifier votre connéctivité.
+                    <br>
+                    Les mot de passe doivent être identiques.
+                  </div>
+                </div>
+              </div>
+              <button class="button button-full button-balanced" ng-click="reponse(reponse.value)">Confirmer</button>
+            </ion-content>
+          </div>
+        </script>
+        <!-- End -->
+
+        <!-- Success Modal -->
+        <script id="my-modal.html" type="text/ng-template">
+          <div class="modal">
+            <ion-header-bar>
+              <h1 style="color: black;" class="title">Changement de mot de passe</h1>
+            </ion-header-bar>
+            <ion-content>
+              <div class="list">
+
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Question secrète : </span>
+                  <input type="text" ng-model="object.question_secrete">
+                </label>
+
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Réponse : </span>
+                  <input type="text" ng-model="object.reponse_secrete">
+                </label>
+
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Mot de passe: </span>
+                  <input type="password" ng-model="object.password">
+                </label>
+
+                <label class="item item-input item-stacked-label">
+                  <span class="input-label" style="
+                  font-weight: 900;
+                  font-size: 15px;">Confirmer : </span>
+                  <input type="password" ng-model="object.second_password">
+                </label>
+
+                
+              </div>
+              <div ng-show="error_change_password">
+                <div class="card">
+                  <div class="item item-divider">
+                    Une erreur s est produite : 
+                  </div>
+                  <div class="item item-text-wrap">
+                    Vérifier votre connéctivité.
+                    <br>
+                    Les mot de passe doivent être identiques.
+                  </div>
+                </div>
+              </div>
+
+                
+              <button class="button button-full button-balanced" ng-click="changementMDP(object)">Confirmer</button>
+
+            </ion-content>
+          </div>
+        </script>
+        <!-- End -->
+
+
+
+
+    </ion-content>
+</ion-view>

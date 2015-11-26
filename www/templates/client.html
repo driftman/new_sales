@@ -1,0 +1,176 @@
+<ion-view view-title="GP 120/1200 pts | GS 0/50" ng-class="{expanded:$scope.isExpanded}">
+    <ion-content >
+    <div class="list card" style="box-shadow: 0px 10px 10px 0 #B71C1C;">
+  <div class="item">
+  	<h1 style="color: #F12424;">{{ client.prenom }} {{ client.nom }}</h1>
+  </div>
+  <div class="item item-image">
+    <img src="img/marjane.jpg">
+  </div>
+  <div class="item">
+    <div class="row">
+        <div class="col"><b>Points Golden Store : </b></div>
+        <div class="col">{{ client.golden_store }}</div>
+    </div>
+    <div class="row">
+        <div class="col"><b><b>Adresse : </b></b></div>
+        <div class="col">{{ client.address }}</div>
+    </div>
+    <div class="row">
+        <div class="col"><b>Telephone : </b></div>
+        <div class="col">{{ client.telephone }}</div>
+    </div>
+    <div class="row">
+        <div class="col"><b>Cumul C.A : </b></div>
+        <div class="col">{{ ca | number : 2 }} DHS</div>
+    </div>
+    <div class="row">
+        <div class="col"><b>Gifts en attente : </b></div>
+        <div class="col">-</div>
+    </div>
+    <div class="row">
+        <div class="col"><b>Moyenne C.A : </b></div>
+        <div class="col">{{ avg | number : 2 }} DHS</div>
+    </div>
+    <div class="row">
+        <div class="col" style="border-bottom: 1px solid grey;"><b>Dernière visite : </b></div>
+        <div class="col" style="border-bottom: 1px solid grey;">10/10/2015 12:32:00</div>
+    </div>
+    <div class="row">
+        <div class="col"></div>
+        <div class="col"></div>
+    </div>
+  </div>
+ </div>
+<br><br>
+  <div class="card">
+  	<h2 class="item" style="color: #B71C1C; font-size : 22px;"> Les 5 dernières factures : </h2>
+  </div>
+        <ion-slide-box show-pager="true" on-slide-changed="onSlideChanged(index)" active-slide="currentIndex">
+          <ion-slide ng-repeat = "commande in commandes">
+            <div class="row header">
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Article</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Libellé</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Qte Cs</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Qte Un</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">PU Brut</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">PU Net</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Valeur HT</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Valeur TVA</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">Valeur TTC</div>
+            </div>
+            <div class="row" ng-repeat="ligne in commande.ligneCommandes" style="max-height: 25px;">
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.designation}}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.designation}}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.packets }}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.units }}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.prixVente }}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.prixVente + (ligne.prixVente * 0.20) }}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.total }}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.total * 0.20 | number : 2}}</div>
+                <div class="col" style="
+                font-size: 11.5px;
+                padding: 0;
+                overflow: hidden;
+                text-align: center;">{{ ligne.total + (ligne.total * 0.20) | number : 2}}</div>
+            </div>
+            
+            <div class="row">
+                <div class="col offset" style="border-left: 1px solid black; border-top: 1px solid black;"></div>
+                <div class="col offset" style="border-top: 1px solid black;"></div>
+                <div class="col" style="background-color: #ADA7A7;">TOTAL H.T</div>
+                <div class="col">0 DHS</div>
+            </div>
+            <div class="row">
+                <div class="col offset" style="border-left: 1px solid black; border-bottom: 1px solid black;"></div>
+                <div class="col offset" style="border-bottom: 1px solid black;"></div>
+                <div class="col" style="background-color: #ADA7A7;">TOTAL T.T.C</div>
+                <div class="col">0 DHS</div>
+            </div>
+
+          </ion-slide>
+          
+        </ion-slide-box>
+        <div>
+            <div class="card">
+                <h2 style="color: #B71C1C; font-size : 22px;" class="item"> Localisation du client : </h2>
+            </div>
+            <leaflet markers="markers2" center="client2" defaults="defaults" width="100%" height="300px"></leaflet>
+      </div>
+
+    </ion-content>
+    <div class="bar bar-footer bar-assertive" ng-show="!vente && mission">
+        <div class="title" ui-sref="app.brandfive({ mission : mission })">Vous devez finir la vente précedente !</div>
+    </div>
+    <div class="bar bar-footer bar-balanced" ng-show="vente && mission">
+        <div class="title" ng-click="start()">Commencer la vente</div>
+    </div>
+</ion-view>
