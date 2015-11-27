@@ -422,3 +422,6 @@ input.underline {
 h3 .title-promotion {
     font-weight: 900;
 }
+.item p {
+    color: rgba(0,0,0,54);
+}
