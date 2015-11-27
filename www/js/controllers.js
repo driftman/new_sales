@@ -2056,31 +2056,93 @@ angular.module('starter.controllers', ['starter.services'])
 
 .controller('ExclusionsCtrl', function($scope){
     var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-    var max = 0;
+    $scope.hold = function(object){
+        if(typeof object.promotions != "undefined" && object.promotions.length > 0)
+        {
+            if(object.clicked)
+            {
+                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
+                {
+                    if($scope.data.conflicts[i].promotion.promotion.id == object.exclude)
+                    {
+                        $scope.data.conflicts[i].promotion.clicked = true;
+                    }
+                }
+                object.clicked = false;
+            }
+            else
+            {
+                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
+                {
+                    if($scope.data.conflicts[i].promotion.promotion.id == object.exclude)
+                    {
+                        $scope.data.conflicts[i].promotion.clicked = false;
+                    }
+                }
+                object.clicked = true;
+            }
+            console.log($scope.data.conflicts);
+        }
+        else
+        {
+            if(object.clicked)
+            {
+                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
+                {
+                    if(object.promotion.id == $scope.data.conflicts[i].inConflictWith.exclude)
+                    {
+                        $scope.data.conflicts[i].inConflictWith.clicked = true;
+                    }
+                }
+                object.clicked = false;
+            }
+            else
+            {
+                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
+                {
+                    if(object.promotion.id == $scope.data.conflicts[i].inConflictWith.exclude)
+                    {
+                        $scope.data.conflicts[i].inConflictWith.clicked = false;
+                    }
+                }
+                object.clicked = true;
+            }
+            console.log($scope.data.conflicts);
+        }
+    };
     $scope.data = {};
     $scope.data.conflicts = [];
     for(var i = 0 ; i < promotions.length ; i++)
     {
-        if(promotions[i].exclusions != null  && promotions[i].exclusions.length > 0)
+        if(promotions[i].exclusions != null && promotions[i].exclusions.length > 0)
         {
            var object = {};
-           object.promotion = promotions[i];
-           object.inConflictWith = [];
+           object.promotion = { exclude : [], promotion: promotions[i], clicked: true };
+           object.inConflictWith = { exclude : promotions[i].id, clicked: false, promotions : [], gratuites : [], remises : []};
            for(var j = 0 ; j < promotions[i].exclusions.length ; j++)
            {
                 for(var k = 0 ; k < promotions.length ; k++)
                 {
+
                     if(promotions[i].exclusions[j] == promotions[k].id)
                     {
-                        object.inConflictWith.push(promotions[k]);
+                        object.inConflictWith.promotions.push(promotions[k].id);
+                        object.promotion.exclude.push(promotions[k].id);
+                        if(promotions[k].gratuites != null && promotions[k].length > 0)
+                        {
+                            object.inConflictWith.gratuites = object.inConflictWith.gratuites.concat(promotions[k].gratuites);
+                        }
+                        if(promotions[k].remise != null && promotions[k].remise > 0)
+                        {
+                            object.inConflictWith.remises = object.inConflictWith.remises.concat(promotions[k].remise);
+                        }
                     }
                 }
            }
            $scope.data.conflicts.push(object);
-           console.log($scope.data.conflicts);
         }
     }
-    console.log(max);
+    console.log($scope.data.conflicts);
 })
 
 .controller('RemainingCtrl', function($scope, $state, Articles){

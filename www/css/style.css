@@ -412,8 +412,13 @@ input.underline {
 .list .item-radio input:checked ~ .item-content, .list .item-radio .item-content    {
   background-color: transparent;
   color: #B71C1C;
+  margin: 0;
 }
 
 .list .item-radio .radio-icon    {
   color: #B71C1C;
+  padding: 0;
+}
+h3 .title-promotion {
+    font-weight: 900;
 }
