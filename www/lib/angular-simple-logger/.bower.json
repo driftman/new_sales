@@ -1,6 +1,6 @@
 {
   "name": "angular-simple-logger",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Basic logger with level logging which can also be independent.",
   "main": "./dist/angular-simple-logger.js",
   "homepage": "https://github.com/nmccready/angular-simple-logger",
@@ -36,14 +36,13 @@
     "bower_components",
     "tmp"
   ],
-  "_release": "0.1.4",
+  "_release": "0.1.5",
   "_resolution": {
     "type": "version",
-    "tag": "0.1.4",
-    "commit": "0b4cba7ebe85c2ac37e9cc889e4a05a1e7c37a60"
+    "tag": "0.1.5",
+    "commit": "dfcb5a61a0643659071e9fad3d6ff2c75038f198"
   },
   "_source": "git://github.com/nmccready/angular-simple-logger.git",
   "_target": "~0.1.4",
-  "_originalSource": "angular-simple-logger",
-  "_direct": true
+  "_originalSource": "angular-simple-logger"
 }

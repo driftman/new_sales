@@ -1,4 +1,4 @@
-<ion-view view-title="Panier de {{ client.name }}">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
 	<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C;
 	max-height: 20px;">
        <div class="row" style="
@@ -69,9 +69,9 @@
             padding: 0;
             min-height: 0;
             border: none;
-            border-bottom: 1px solid black;
+            border-bottom: 1px solid rgba(0,0,0,.5);
             min-height: 0px;
-            text-align: left;" ng-repeat="item in data.items">
+            text-align: left;" ng-repeat="item in data.items | orderBy:'-prixVente' track by $index ">
                 <div class="row" style="
                 margin: 0;
                 padding: 0;
@@ -87,26 +87,20 @@
                     font-weight: 900; 
                     text-align: left; 
                     margin: 0;
-                    color: #060606;">{{ item.nomArticle }}</p>
-                    <!-- <p 
-                    style="
-                    font-size: 11px; 
-                    font-weight: 900; 
-                    margin: 0;
-                    text-align: left;">AR785693</p> --></div>
+                    color: #060606;">{{ item.nomArticle }}</p></div>
                 <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 900;
-                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.unit"></input>
+                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.unit" ng-change="checkk()"></input>
             </div>
             <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 900;
-                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.packet"></input>
+                text-align: center;"><input type="number" style="font-weight: 900; color: black; width: 100%; text-align:center;" ng-model="item.packet" ng-change="checkk()"></input>
             </div>
                 <div class="col col-15" style="
                 margin: 0;
@@ -235,7 +229,7 @@
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
-                float: left;">2000,00</div>
+                float: left;">{{ data.items | total | promotion }} DHS</div>
               </div>
             </div>
             <div class="item" 
@@ -351,7 +345,7 @@
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
-                float: left;">2400,00</div>
+                float: left;">{{ totalBill | promotion }} DHS </div>
               </div>
             </div>
           </div>
@@ -362,9 +356,9 @@
 </ion-view>
 <div class="bar bar-footer bar-balanced">
     <div class="title">
-        <a ng-click = "pay()" ng-show="recovery" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-card"></i></a>
-        Total : {{ data.items | total }} DHS 
-        <a ng-click="confirm()"> <i style="float: right; font-weight: 900; font-size: 35px;" class="icon ion-android-done-all"></i></a>
-        <a ng-click="" ng-show="!recovery"> <i style="float: left; font-weight: 900; font-size: 35px;" class="icon ion-android-print"></i></a>
+        <a ng-show="true" ng-click = "pay()" ng-show="recovery" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-card"></i></a>
+        Total : {{ totalBill | promotion }} DHS 
+        <a ng-click="confirm()"> <i style="float: right; font-weight: 900; font-size: 35px;" class="icon ion-android-done-all"></i></a><!-- 
+        <a ng-click="" ng-show="true"> <i style="float: left; font-weight: 900; font-size: 35px;" class="icon ion-android-print"></i></a> -->
     </div> 
 	</div>

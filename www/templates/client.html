@@ -1,4 +1,4 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50" ng-class="{expanded:$scope.isExpanded}">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20." ng-class="{expanded:$scope.isExpanded}">
     <ion-content >
     <div class="list card" style="box-shadow: 0px 10px 10px 0 #B71C1C;">
   <div class="item">
@@ -167,10 +167,10 @@
       </div>
 
     </ion-content>
-    <div class="bar bar-footer bar-assertive" ng-show="!vente && mission">
-        <div class="title" ui-sref="app.brandfive({ mission : mission })">Vous devez finir la vente précedente !</div>
+    <div class="bar bar-footer bar-assertive" ng-show="!vente">
+        <div class="title" ui-sref="app.brandfive">Vous devez finir la vente précedente !</div>
     </div>
-    <div class="bar bar-footer bar-balanced" ng-show="vente && mission">
-        <div class="title" ng-click="start()">Commencer la vente</div>
+    <div class="bar bar-footer bar-balanced" ng-show="vente">
+        <div class="title" ng-click="goClient()">Commencer la vente</div>
     </div>
 </ion-view>

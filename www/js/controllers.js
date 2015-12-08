@@ -29,6 +29,7 @@ angular.module('starter.controllers', ['starter.services'])
         document.getElementsByTagName('ion-nav-bar')[0].style.display = 'block';
     };
 
+    //$scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.noHeader = function() {
         var content = document.getElementsByTagName('ion-content');
         for (var i = 0; i < content.length; i++) {
@@ -57,7 +58,7 @@ angular.module('starter.controllers', ['starter.services'])
         });
         $timeout(
             function(){
-                window.localStorage['profile'] = 'null';
+                window.localStorage.removeItem('profile');
                 $state.go("menu.login");
                 $ionicLoading.hide();
             }, 3000);
@@ -124,6 +125,7 @@ angular.module('starter.controllers', ['starter.services'])
     Promotions,
     $state)
 {
+    $scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.$parent.clearFabs();
     // Set Header
     $ionicSideMenuDelegate.canDragContent(true);
@@ -165,9 +167,10 @@ angular.module('starter.controllers', ['starter.services'])
 }])
 
 .controller('LoginCtrl', function($scope, $rootScope, $timeout, $cordovaToast, $ionicLoading,
-    $stateParams, $ionicSideMenuDelegate, $state, $ionicModal, ionicMaterialInk, Accounts, Profile) {
+    $stateParams, $ionicSideMenuDelegate, $state, $ionicModal, ionicMaterialInk, Accounts, Profile, Clients) {
+
     $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] !== 'null')
+        if(typeof window.localStorage['profile'] != 'undefined')
         {
             $state.go("menu.entry");
         }
@@ -229,13 +232,26 @@ angular.module('starter.controllers', ['starter.services'])
                 $scope.error_forgot_password=true;
             });
     };
+    /*Profile.getProfiles(
+        function(success){
+            console.log("235: "+JSON.stringify(success));
+        }, function(error){
+            console.log("237: "+JSON.stringify(error));
+        });
+    Clients.getAllClients(
+        function(success){
+            console.log(JSON.stringify(success));
+        }, function(error){
+            console.log(JSON.stringify(error));
+        });*/
     $scope.login = function(object) {  
         $ionicLoading.show({
           template : 'Connexion en cours ...'
-        });       
+        });   
       Accounts.getAccountByUserNameAndPassword(object.username, object.password).then(
         function(user){
-            console.log("THIS IS IT : "+user);
+            window.localStorage['profile'] = JSON.stringify(user);
+            console.log("THIS IS ITTT : "+user);
             if(typeof user === "undefined")
             {
                 updateIonicLoading('Erreur fatale !');
@@ -243,14 +259,7 @@ angular.module('starter.controllers', ['starter.services'])
             }
             if(user != null && user.first_login === 1)
             {
-                $rootScope.infos.account = user;
                 updateIonicLoading('Connexion réussi !');
-                Profile.getProfile(user.id_db).then(
-                    function(profile){
-                        $rootScope.infos.profile = profile;
-                    }, 
-                    function(error){
-                    });
                 console.log(JSON.stringify(user));
                 current_user = user;
                 console.log(user);
@@ -259,15 +268,7 @@ angular.module('starter.controllers', ['starter.services'])
             }
             else if( user != null && user.first_login === 0)
             {
-                $rootScope.infos.account = user;
                 updateIonicLoading('Connexion réussi !');
-                Profile.getProfile(user.id_db).then(
-                    function(profile){
-                        $rootScope.infos.profile = profile;
-                        window.localStorage['profile'] = JSON.stringify($rootScope.infos);
-                    }, 
-                    function(error){
-                    });
                 console.log(JSON.stringify(user));
                 current_user = user;
                 console.log(user);
@@ -280,22 +281,26 @@ angular.module('starter.controllers', ['starter.services'])
                 updateIonicLoading('Tentative de connexion à NewSales ');
                 Accounts.connectFromAPI(object).then(
                     function(success){
+                        var profileToProfile = {};
                         updateIonicLoading("Connexion réussi !");
                         var data = success.data;
+                        console.log(JSON.stringify(data));
+                        var _id_db = data.employee.id;
                         var account = {
                             id_db : data.employee.id,
                             username : data.username,
                             password : data.password,
-                            golden_points : data.employee.golden_points
+                            golden_points : data.employee.goldenPoints,
+                            golden_stores : data.employee.goldenPoints
                         };
                         Accounts.addAccount(account).then(
                                 function(success1){
+                                    console.log("addAccount !");
+                                    console.log(JSON.stringify(success1));
                                     if(typeof success1.insertId !== "undefined")
                                     {
-                                        $rootScope.infos.account = account;
-                                        console.log(success1);  
-                                        console.log("Compte ajouté avec succes");
                                         var profile = {
+                                            id_db : _id_db,
                                             name : data.firstName,
                                             second_name : data.lastName,
                                             address : data.address,
@@ -306,16 +311,23 @@ angular.module('starter.controllers', ['starter.services'])
                                         
                                         Profile.addProfile(profile).then(
                                             function(success2){
+                                                console.log(JSON.stringify(success2));
                                                 if(typeof success2.insertId !== "undefined")
                                                 {
-                                                    $rootScope.infos.profile = profile;
-                                                    window.localStorage['profile'] = JSON.stringify($rootScope.infos);
+                                                    window.localStorage['profile'] = JSON.stringify(profile);
                                                     updateIonicLoading("Votre espace personnel a été créé avec succes !");
                                                     $state.go("menu.entry");
                                                 }
                                                 else
                                                 {
+                                                    Profile.getProfiles(
+                                                        function(success){
+                                                            console.log(JSON.stringify(success));
+                                                        }, function(error){
+                                                            console.log(JSON.stringify(error));
+                                                        });
                                                     updateIonicLoading("Erreur lors de la création de votre personnel !");
+                                                    console.log(success2);
                                                 }
                                             },
                                             function(error){
@@ -324,6 +336,12 @@ angular.module('starter.controllers', ['starter.services'])
                                     }
                                     else
                                     {
+                                        Profile.getProfiles(
+                                                        function(success){
+                                                            console.log(JSON.stringify(success));
+                                                        }, function(error){
+                                                            console.log(JSON.stringify(error));
+                                                        });
                                         updateIonicLoading("Erreur lors de la création de votre personnel !");
                                     }
                             },
@@ -333,6 +351,7 @@ angular.module('starter.controllers', ['starter.services'])
 
                     }, 
                     function(error){
+                        console.log(JSON.stringify(error));
                         switch(error.status)
                         {
                             case 404:
@@ -345,7 +364,7 @@ angular.module('starter.controllers', ['starter.services'])
                                 updateIonicLoading("Problème technique");
                                 break;
                             default:
-                                updateIonicLoading("Problème de connexion");
+                                updateIonicLoading("Problème de connexionnn");
                                 break;
                         }
                     });
@@ -409,11 +428,13 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, $state, Missions, Clients){
+.controller('EntryCtrl', function($scope, $rootScope, $state, Routes, BrandFive, Commandes, Missions, Clients, Articles, Marques){
+    var infos;
     $scope.$on('$ionicView.beforeEnter', function() {
         if(window.localStorage['profile'] !== 'null')
         {
-            $scope.infos = JSON.parse(window.localStorage['profile']);
+            infos = JSON.parse(window.localStorage['profile']);
+            $scope.infos = infos;
         }
         else
         {
@@ -424,15 +445,43 @@ angular.module('starter.controllers', ['starter.services'])
         window.open('img/test.pdf', '_blank', 'location=yes');
     };
     $scope.synchronization = function(){
-        Missions.syncMissions($scope.infos.account.id_db).then(
+
+        Commandes.syncCommandes().then(
+            function(success){
+               // Commandes.sendCommandeToAPI(success);
+               console.log(success);
+            }, 
+            function(error){
+                console.log(error);
+            });
+
+        /*Routes.syncRoutes(infos.id_db);
+        Missions.syncMissions(infos.id_db).then(
             function(success){
                 console.log(success);
             },
             function(error){
                 console.log(error.message)
-            });
+            });*/
 
-        Clients.syncClients($scope.infos.account.id_db);
+        /*Clients.syncClients(infos.id_db);*/
+       // Articles.syncArticles();
+        /*Marques.getAll().then(
+            function(success){
+                console.log(JSON.stringify(success));
+            },
+            function(error){
+                console.log(JSON.stringify(error));
+            });*/
+        /*BrandFive.addBrandFive();*/
+        /*Articles.getArticlesByMarque('GILLETTE').then(
+            function(success){
+                console.log(JSON.stringify(success));
+            },
+            function(error){
+                console.log(JSON.stringify(error));
+            });*/
+
     };
 })
 
@@ -452,7 +501,9 @@ angular.module('starter.controllers', ['starter.services'])
     ionicMaterialInk, 
     Promotions,
     $document,
-    $state)
+    $cordovaGeolocation,
+    $state,
+    $ionicLoading)
 {
     $scope.$parent.clearFabs();
     $scope.$parent.showHeader();
@@ -460,6 +511,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
     $scope.vente = typeof window.localStorage['cart'] == "undefined";
+    console.log($scope.vente);
 
     // Set Motion
     ionicMaterialMotion.fadeSlideInRight();
@@ -467,19 +519,80 @@ angular.module('starter.controllers', ['starter.services'])
     // Set Ink
     $scope.clients = [];
     ionicMaterialInk.displayEffect();
+    $scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.client = {};
     $scope.mission_id = $rootScope.mission;
     $ionicSlideBoxDelegate.update();
     $scope.$on('$ionicView.beforeEnter', function() {
         $ionicSlideBoxDelegate.update();
     });
-    console.log($rootScope.mission);
+    var clientObject;
+    $scope.goClient = function(){
+        $ionicLoading.show({
+            template : "Préparation de la visite en cours ..."
+        });
+        var startDay = new Date();
+        var mission = {
+            route_id: $scope.client.route,
+            client_id: $scope.client.id_db,
+            date_start: startDay.getTime(),
+            state: 0,
+            synced: false
+        };
+        if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
+        {
+                var posOptions = {timeout: 10000, enableHighAccuracy: false};
+                $cordovaGeolocation
+                .getCurrentPosition(posOptions)
+                .then(function (position) {
+                      var object = {};
+                      object.lat  = position.coords.latitude;
+                      object.lng = position.coords.longitude;
+                      console.log(object);
+                      console.log(clientObject.id_db);
+                      Clients.updateClientCoords(clientObject.id_db, object).then(
+                        function(success){
+                            console.log("Successfully up to date !");
+                            console.log(success);
+                        },
+                        function(error){
+                            console.log("Error while updating");
+                        });
+                    }, function(err) {
+                      console.log("WE'LL TRY NEXT TIME!");
+                });
+        }
+        else
+        {
+            console.log("no need !");
+        }
+        if(typeof window.localStorage['mission'] == "undefined")
+        {
+            window.localStorage['mission'] = JSON.stringify(mission);
+        }
+        else
+        {
+            var localMission = JSON.parse(window.localStorage['mission']);
+            if(localMission.client_id != $scope.client.id_db)
+            {
+                window.localStorage['mission'] = JSON.stringify(mission);
+            }
+        }
+        $timeout(
+            function(){
+                $ionicLoading.hide();
+                $state.go("app.brandfive");
+            }, 2500);
+        
+        
+    };
+
     var clientName;
     Clients.getClient($stateParams.id).then(
         function(client){
             $scope.client = client;
-            console.log(JSON.stringify(client));
-            clientName  = $scope.client.name;
+            clientObject = client;
+            clientName  = clientObject.name;
         }, 
         function(error){
             console.log(error.message);
@@ -498,11 +611,8 @@ angular.module('starter.controllers', ['starter.services'])
         function(error){
             console.log(error.message);
         });
+
     $scope.commandes = [];
-    $scope.start = function(){
-        Missions.setEntryDate($rootScope.mission, Date.now()).then(function(success){console.log(success)});
-        $state.go("app.brandfive", { mission : $rootScope.mission });
-    };
     Commandes.getCommandesByClient($stateParams.id).then(
         function(data){
             console.log(data);
@@ -527,8 +637,7 @@ angular.module('starter.controllers', ['starter.services'])
                             packets: data[j].packets,
                             total: data[j].total,
                             units: data[j].units,
-                            prixVente: data[j].prixVente,
-                            total: data[j].total
+                            prixVente: data[j].prixVente
                         };
                         trueObject.ligneCommandes.push(ligneCommande);
                     }
@@ -627,7 +736,7 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('RoutesCtrl', function($scope, $rootScope, $ionicModal,
+.controller('RoutesCtrl', function($scope, $ionicLoading, $rootScope, $ionicModal,
     Missions, Clients,
     $ionicSideMenuDelegate, $state, $timeout, ionicMaterialMotion, ionicMaterialInk){
     $scope.data = {};
@@ -636,29 +745,114 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.clearFabs();
     $scope.$parent.showHeader();
     $scope.$parent.setHeaderFab('left');
+    $scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.address = "";
     $scope.noMoreItemsAvailable = false;
     $scope.data.missions = [];
     $scope.missions = [];
+    /****************************************************/
+    $scope.days = [];
+    var today = new Date(Date.now());
+    today.setHours(0,0,0,0);
+    var todayMs = today.getTime();
+    var todayDay = today.getDay();
+    var startDay = todayDay + 1;
+    while(startDay <= 6)
+    {
+        $scope.days.push(startDay);
+        startDay+=1;
+    }
+    /***************************************************/
+    $scope.day = 0;
+
+
+
+    $scope.test = function(){
+        $scope.missions = [];
+        $ionicLoading.show({
+            template: "chargement ..."
+        });
+        $timeout(function(){
+
+            var requestDate = new Date(Date.now()+($scope.day - todayDay)*24*60*60*1000);
+            requestDate.setHours(0,0,0,0);
+            var time = requestDate.getTime();
+            console.log("Between : "+new Date(time)+" and : "+new Date((time+24*60*60*1000)));
+            Missions.getMissionsBetween(time, time+24*60*60*1000).then(
+                function(missions){
+                    
+                    angular.forEach(missions, function(mission){
+                        $scope.missions.push(mission);
+                    });
+                }, 
+                function(error){
+                    console.log(error.message);
+                });
+            $ionicLoading.hide();
+        }, 1000);
+        
+    };
+
+    Missions.getTodaysMissions(todayMs, todayMs+24*60*60*1000).then(
+            function(missions){
+                console.log(missions);
+                $scope.missions = [];
+                angular.forEach(missions, function(mission){
+                    $scope.missions.push(mission);
+                });
+            }, 
+            function(error){
+                console.log(error.message);
+            });
+
+
+    $scope.today = function(){
+
+        $scope.missions = [];
+        $ionicLoading.show({
+            template: "chargement ..."
+        });
+        $timeout(function(){
+        $ionicLoading.hide();
+        Missions.getTodaysMissions(todayMs).then(
+            function(missions){
+                angular.forEach(missions, function(mission){
+                    $scope.missions.push(mission);
+                });
+            }, 
+            function(error){
+                console.log(error.message);
+            });
+            }, 1000);
+    };
+
+    $scope.retard = function(){
+        $scope.missions = [];
+        $ionicLoading.show({
+            template: "chargement ..."
+        });
+        $timeout(function(){
+            $ionicLoading.hide();
+            Missions.getOtherMissions(todayMs).then(
+                function(missions){
+                    console.log(missions);
+                    angular.forEach(missions, function(mission){
+                        $scope.missions.push(mission);
+                    });
+                }, 
+                function(error){
+                    console.log(error.message);
+                });
+        }, 1000);
+    };
+
+
     $scope.goToClient = function(mission){
-        $rootScope.mission = mission.id_db;
+        window.localStorage['mission'] = JSON.stringify(mission);
         $state.go("app.client", {id : mission.client_id});
     };
-    Missions.getUnfinishedMissions().then(
-        function(missions){
-            length = missions.length;
-            for(var i = 0 ; i < missions.length ; i++)
-            {
-                $scope.missions.push(missions[i]);
-            }
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-    $scope.test = function(mission_id){
-        console.log(mission_id);
-        $rootScope.mission = mission_id;
-    };
+
+    
     
     $scope.goClient = function(_id)
     {
@@ -751,35 +945,40 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('ClientsCtrl', function($scope, $stateParams, $timeout, $cordovaGeolocation, Clients, ionicMaterialInk, ionicMaterialMotion) {
+.controller('ClientsCtrl', function($scope, $stateParams, $state, $timeout, $cordovaGeolocation,Routes, Clients, ionicMaterialInk, ionicMaterialMotion) {
     // Set Header
     $scope.$parent.clearFabs();
     $scope.$parent.showHeader();
     $scope.$parent.setHeaderFab('left');
     // Set Motion
     ionicMaterialMotion.fadeSlideInRight();
-
+$scope.infos = JSON.parse(window.localStorage['profile']);
     // Set Ink
     $scope.clients = [];
     $scope.sync = function(){
         Clients.syncClients(1);
     };
-   /* angular.forEach(data.data, function(route)
-            {
-                angular.forEach(route.clients, function(client){
-                    $scope.clients.push(client);
-                })
-            });
-            console.log(JSON.stringify($scope.clients));*/
+    var profile = JSON.parse(window.localStorage['profile']);
     Clients.getAllClients().then(
+
         function(clients){
+            console.log(JSON.stringify(clients));
+            var routes = {};
             angular.forEach(clients, function(client){
+                    routes[client.route] = "";
                     $scope.clients.push(client);
                 });
+            $scope.routes = Object.keys(routes);
+            console.log($scope.routes);
         }, 
         function(error){
-            console.log(error);
+            console.log("924");
+            console.log(JSON.stringify(error));
         });
+    $scope.goClient = function(_id){
+        $state.go('app.client', { id : _id});
+    };
+    
 
     
 })
@@ -788,7 +987,7 @@ angular.module('starter.controllers', ['starter.services'])
     Routes, SynchronizationService,$ionicLoading, Profile, $cordovaToast, Commandes, BrandFive, Missions, LigneCommandes,
     $ionicSideMenuDelegate, $state, $timeout, ionicMaterialMotion, ionicMaterialInk) {
     $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] === 'null')
+        if(typeof window.localStorage['profile'] == 'undefined')
         {
             $state.go("menu.login");
         }
@@ -802,7 +1001,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.setHeaderFab(false);
     console.log($rootScope.infos);
     $scope.unfinishedMissions = [];
-    $scope.toggle = function () {
+$scope.infos = JSON.parse(window.localStorage['profile']);    $scope.toggle = function () {
       $scope.type = $scope.type === 'PolarArea' ?
         'Pie' : 'PolarArea';
     };
@@ -815,6 +1014,7 @@ angular.module('starter.controllers', ['starter.services'])
     Profile.getGPAccount().then(function(ca){$scope.gp = ca.golden_points; }, function(){err})
     Commandes.getCAVendeur().then(
         function(result){
+            console.log(result);
             $scope.ca = result.ca;
         }, 
         function(error){
@@ -988,7 +1188,7 @@ angular.module('starter.controllers', ['starter.services'])
         }
     });
     console.log($stateParams.mission);
-    $scope.rows = [];
+$scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
     $scope.totalBill = 0;
     var currentCart = JSON.parse(window.localStorage['cart'] || '{}');
      function refreshTotalBill()
@@ -1045,7 +1245,7 @@ angular.module('starter.controllers', ['starter.services'])
       var posOptions = {timeout: 10000, enableHighAccuracy: false};
       $scope.client = {};
       $scope.routes = [];
-      $cordovaGeolocation
+$scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocation
         .getCurrentPosition(posOptions)
         .then(function (position) {
             $scope.client.lat  = position.coords.latitude;
@@ -1088,22 +1288,69 @@ angular.module('starter.controllers', ['starter.services'])
       };
 })
 
-.controller('CartCtrl', function($state, $stateParams, $scope, Commandes, Missions, LigneCommandes, Articles){
+.controller('CartCtrl', function($state, $stateParams, $timeout, $scope, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles){
+    $scope.$on('$ionicView.beforeEnter', function(){
+        if(typeof window.localStorage['cart'] == "undefined")
+        {
+            $state.go("app.profile");
+        }
+    });
     var cart = JSON.parse(window.localStorage['cart'] || '{}');
+    var canFinish = JSON.parse(window.localStorage['done'] || 'false');
+    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.canFinish = canFinish;
     $scope.data = {};
-    $scope.data.items = []
-    $scope.data.total = 0;
-    $scope.recovery = true;
-    
-    if(cart !== null)
+    $scope.data.items = [];
+    if(cart != null)
+    {
+        if(typeof cart.items != "undefined" && cart.items.length > 0)
+        {
+            angular.forEach(cart.items, function(item){
+                $scope.data.items.push(item);
+                $scope.data.total+=(((item.packet*10)+item.unit)*item.prixVente);
+            });
+        }
+        addGiftsToCart();
+
+    }
+    if(cart != null && typeof cart.mission != "undefined" && cart.mission != null)
     {
         Missions.getMission(cart.mission).then(
         function(mission){
+            console.log(mission);
             $scope.data.client = mission.client_id;
         });
     }
-    $scope.test = JSON.parse(window.localStorage['sbd']);
-    console.log($scope.test);
+    function addGiftsToCart()
+    {
+        if(canFinish)
+        {
+            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+            angular.forEach(promotions, function(promotion){
+                var promotions = [];
+                if(promotion.consumed && promotion.gratuites != null && promotion.gratuites.length > 0)
+                {
+                    var cumule = promotion.cumule != null ? promotion.cumule : 1;
+                    console.log(cumule);
+                    angular.forEach(promotion.gratuites, function(gratuite){
+
+                        var trueItem = {
+                            id : gratuite.id,
+                            id_db : gratuite.id,
+                            nomArticle : gratuite.designation,
+                            unit : gratuite.qty*cumule,
+                            packet : 0,
+                            prixVente : 0,
+                            promo : true
+                        };
+                        $scope.data.items.push(trueItem);
+                        window.localStorage['gratuites'] = JSON.stringify(promotions);
+                    });
+                }
+
+            });
+        }
+
+    }
     function refreshTotalBill()
     {
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
@@ -1124,63 +1371,172 @@ angular.module('starter.controllers', ['starter.services'])
         cart = null;
 
     }
+    refreshTotalBill();
+    var missionDB = true;
     $scope.pay = function(){
-        $scope.sbdShow = false;
-        Missions.setExitDate(cart.mission, Date.now()).then(function(success){console.log(success)});
-        $scope.confirm();
         $scope.recovery = false;
         $scope.data.recovery = [];
+        $scope.sbdShow = false;
+        $scope.confirm();
+        var cart = JSON.parse(window.localStorage['cart'] || '{}');
+        var mission = JSON.parse(window.localStorage['mission'] || '{}');
+        mission.state = true;
+        console.log(mission)
+        if(cart.mission == null || typeof mission.id_mission == "undefined")
+        {
+            console.log("need mission");
+            missionDB = false;
+            Missions.addLocalMission(mission).then(
+                function(success){
+                    var cart = JSON.parse(window.localStorage['cart'] || '{}');
+                    var mission = JSON.parse(window.localStorage['mission'] || '{}');
+                    cart.mission = success;
+                    mission.id_mission = success;
+                    window.localStorage['cart'] = JSON.stringify(cart);
+                    window.localStorage['mission'] = JSON.stringify(mission);
+                    countAndCheckGPGS()
+                    addCommande(cart.mission, mission.client_id);
+                }, 
+                function(error){
+                    console.log(error);
+                });
+        }
+        else
+        {
+            console.log("no need");
+            var sbds = JSON.parse(window.localStorage['sbd']);
+            var count = 0;
+            for(var i=0;i<sbds.length;i++)
+            {
+                var min = sbds[i].min;
+                var current = 0;
+                for(var j=0;j<sbds[i].articles.length;j++)
+                {
+                    current+=sbds[i].articles[j].qty;
+                }
+                if(current>=min)
+                {
+                    count+=1;
+                }
+            }
+            countAndCheckGPGS();
+            addCommande(cart.mission, mission.client_id);
+        }      
+        
+    };
+
+    function countAndCheckGPGS()
+    {
+        console.log("countAndCheckGPGS");
+        var sbds = JSON.parse(window.localStorage['sbd']);
+        var count = 0;
+        for(var i=0;i<sbds.length;i++)
+        {
+            var min = sbds[i].min;
+            var current = 0;
+            for(var j=0;j<sbds[i].articles.length;j++)
+            {
+                current+=sbds[i].articles[j].qty;
+            }
+            if(current>=min)
+            {
+                count+=1;
+            }
+        }
+        if(count > 0)
+        {
+            var profile = JSON.parse(window.localStorage['profile']);
+            var mission = JSON.parse(window.localStorage['mission']);
+            Accounts.addGoldenPoints(profile.id_db, count).then(
+                function(success){
+                    console.log(success);
+                }, 
+                function(error){
+                    console.log(error);
+                });
+            Clients.addGoldenStore(mission.client_id, count).then(
+                function(success){
+                    console.log(success);
+                }, 
+                function(error){
+                    console.log(error);
+                });
+        }
+    }
+
+    function addCommande(mission_id, client_id)
+    {
+        console.log("THIS IS THE MISSION ID");
+        console.log(mission_id);
         var code_commande = "CM"+Date.now();
-        console.log(code_commande);
-        Commandes.addCommande(code_commande, cart.mission, $scope.data.client).then(
+        Commandes.addCommande(code_commande, mission_id, client_id).then(
             function(success){
-                console.log("start");
-                var commande_id = success.insertId;
-                console.log(success.insertId)
                 console.log(success);
-                var cart = JSON.parse(window.localStorage['cart'] || '{}');
+                
+                var commande_id = success.insertId;
                 var items = cart.items;
-                console.log(items);
-                console.log(typeof commande_id);
                 if(typeof commande_id === "number")
                 {
+
                     angular.forEach(items, function(item){
-                    console.log(item);
-                    var ligneCommande = {
-                        nomArticle : item.nomArticle,
-                        prixVente : item.prixVente,
-                        packet : item.packet,
-                        unit : item.unit,
-                        id : item.id_db
-                    };
-                    console.log(JSON.stringify(ligneCommande));
-                    LigneCommandes.addLigneCommande(ligneCommande, commande_id).then(
-                        function(success){
-                            //console.log("success");
-                            console.log(success);
-                        },
-                        function(error){
-                            console.log(error.message);
-                        });
+
+                        var ligneCommande = {
+                            nomArticle : item.nomArticle,
+                            prixVente : item.prixVente,
+                            packet : item.packet,
+                            unit : item.unit,
+                            id : item.id_db
+                        };
+
+                        LigneCommandes.addLigneCommande(ligneCommande, commande_id).then(
+                            function(success){
+                                console.log(success);
+                            },
+                            function(error){
+                                console.log(error.message);
+                            });
                     });
-                    console.log(cart.mission);
-                    Missions.setMissionToSucceed(cart.mission, commande_id).then(
+
+                    console.log("ABOUT TO UPDATE MISSION WITH ID : "+mission_id+", AND INJECT COMMANDE : "+commande_id+" TO IT !");
+                    if(missionDB)
+                    {
+                        console.log("THIS IS A MISSION FROM API");
+                        Missions.setMissionToSucceed(mission_id, commande_id).then(
                         function(success){
                             console.log(success);
                         }, 
                         function(error){
                             console.log(error);
                         });
+                    }
+                    else
+                    {
+                        console.log("THIS IS A MISSION FROM PHONE");
+                        Missions.setMissionToSucceedLocal(mission_id, commande_id).then(
+                        function(success){
+                            console.log(success);
+                        }, 
+                        function(error){
+                            console.log(error);
+                        });
+                    }
                 }
+                $scope.canFinish = false
                 window.localStorage.removeItem('cart');
                 window.localStorage.removeItem('sbd');
                 window.localStorage.removeItem('promotions');
                 window.localStorage.removeItem('marques');
+                window.localStorage.removeItem('mission');
+                window.localStorage.removeItem('done');
             }, 
             function(error){
                 console.log(error);
             });
-    };
+        $timeout(
+            function(){
+                $state.go("app.profile");
+            }, 1000);
+    }
 
     function check(){
                 refreshTotalBill();
@@ -1192,7 +1548,7 @@ angular.module('starter.controllers', ['starter.services'])
                 angular.forEach($scope.articles, function(article)
                 {
                         /******************** TAKING ON CONSIDERATION ONLY THE ONES WITH QTY gt 0 *******************/
-                    if(article.packet > 0 || article.unit > 0)
+                    if((article.packet > 0 || article.unit > 0) && typeof article.promo == "undefined")
                     {
                         /******************** STARTING WITH THE SBD ********************/
                         angular.forEach(sbds, function(sbd){
@@ -1255,6 +1611,31 @@ angular.module('starter.controllers', ['starter.services'])
                         }
 
                         /******************************** PROMOTIONS PART ************************************/
+                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+                        refreshTotalBill();
+                         for(var i = 0 ; i < promotions.length ; i++)
+                        {
+                            if(promotions[i].type == 'PC')
+                            {
+                                console.log("Promotion Client FOR YOU !!");
+                                console.log(promotions[i]);
+                                console.log($scope.totalBill);
+                                if(promotions[i].ca <= $scope.totalBill)
+                                {
+                                    
+                                    promotions[i].consumed = true;
+                                    console.log("CONSOMME");
+
+                                }
+                                else
+                                {
+                                    promotions[i].consumed = false;
+                                    console.log("NON CONSOMME");
+                                }
+                            }
+                        }
+                        window.localStorage['promotions'] = JSON.stringify(promotions);
+
                         if(article.promotions != null)
                         {
                             var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
@@ -1483,7 +1864,7 @@ angular.module('starter.controllers', ['starter.services'])
         console.log(items.length);
         var cleanOnes = [];
         var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        angular.forEach(items, function(article){
+        /*angular.forEach(items, function(article){
             if(article.groupeSBD != null)
             {
                 console.log(article);
@@ -1502,10 +1883,10 @@ angular.module('starter.controllers', ['starter.services'])
                 }
             }
             window.localStorage['sbd'] = JSON.stringify(sbds);
-        });
+        });*/
         for(var i = 0 ; i < items.length ; i++)
         {
-            if(!((items[i].packet === 0) && (items[i].unit === 0)))
+            if(!((items[i].packet === 0) && (items[i].unit === 0)) && typeof items[i].promo == "undefined")
             {
                 cleanOnes.push(items[i]);
             }
@@ -1514,16 +1895,10 @@ angular.module('starter.controllers', ['starter.services'])
         angular.forEach(cleanOnes, function(clean){
             $scope.data.items.push(clean);
         });
+        addGiftsToCart();
         var finalObject = { mission : mission_id, items : cleanOnes };
         window.localStorage['cart'] = JSON.stringify(finalObject);
-    }
-    if(cart !== null)
-    {
-        angular.forEach(cart.items, function(item){
-        $scope.data.items.push(item);
-        $scope.data.total+=(((item.packet*10)+item.unit)*item.prixVente);
-        });
-    }
+    };
 
 })
 
@@ -1549,7 +1924,7 @@ angular.module('starter.controllers', ['starter.services'])
             $state.go('menu.login');
         }
     });
-    $scope.marque = $stateParams.name;
+    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.marque = $stateParams.name;
     $scope.articles = [];
     $scope.totalBill = 0;
     $scope.cnt = 0;
@@ -1776,6 +2151,32 @@ angular.module('starter.controllers', ['starter.services'])
                             }
                                 
                         }
+
+                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+                        refreshTotalBill();
+                         for(var i = 0 ; i < promotions.length ; i++)
+                        {
+                            if(promotions[i].type == 'PC')
+                            {
+                                console.log("Promotion Client FOR YOU !!");
+                                console.log(promotions[i]);
+                                console.log($scope.totalBill);
+                                if(promotions[i].ca <= $scope.totalBill)
+                                {
+                                    
+                                    promotions[i].consumed = true;
+                                    console.log("CONSOMME");
+
+                                }
+                                else
+                                {
+                                    promotions[i].consumed = false;
+                                    console.log("NON CONSOMME");
+                                }
+                            }
+                        }
+                        window.localStorage['promotions'] = JSON.stringify(promotions);
+
                         if(article.promotions != null)
                         {
                             console.log('Cet Article Est En Promo');
@@ -1858,13 +2259,20 @@ angular.module('starter.controllers', ['starter.services'])
                                                         console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
                                                         var repetitions = Math.trunc(count / promotions[j].qte);
                                                         console.log(repetitions);
-                                                        if(repetitions >= promotions[j].max)
+                                                        if(promotions[j].max == null)
                                                         {
-                                                            promotions[j].cumule = promotions[j].max;
+                                                            promotions[j].cumule = repetitions;
                                                         }
                                                         else
                                                         {
-                                                            promotions[j].cumule = repetitions;
+                                                            if(repetitions >= promotions[j].max)
+                                                            {
+                                                                promotions[j].cumule = promotions[j].max;
+                                                            }
+                                                            else
+                                                            {
+                                                                promotions[j].cumule = repetitions;
+                                                            }
                                                         }
                                                     }
                                                     else
@@ -2054,8 +2462,100 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('ExclusionsCtrl', function($scope){
+.controller('ExclusionsCtrl', function($scope,$state){
     var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+    $scope.infos = JSON.parse(window.localStorage['profile']);
+    function refreshTotalBill()
+    {
+        var cart = JSON.parse(window.localStorage['cart'] || '{}');
+        $scope.totalBill = 0;
+        for(var i = 0 ; i < cart.items.length ; i++)
+        {
+            console.log(cart.items[i]);
+            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
+            if(cart.items[i].tva != null && cart.items[i].tva > 0)
+            {
+                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
+            }
+            else
+            {
+                $scope.totalBill+=noTva;
+            }
+            
+        }
+        cart = null;
+
+    }
+    refreshTotalBill();
+    $scope.finish = function(){
+        for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
+        {
+            if($scope.data.conflicts[i].inConflictWith.clicked == false)
+            {
+                for(var j = 0 ; j < promotions.length ; j++)
+                {
+                    for(var k = 0 ; k < $scope.data.conflicts[i].inConflictWith.promotions.length ; k++)
+                    {
+                        if(promotions[j].id == $scope.data.conflicts[i].inConflictWith.promotions[k])
+                        {
+                            promotions[j].consumed = false;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for(var j = 0 ; j < promotions.length ; j++)
+                {
+                    for(var k = 0 ; k < $scope.data.conflicts[i].inConflictWith.promotions.length ; k++)
+                    {
+                        if(promotions[j].id == $scope.data.conflicts[i].inConflictWith.promotions[k])
+                        {
+                            promotions[j].consumed = true;
+                        }
+                    }
+                }
+            }
+            if($scope.data.conflicts[i].promotion.clicked == false)
+            {
+                console.log($scope.data.conflicts[i].promotion);
+                for(var j = 0 ; j < promotions.length ; j++)
+                {
+                    if(promotions[j].id == $scope.data.conflicts[i].promotion.promotion.id)
+                    {
+                        promotions[j].consumed = false;
+                    }
+                }
+            }
+            else
+            {
+                for(var j = 0 ; j < promotions.length ; j++)
+                {
+                    if(promotions[j].id == $scope.data.conflicts[i].promotion.promotion.id)
+                    {
+                        promotions[j].consumed = true;
+                    }
+                }
+            }
+        }
+        for(var i = 0 ; i < promotions.length ; i++)
+        {
+            if(promotions[i].consumed == true && promotions[i].inclusions != null && promotions[i].inclusions.length > 0)
+            {
+                for(var j = 0 ; j < promotions[i].inclusions.length ; j++)
+                {
+                    if(promotions[i].inclusions[j].consumed == false)
+                    {
+                        promotions[i].consumed = false;
+                        break;
+                    }
+                }
+            }
+        }
+        window.localStorage['promotions'] = JSON.stringify(promotions);
+        $state.go("app.cart");
+
+    };
     $scope.hold = function(object){
         if(typeof object.promotions != "undefined" && object.promotions.length > 0)
         {
@@ -2114,21 +2614,25 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.data.conflicts = [];
     for(var i = 0 ; i < promotions.length ; i++)
     {
-        if(promotions[i].exclusions != null && promotions[i].exclusions.length > 0)
+        if(promotions[i].consumed == true && promotions[i].exclusions != null && promotions[i].exclusions.length > 0)
         {
+
            var object = {};
            object.promotion = { exclude : [], promotion: promotions[i], clicked: true };
            object.inConflictWith = { exclude : promotions[i].id, clicked: false, promotions : [], gratuites : [], remises : []};
+           console.log("Length promotion exclusion : "+promotions[i].exclusions.length);
            for(var j = 0 ; j < promotions[i].exclusions.length ; j++)
            {
                 for(var k = 0 ; k < promotions.length ; k++)
                 {
 
-                    if(promotions[i].exclusions[j] == promotions[k].id)
+                    if(promotions[i].exclusions[j] == promotions[k].id && promotions[k].consumed == true)
                     {
+                        console.log(promotions[i].exclusions[j]);
+                        console.log(promotions[k]);
                         object.inConflictWith.promotions.push(promotions[k].id);
                         object.promotion.exclude.push(promotions[k].id);
-                        if(promotions[k].gratuites != null && promotions[k].length > 0)
+                        if(promotions[k].gratuites != null && promotions[k].gratuites.length > 0)
                         {
                             object.inConflictWith.gratuites = object.inConflictWith.gratuites.concat(promotions[k].gratuites);
                         }
@@ -2136,19 +2640,30 @@ angular.module('starter.controllers', ['starter.services'])
                         {
                             object.inConflictWith.remises = object.inConflictWith.remises.concat(promotions[k].remise);
                         }
+
+                    }
+                    else
+                    {
+                        console.log("0");
                     }
                 }
            }
+           if(!object.inConflictWith.promotions.length < 1)
+           {
            $scope.data.conflicts.push(object);
+           }
         }
     }
-    console.log($scope.data.conflicts);
 })
 
 .controller('RemainingCtrl', function($scope, $state, Articles){
+    
+    refreshTotalBill();
     var cart = JSON.parse(window.localStorage['cart'] || '{}');
     var sbd = JSON.parse(window.localStorage['sbd'] || '[]');
     var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+     $scope.infos = JSON.parse(window.localStorage['profile']);
+    $scope.filterValue = "sbd";
     $scope.articles = [];
     console.log(promotions);
     var array = [];
@@ -2260,6 +2775,27 @@ angular.module('starter.controllers', ['starter.services'])
 
                     });
     }
+    function refreshTotalBill()
+    {
+        var cart = JSON.parse(window.localStorage['cart'] || '{}');
+        $scope.totalBill = 0;
+        for(var i = 0 ; i < cart.items.length ; i++)
+        {
+            console.log(cart.items[i]);
+            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
+            if(cart.items[i].tva != null && cart.items[i].tva > 0)
+            {
+                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
+            }
+            else
+            {
+                $scope.totalBill+=noTva;
+            }
+            
+        }
+        cart = null;
+
+    }
 
     function check(){
                 var start = Date.now();
@@ -2332,6 +2868,35 @@ angular.module('starter.controllers', ['starter.services'])
                         }
 
                         /******************************** PROMOTIONS PART ************************************/
+
+                        /******************************** PROMOTION CLIENT ***********************************/
+                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+                        refreshTotalBill();
+                         for(var i = 0 ; i < promotions.length ; i++)
+                        {
+                            if(promotions[i].type == 'PC')
+                            {
+                                console.log("Promotion Client FOR YOU !!");
+                                console.log(promotions[i]);
+                                console.log($scope.totalBill);
+                                if(promotions[i].ca <= $scope.totalBill)
+                                {
+                                    
+                                    promotions[i].consumed = true;
+                                    console.log("CONSOMME");
+
+                                }
+                                else
+                                {
+                                    promotions[i].consumed = false;
+                                    console.log("NON CONSOMME");
+                                }
+                            }
+                        }
+                        window.localStorage['promotions'] = JSON.stringify(promotions); 
+
+                        /********************************* OTHERS ********************************************/
+
                         if(article.promotions != null)
                         {
                             var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
@@ -2599,8 +3164,10 @@ angular.module('starter.controllers', ['starter.services'])
 })
 
 .controller('BrandFiveCtrl', function($http, $scope, $ionicLoading, $stateParams, $state, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes){
+
+    window.localStorage['done'] = typeof window.localStorage['done'] == "undefined" ? JSON.stringify(false) : JSON.parse(window.localStorage['done']);
     $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] === 'null')
+        if(typeof window.localStorage['profile'] == 'undefined')
         {
             $state.go("menu.login");
         }
@@ -2616,7 +3183,9 @@ angular.module('starter.controllers', ['starter.services'])
             console.log(error.message);
         });
     });
-    var firstEntry = { mission : $stateParams.mission, items : [] };
+     $scope.infos = JSON.parse(window.localStorage['profile']);
+    var mission = JSON.parse(window.localStorage['mission'] || '{}');
+    var firstEntry = { mission : typeof mission.id_mission == "undefined" ? null : mission.id_mission, items : [] };
     $scope.idMission = $stateParams.mission;
     $scope.change = function(){
         refreshBrandRealTime();
@@ -2739,7 +3308,6 @@ angular.module('starter.controllers', ['starter.services'])
         $scope.totalBill = 0;
         for(var i = 0 ; i < cart.items.length ; i++)
         {
-            console.log(cart.items[i]);
             var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
             if(cart.items[i].tva != null && cart.items[i].tva > 0)
             {
@@ -2900,7 +3468,7 @@ angular.module('starter.controllers', ['starter.services'])
     }
     $scope.back = false;
     $scope.forw = true;
-    $scope.otherBrands = false;
+    $scope.otherBrands = JSON.parse(window.localStorage['done'] || 'false');
     var defaultStep = 0;
     $scope.currentStep = defaultStep;
     $scope.marques = [];
@@ -2972,21 +3540,28 @@ angular.module('starter.controllers', ['starter.services'])
                             window.localStorage['cart'] = JSON.stringify(currentBasket);
                                 
                         }
+
+
                         var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
                         refreshTotalBill();
-                         for(var i = 0 ; i < promotions.length ; i++)
+                        for(var i = 0 ; i < promotions.length ; i++)
                         {
                             if(promotions[i].type == 'PC')
                             {
-                                console.log("Promotion Client FOR YOU !!");
-                                console.log(promotions[i]);
-                                console.log($scope.totalBill);
                                 if(promotions[i].ca <= $scope.totalBill)
                                 {
-                                    console.log("EN POCHE !");
+                                    promotions[i].consumed = true;
+                                }
+                                else
+                                {
+                                    promotions[i].consumed = false;
                                 }
                             }
                         }
+                        window.localStorage['promotions'] = JSON.stringify(promotions);
+                        promotions = null;
+
+
                         if(article.promotions != null)
                         {
                             console.log('Cet Article Est En Promo');
@@ -3069,13 +3644,20 @@ angular.module('starter.controllers', ['starter.services'])
                                                         console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
                                                         var repetitions = Math.trunc(count / promotions[j].qte);
                                                         console.log(repetitions);
-                                                        if(repetitions >= promotions[j].max)
+                                                        if(promotions[j].max == null)
                                                         {
-                                                            promotions[j].cumule = promotions[j].max;
+                                                            promotions[j].cumule = repetitions;
                                                         }
                                                         else
                                                         {
-                                                            promotions[j].cumule = repetitions;
+                                                            if(repetitions >= promotions[j].max)
+                                                            {
+                                                                promotions[j].cumule = promotions[j].max;
+                                                            }
+                                                            else
+                                                            {
+                                                                promotions[j].cumule = repetitions;
+                                                            }
                                                         }
                                                     }
                                                     else
@@ -3204,46 +3786,6 @@ angular.module('starter.controllers', ['starter.services'])
                     $scope.currentBrand = $scope.brandFives[$scope.currentStep];
                     refreshBrand($scope.currentBrand.name);
                 }
-                var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                refreshTotalBill();
-                var cart = JSON.parse(window.localStorage['cart']);
-                 for(var i = 0 ; i < promotions.length ; i++)
-                {
-                    cart.remises = typeof cart.remises == "undefined" ? [] : cart.remises;
-                    if(promotions[i].type == 'PC')
-                    {
-                        console.log("Promotion Client FOR YOU !!");
-                        console.log(promotions[i]);
-                        console.log($scope.totalBill);
-                        if(promotions[i].ca <= $scope.totalBill)
-                        {
-                            promotions[i].consumed = true;
-                            console.log("NORMALEMENT EN POCHE !");
-                            if(cart.remises.length < 1)
-                            {
-                                cart.remises.push({ remise : 5, promotion_id : promotions[i].id });
-                            }
-                            else
-                            {
-                                for(var j = 0 ; j < cart.remises.length ; j++)
-                                {
-                                    var found = false;
-                                    if(promotions[i].id == cart.remises[j].promotion_id)
-                                    {
-                                        found = true;
-                                        return;
-                                    }
-                                    if(!found)
-                                    {
-                                        cart.remises.push({ remise : 5, promotion_id : promotions[i].id });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                window.localStorage['promotions'] = JSON.stringify(promotions);
-                window.localStorage['cart'] = JSON.stringify(cart);
     }
     
     $scope.backward = function(){
@@ -3271,17 +3813,20 @@ angular.module('starter.controllers', ['starter.services'])
         if($scope.forw)
             {
                 check(false);
-                if($scope.currentStep < 5)
+                if($scope.currentStep < $scope.brandFives.length)
                 {
                     $scope.back = true;
                     var result = $scope.currentStep+=1;
                     $scope.currentBrand = $scope.brandFives[$scope.currentStep];
-                    console.log($scope.currentBrand);
+                    console.log("current brand :");
+                    console.log(JSON.stringify($scope.currentBrand));
+                    console.log(JSON.stringify($scope.currentBrand));
                     refreshBrand($scope.currentBrand.name);
-                    if($scope.currentStep == 4)
+                    if($scope.currentStep == $scope.brandFives.length - 1)
                     {
                         $scope.forw = false;
                         $scope.otherBrands = true;
+                        window.localStorage['done'] = JSON.stringify(true);
                     }
                 }
                 else
@@ -3291,8 +3836,20 @@ angular.module('starter.controllers', ['starter.services'])
                 }
             }
     };
+    $scope.goCart = function(){
+        if(JSON.parse(window.localStorage['done']))
+        {
+            $state.go("app.remainings");
+        }
+        else
+        {
+            $state.go("app.cart");
+        }
+    };
+
     Marques.getBrandFiveFromLocalDB().then(
         function(brandfives){
+            console.log(JSON.stringify(brandfives));
             $scope.brandFives = brandfives;
             $scope.currentBrand = $scope.brandFives[$scope.currentStep];
             refreshBrand($scope.currentBrand.name);
@@ -3320,6 +3877,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.isExpanded = true;
     $scope.$parent.setExpanded(true);
     $scope.$parent.setHeaderFab('right');
+    $scope.infos = JSON.parse(window.localStorage['profile']);
 
     $timeout(function() {
         ionicMaterialMotion.fadeSlideIn({
@@ -3337,6 +3895,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.isExpanded = true;
     $scope.$parent.setExpanded(true);
     $scope.$parent.setHeaderFab(false);
+     $scope.infos = JSON.parse(window.localStorage['profile']);
 
     // Activate ink for controller
     ionicMaterialInk.displayEffect();

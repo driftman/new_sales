@@ -1,4 +1,4 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
     <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
        <div 
        style="
@@ -8,15 +8,20 @@
             position: absolute;
             left: 8px;
             top: 1.5px;
-            margin: 8px;
-            margin-left: 30px;
             font-size: 15px;
             font-weight: 900;
             "><input placeholder="Filtrer" ng-model="articleName" style="
-            max-width: 40%; 
+            max-width: 30%; 
             border-radius: 5px;
             font-weight: 900;
-            font-size: 13px;"> <b style="float: right; font-style: italic;">SBD/Promotions</b> </label>
+            font-size: 13px;"> <b style="float: right;font-style: italic;">SBD/Promotions : <select style="font-size: 14px; float: right;" ng-model="filterValue">
+              <option value="promotion">promotion</option>
+              <option value="sbd">sbd</option>
+            </select>
+            
+        </b> 
+             
+          </label>
             </div>
 
     </div>
@@ -101,9 +106,9 @@
             padding: 0;
             min-height: 0;
             border: none;
-            border-bottom: 1px solid black;
+            border-bottom: 1px solid rgba(0,0,0,0.2);
             min-height: 0px;
-            text-align: left;" ng-repeat="article in articles | filter:articleName ">
+            text-align: left;" ng-repeat="article in articles | remaining : filterValue">
                 <div class="row" style="
                 margin: 0;
                 padding: 0;
@@ -122,7 +127,7 @@
                     margin-top: -3px;
                     margin-bottom: -3px;
                     font-size: 12.5px; 
-                    font-weight: 900; 
+                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }};  
                     text-align: left; 
                     color: #060606;">{{ article.nomArticle }}</p>
                     <p 
@@ -166,12 +171,12 @@
           </div>
             
 	</ion-content>
-  <div class="bar bar-footer bar-balanced">
+  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
 
-    	Total : {{totalBill}} DHS 
+    	Total : {{totalBill | promotion }} DHS 
 
-        <a ui-sref="app.cart" style="float: right; font-size: 35px;"> <i class="icon ion-android-arrow-forward"></i></a>
+        <a ui-sref="app.conflicts" style="float: right; font-size: 35px;"> <i class="icon ion-android-arrow-forward"></i></a>
         
 
   </div>

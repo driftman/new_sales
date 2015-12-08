@@ -1,33 +1,34 @@
-<ion-view view-title="Soufiane ELBAZ 1200 pts.">
-    <div class="bar bar-subheader bar-balanced" style="background-color: white; box-shadow: none; height: 18px;">
-     <!-- <div class="row stat">
-        <div class="col col-10 stat" style="
-        background-color: #00C853; 
-        border-top-left-radius: 5px; 
-        border-bottom-left-radius: 5px;"></div>
-        <div class="col col-50 stat" style="background-color: #F9A825;"></div>
-        <div class="col stat" style="
-        background-color: #D50000;
-        border-top-right-radius: 5px; 
-        border-bottom-right-radius: 5px;
-        "></div>
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
+    <div class="bar bar-subheader bar-balanced" style="text-align: center; border-color: #D14949; background-color:#AE2121; box-shadow: none; height: auto;">
+     
+      <!-- <div class="button-bar">
+        <a class="button" style="    font-weight: 900; background-color: #CE1515; font-size: 12.5px; text-transform: none; white-space: normal; text-overflow: none; overflow: none; max-width: 100%; min-height: 15px; max-height: 30px;">aujourd'hui</a>
+        <a class="button" style="    font-weight: 900; background-color: #CE1515; font-size: 12.5px; text-transform: none; white-space: normal; max-width: 100%; min-height: 15px; max-height: 30px;">en retard</a>        
       </div> -->
-      <div class="key_map_container" style="margin: 0;">
-            <span class="key_map" style=" font-size: 12px; color: black;text-align: center;">
-                <i style="color: red;" class="icon ion-flag"></i> en attente &nbsp;
-                <i style="color: orange;" class="icon ion-flag"></i> non facturé &nbsp;
-                <i style="color: green;" class="icon ion-flag"></i> facturé
-            </span>
-        </div>
-      <br>
-      
-
+      <a style="margin: 7px; color: white; font-size: 16px; text-decoration: underline; font-weight: 600;" ng-click="today()">aujourd'hui</a>
+      <a style=" margin: 7px; color: white; font-size: 16px; text-decoration: underline; font-weight: 600;" ng-click="retard()">autres</a>
+      <label for="date" style=" margin: 7px; font-size: 16px; font-weight: 600;"> état: </label>
+        <select id="date" style="font-size: 14px;" ng-model="search.state">
+          <option value="0">en attente</option>
+          <option value="1">visité</option>
+        </select>
+      </label>
     </div>
+
+      <div class="key_map_container" style="margin: 0;">
+          <span class="key_map" style=" font-size: 12px; color: black;text-align: center;">
+              <i style="color: red;" class="icon ion-flag"></i> en attente &nbsp;
+              <i style="color: orange;" class="icon ion-flag"></i> non facturé &nbsp;
+              <i style="color: green;" class="icon ion-flag"></i> facturé
+          </span>
+      </div>
+    <br>
     <ion-content ng-class="{expanded:$scope.isExpanded}"> 
     <br>
-        <ion-list show-delete="false" can-swipe="true">
+    <br>
+        <ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
             <ion-item
-            collection-repeat="mission in missions"
+            collection-repeat="mission in missions | orderBy:'state' |filter:search"
             item="mission"
             ng-click="goToClient(mission)" 
             style="font-size: 25px; border-bottom: 1px solid grey; padding: 0;" 

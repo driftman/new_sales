@@ -1,4 +1,4 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
     <ion-content ng-class="{expanded:$scope.isExpanded}">
         <div class="hero slide-up" style="
   background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
@@ -14,9 +14,9 @@
                 <h4 style="color: white; margin-top: 0px;
                 margin-bottom: 0px; ">C.A : {{ ca }} DHS</h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; ">Golden Points : {{ gp }} / 1200 pts</h4>
+                margin-bottom: 0px; ">Golden Points : {{ profile.golden_points }} / 250 pts</h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; ">Golden Stores : 0 / 50</h4>
+                margin-bottom: 0px; ">Golden Stores : {{ profile.golden_stores }} / 20</h4>
             </div>
         </div>
         <!-- <div class="tabs tabs-dark tabs-icon-top static" style="padding: 5px; background: white; border-bottom: 2.5px solid black; border-top: 2.5px solid black;">
@@ -66,7 +66,7 @@
         </div>
         <div class="list" ng-repeat="mission in unfinishedMissions" style="border-bottom: 1px solid {{ mission.state | flag }};">
             <a ng-click="client(mission._id)" class="item item-avatar item-icon-right">
-                <img src="img/mission.png">
+                <img src="img/mission.png" style="margin-bottom: 10px;">
                 <h2 style="font-weight: 700;">{{ mission.code_mission }}</h2>
                 <p>{{ mission.address }}</p>
                 <i style="color: {{ mission.state | flag }};" class="icon ion-flag"></i>

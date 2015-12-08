@@ -1,4 +1,4 @@
-<ion-view view-title="Marque {{ currentStep + 1 }}">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
     <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
        <div 
        style="
@@ -60,6 +60,7 @@
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
+                border-right: 2px solid white;
                 text-align: left;">désignation({{cnt}})</div>
                 
                 <div class="col col-15" 
@@ -71,6 +72,7 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
+                border-right: 2px solid white;
                 float: left;">unité</div>
                 <div class="col col-15" 
                 style="
@@ -81,6 +83,7 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
+                    border-right: 2px solid white;
                 float: left;">caisse</div>
                 <div class="col col-15" 
                 style="
@@ -91,6 +94,7 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
+                    border-right: 2px solid white;
                 float: left;">total</div>
                 <div class="col" 
                 style="
@@ -118,9 +122,9 @@
             padding: 0;
             min-height: 0;
             border: none;
-            border-bottom: 1px solid black;
+            border-bottom: 1px solid rgba(0,0,0,0.2);
             min-height: 0px;
-            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD'">
+            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD' track by $index">
                 <div class="row" style="
                 background-color: {{ article | backgroundSBD }};
                 margin: 0;
@@ -138,7 +142,7 @@
                     margin-top: -3px;
                     margin-bottom: -3px;
                     font-size: 12.5px; 
-                    font-weight: 900; 
+                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }} ; 
                     text-align: left; 
                     color: #060606;">{{ article.nomArticle }}</p>
                     <p 
@@ -149,19 +153,27 @@
                     font-size: 10.5px; 
                     font-weight: 900; 
                     text-align: left;">PPQ: {{ article.past }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
-                    font-size: 18px; color: #B71C1C;">&#8471</span></p></div>
+                    font-size: 21.5px; color: #B71C1C;">&#8471</span></p></div>
                 
                 <div class="col col-15" style="
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" value="0" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD }};color: green; width: 100%; text-align:center;"></input>
+                border: none;"><input type="number" value="0" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD }};color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input>
                 </div>
                 <div class="col col-15" style="
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD }}; color: green; width: 100%; text-align:center;"></input></div>
+                border: none;"><input type="number" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD }}; color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input></div>
                 <div class="col col-15" style="
                 border: none;
                 margin: 0;
@@ -181,10 +193,10 @@
           </div>
             
 	</ion-content>
-  <div class="bar bar-footer bar-balanced">
+  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
-        <a ui-sref="app.remainings" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
-        Total : {{totalBill}} DHS <a ng-show="otherBrands" ng-click = "toBrands()" > <i style="float: right;
+        <a ng-click="goCart()" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
+        Total : {{totalBill | promotion }} DHS <a ng-show="otherBrands" ng-click = "toBrands()" > <i style="float: right;
     font-weight: 900;
     font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div> 
 

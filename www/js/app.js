@@ -161,7 +161,7 @@ angular.module('starter',
     })
 
     .state('app.brandfive', {
-        url : "/brandfive/:mission",
+        url : "/brandfive",
         views : {
             'menuContent': {
                 templateUrl: 'templates/brandFive.html',
@@ -298,5 +298,5 @@ angular.module('starter',
         });*/
 
     // if none of the above states are matched, use this as the fallback
-    //$urlRouterProvider.otherwise('/menu/login');
+    $urlRouterProvider.otherwise('/menu/login');
 });

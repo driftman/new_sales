@@ -1,11 +1,25 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
+    <div class="bar bar-subheader bar-balanced" style="text-align: right; border-color: #D14949; padding: 5px; background-color:#AE2121; box-shadow: none; height: auto;">
+     
+      <!-- <div class="button-bar">
+        <a class="button" style="    font-weight: 900; background-color: #CE1515; font-size: 12.5px; text-transform: none; white-space: normal; text-overflow: none; overflow: none; max-width: 100%; min-height: 15px; max-height: 30px;">aujourd'hui</a>
+        <a class="button" style="    font-weight: 900; background-color: #CE1515; font-size: 12.5px; text-transform: none; white-space: normal; max-width: 100%; min-height: 15px; max-height: 30px;">en retard</a>        
+      </div> -->
+  
+      <label for="date" style="margin: 7px; font-size: 16px; font-weight: 600;"> route: </label>
+        <select id="date" style="font-size: 14px;" ng-model="search.route">
+          <option ng-repeat="route in routes" value="{{ route }}">{{ route }}</option>
+        </select>
+      </label>
+    </div>
     <ion-content>
-        <ion-list show-delete="false" show-reorder="false">
+    <br><br>
+        <ion-list>
         <ion-item class="item-thumbnail-left"
-                  collection-repeat="client in clients" 
+                  collection-repeat="client in clients | filter:search" 
                   collection-item-width="'100%'"
                   item="client"
-                  ui-sref="app.client({ id : client.id_db })"
+                  ng-click="goClient(client.id_db)"
                   style="border-bottom : 2px solid black;">
           <img ng-src="img/red.png">
           <h2 style="font-weight: 700;">Adresse : {{ client.address }}</h2>
@@ -14,8 +28,6 @@
                 <p>Localisation : {{ client.lat }}, {{ client.lng }} </p>
                 <p><b>C.A : </b> {{ client.chiffreAffaire }} DHS</p>
                 <p><b>Points Golden Store </b> {{ client.golden_store }}</p>
-                <ion-option-button class="button-calm icon ion-pie-graph" style="color: #FFF;"  ui-sref="app.client({ id : client.id})"></ion-option-button>
-                <ion-option-button class="button-balanced icon ion-map" style="color: #FFF;" ng-click="openModal(route.address)"></ion-option-button>
         </ion-item>
 
       </ion-list>

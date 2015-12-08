@@ -1,13 +1,16 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
     <ion-content>
 
-        <h2> Choisir les promotions </h2>
+        <h2 style="text-align: center;
+    font-weight: 600;
+    color: rgba(255, 0, 0, 0.81);
+    text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,.1), 0 0 5px rgba(0,0,0,.1), 0 1px 3px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.2), 0 5px 10px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.2), 0 20px 20px rgba(0,0,0,.15);"> Choisir les promotions </h2>
         <div class="list" class="padding: 15px;">
 
           <div class="item" ng-repeat="conflict in data.conflicts" style="margin: 0; padding: 0;">
             <div class="row" style="margin: 0; padding: 15px;">
               <div class="col col-50" style=" margin-right: 2px; border-radius: 7px; background-color: {{ (conflict.promotion.clicked == true) ? '#EF5350' : '#DBDBDB' }};" ng-click="hold(conflict.promotion)">
-                <i style="color: rgba(66, 117, 208, 0.55); float: right;" ng-show="conflict.promotion.clicked" class="icon ion-star"></i>
+                <i style="color: rgba(8, 96, 254, 0.59); float: right;" ng-show="conflict.promotion.clicked" class="icon ion-star"></i>
                 <h2 style="font-weight: 900; color: {{ (conflict.promotion.clicked == true) ? '#FFF' : '#B50303' }};"> Promotion N°: {{ conflict.promotion.promotion.id }} </h2>
                 <h3 ng-if="conflict.promotion.promotion.gratuites != null && conflict.promotion.promotion.gratuites.length > 0"><b style="color: rgba(0,0,0,87);">Article(s) : </b></h3>
                 <p style="line-height: 14px; margin: 0; font-size: 12px; font-weight: 600; color: rgba(0,0,0,54);" ng-if="conflict.promotion.promotion.gratuites != null && conflict.promotion.promotion.gratuites.length > 0" ng-repeat="gratuite in conflict.promotion.promotion.gratuites">
@@ -18,7 +21,7 @@
                 <p>
               </div>
               <div class="col col-50" style="margin-left: 2px; border-radius: 7px; background-color: {{ (conflict.inConflictWith.clicked == true) ? '#EF5350' : '#DBDBDB' }};" ng-click="hold(conflict.inConflictWith)">
-                 <i style="color: rgba(66, 117, 208, 0.55); float: right;" ng-show="conflict.inConflictWith.clicked" class="icon ion-star"></i>
+                 <i style="color: rgba(8, 96, 254, 0.59); float: right;" ng-show="conflict.inConflictWith.clicked" class="icon ion-star"></i>
                 <h2 style="font-weight: 900; color: {{ (conflict.inConflictWith.clicked == true) ? '#FFF' : '#B50303' }};">Promotion(s) N°: {{ conflict.inConflictWith.promotions.join(', ')}}</h2>
 
                 <h3 ng-if="conflict.inConflictWith.gratuites != null && conflict.inConflictWith.gratuites.length > 0"><b style="color: rgba(0,0,0,87);">Article(s) :</b></h3>
@@ -40,7 +43,7 @@
     </ion-content>
     <div class="bar bar-footer bar-balanced">
       <div class="title">
-      Total : --- DHS 
+      Total : {{ totalBill | promotion }} DHS 
       <a ng-click="finish()" style="float: right; font-size: 35px;"> <i class="icon ion-android-arrow-forward"></i></a>
       </div>
     </div>

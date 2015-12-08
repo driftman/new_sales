@@ -1,4 +1,4 @@
-<ion-view view-title="GP 120/1200 pts | GS 0/50">
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
     <ion-content ng-class="{expanded:$scope.isExpanded}" style="background-color:#D4D4B7;">
           <div class="list">
             <div class="row " ng-repeat="row in rows" style="padding: 0; border: none;">
@@ -55,9 +55,9 @@
             </ion-modal-view>
           </script>
 	</ion-content>
-     <div class="bar bar-footer bar-balanced">
+     <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
-      Total : {{totalBill}} DHS
+      Total : {{totalBill | promotion }} DHS
       <a ui-sref="app.remainings" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
     </div>
   </div>
