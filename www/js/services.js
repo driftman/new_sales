@@ -232,6 +232,7 @@ var DB_CONFIG = {
           { name : "promotion_gratuite_id" , value : "integer" },
           { name : "article_id" , value : "integer" },
           { name : "qte", value : "integer" },
+          { name : "groupe", value : "text"},
           { name : "FOREIGN KEY(promotion_gratuite_id)", value : "REFERENCES promotion_gratuite(id)"},
           { name : "FOREIGN KEY(article_id)", value : "REFERENCES articles(id_db)"}
                   ]
@@ -577,6 +578,7 @@ angular.module('starter.services', ['ngCordova'])
     function init() {
       if(window.sqlitePlugin)
       {
+        console.log("SQLITE PLUGIN ADDED !!");
         db = window.sqlitePlugin.openDatabase({name: "my.db", androidDatabaseImplementation: 2, androidLockWorkaround: 1}
           , function(success){
             console.log(JSON.stringify(success));
@@ -594,6 +596,7 @@ angular.module('starter.services', ['ngCordova'])
       }
       else
       {
+        console.log("SHOULD ADD SQLITE PLUGIN !!");
         db = window.openDatabase(DB_CONFIG.name, '1.0', DB_CONFIG.name , 655367);
         angular.forEach(DB_CONFIG.tables, function(table){
         var columns = [];
@@ -717,6 +720,69 @@ angular.module('starter.services', ['ngCordova'])
   }
 })
 
+.factory("SBD", function(DB,$http){
+  return  {
+    syncSBDFromAPI : syncSBDFromAPI
+  };
+
+  function syncSBDFromAPI()
+  {
+    var request = {
+      url: 'http://192.168.100.136:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
+      method: 'GET'
+    };
+    $http(request).then(
+      function(success){
+        angular.forEach(success.data, function(classe){
+          addSBDToDB(classe.classeTitle, classe.groupes);
+          
+        });
+      },
+      function(error){
+        console.log(JSON.stringify(error));
+      });
+  }
+
+  function addSBDToDB(classeTitle, groupes)
+  {
+    var sql_query = "INSERT INTO groupes_sbd(id_db, qte_min, classe) VALUES(?,?,?);";
+    angular.forEach(groupes, function(groupe){
+      var bindings = [groupe.id, groupe.qtyMin, classeTitle];
+      DB.query(sql_query, bindings).then(
+        function(success){
+          console.log("THE GROUPE HAS BEEN ADDED successfully ! waiting for article bindings");
+          console.log(success);
+          angular.forEach(groupe.itemIds, function(itemId){
+            addArticleSBD(itemId, groupe.id).then(
+              function(success){
+                console.log("ARTICLE_SBD ADDED successfully");
+                console.log(success);
+              },
+              function(error){
+                console.log(error);
+              });
+          });
+        },
+        function(error){
+          console.log(error);
+        });
+    });
+  }
+
+  function addArticleSBD(idArticle, idGroupe)
+  {
+    var sql_query = "INSERT INTO article_sbd(id_groupe_sbd, id_article) VALUES(?,?);";
+    var bindings = [idGroupe, idArticle];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+})
+
 .factory("LignesCommandes", function(DB){
   return {
     getAllCommandes : getAllCommandes,
@@ -724,15 +790,7 @@ angular.module('starter.services', ['ngCordova'])
     getCommandesByClient : getCommandeByClient,
     getAllLigneCommandesByCommande : getAllLigneCommandesByCommande
   };
-        /*name : "ligneCommandes",
-        columns : [
-          { name : "id" , value : "integer primary key autoincrement" },
-          { name : "id_commande" , value : "integer not null" },
-          { name : "id_article", value : "text unique not null" },
-          { name : "packet", value : "integer not null"},
-          { name : "unit", value : "integer not null"},
-          { name : "pu_ht", value : "long not null"},
-          { name : "pu_ttc", value : "long not null"}*/
+
   function findArticleInLastCommande(_idCommande, _idArticle)
   {
     var sql_query = "SELECT * FROM ligneCommandes WHERE id_commande = ? AND id_article = ?;";
@@ -814,7 +872,7 @@ angular.module('starter.services', ['ngCordova'])
   }
 })
 
-.factory("Commandes", function(DB, $q, $http){
+.factory("Commandes", function(DB, $q, $http, Missions){
   return {
     getAllCommandes : getAllCommandes,
     getCommandesByMission : getCommandesByMission,
@@ -832,13 +890,16 @@ angular.module('starter.services', ['ngCordova'])
   function sendCommandeToAPI(commandes)
   {
     angular.forEach(commandes, function(commande){
+      commande.lignes = JSON.parse(commande.lignes);
       var request = {
-        url: "URL",
+        url: "http://192.168.100.222:8085/newsales/rest/orders/add",
         method: "POST",
         data: commande
       };
+      console.log(commande);
       $http(request).then(
         function(success){
+          console.log(JSON.stringify(success));
           var data = success.data;
           // WE'LL UPDATE SYNCED IN MISSION TO TRUE
           Missions.setToSynced(data.id, commande.mobile).then(
@@ -850,7 +911,7 @@ angular.module('starter.services', ['ngCordova'])
             });
         }, 
         function(error){
-            console.log(error);
+            console.log(JSON.stringify(error));
             console.log("ERROR WHILE SENDING COMMANDE TO API");
         });
     });
@@ -859,9 +920,11 @@ angular.module('starter.services', ['ngCordova'])
 
   function syncCommandes()
   {
-    var sql_query = 'SELECT M.id AS mobile, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE synced = 0 AND state = 1 GROUP BY C.id';
+    var sql_query = 'SELECT M.id AS mobile, M.client_id AS client, M.route_id AS route, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 GROUP BY C.id';
     return DB.query(sql_query).then(
       function(success){
+        console.log("869");
+        console.log(JSON.stringify(success));
         return DB.fetchAll(success);
       }, 
       function(error){
@@ -1092,10 +1155,9 @@ angular.module('starter.services', ['ngCordova'])
   function connectFromAPI(account)
   {
     var req = {
-      method : "GET",
-      url : "http://192.168.100.222:8082/newsales/rest/vendors/login?username="+account.username+"&password="+account.password
+      method : "PUT",
+      url : "http://192.168.100.222:8085/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
     };
-    console.log("inside !");
     return $http(req);
   }
 
@@ -1225,21 +1287,21 @@ angular.module('starter.services', ['ngCordova'])
           innerId = data.id_db;
           console.log("1179 :"+innerId);
         }
-      $http.get("http://192.168.100.222:8082/newsales/rest/vendors/"+_id+"/clients/check").then(
+      $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_id+"/clients/check").then(
         function(data, status, headers){
            console.log(data.data);
           var outerId = data.data.id;
           if(innerId < outerId)
           {
             console.log("some updates are waiting ...");
-            $http.get("http://192.168.100.222:8082/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
+            $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
               function(data, status, headers){
                 angular.forEach(data.data, function(client){
                   var object = {};
                   object.id_db = client.id;
                   object.code_client = client.codeClient
                   object.address = client.address;
-                  object.lat = typeof client.lat === "undefined" ? 0.0 : client.lat;
+                  object.lat = typeof client.latitu === "undefined" ? 0.0 : client.lat;
                   object.lng = typeof client.lng === "undefined" ? 0.0 : client.lng;
                   object.nom = client.nom;
                   object.prenom = client.prenom;
@@ -1333,14 +1395,17 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function addBrandFive()
+  function addBrandFive(brand)
   {
-    var sql_query = 'INSERT INTO brand_five(id_db, code_marque, name, five) VALUES (2, "BRAND2", "WELLA", 1);';
-    DB.query(sql_query).then(
+    var sql_query = 'INSERT INTO brand_five(id_db, code_marque, name, five) VALUES (?,?,?,?);';
+    var bindings = [brand.id_db, brand.name, brand.name, 1];
+    DB.query(sql_query, bindings).then(
       function(success){
+        console.log("success BrandFive !");
         console.log(JSON.stringify(success));
       }, 
       function(error){
+        console.log("Erreur lors de l'enregistrement de la BrandFive !");
         console.log(JSON.stringify(error));
       });
   }
@@ -1349,7 +1414,7 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     var req = {
       method :"GET",
-      url : "http://192.168.100.222:8082/newsales/rest/brandfive"
+      url : "http://192.168.100.222:8085/newsales/rest/brandfive"
     };
     return $http(req).then(
       function(brandFive, status, headers){
@@ -1398,10 +1463,10 @@ angular.module('starter.services', ['ngCordova'])
         return error
       });
   }
-  function syncArticles()
+  function syncAllArticles()
   {
     var params = {
-      url: "http://192.168.100.123:8082/newsales/rest/items",
+      url: "http://192.168.100.222:8085/newsales/rest/items",
       method: "GET"
     };
     $http(params).then(
@@ -1410,13 +1475,77 @@ angular.module('starter.services', ['ngCordova'])
         addAll(success.data);
       }, 
       function(error){
-        console.log(error);
+        console.log(JSON.stringify(error));
+      });
+  }
+  function syncArticles()
+  {
+    var highestIDDB;
+    var highestIDAPI;
+    getHighest().then(
+      function(success)
+      {
+        
+
+        if(success == null || success.id_db == 0)
+        {
+          console.log("BASE DE DONNEE VIDE  !!");
+          syncAllArticles();
+        }
+        else
+        {
+          console.log("BASE DE DONNEE NON VIDE  !!");
+          highestIDDB = success.id_db;
+          var request = {
+            url: "http://192.168.100.222:8085/newsales/rest/items/sync",
+            method: 'GET'
+          };
+
+          $http(request).then(
+            function(success){
+              highestIDAPI = success.data.id;
+              console.log("HIGHEST IN DB : "+highestIDDB);
+              console.log("HIGHEST IN API : "+highestIDAPI);
+              if(highestIDAPI > highestIDDB)
+              {
+                console.log("SOME UPDATES REMAINING !");
+                //syncArticlesFrom(highestIDDB);
+              }
+              else
+              {
+                console.log("ARTICLES UP TO DATE !");
+              }
+            }, 
+            function(error){
+              console.log(JSON.stringify(error));
+            });
+        }
+
+      });
+
+  }
+  function syncArticlesFrom(_id)
+  {
+    var request = {
+      url: "http://192.168.100.222:8085/newsales/rest/items/from/"+_id,
+      method: 'GET'
+    };
+    $http(request).then(
+      function(success){
+        console.log("Articles success from DB");
+        addAll(success.data);
+      }, 
+      function(error){
+        console.log(JSON.stringify(error));
       });
   }
 
   function getArticleWithSBD()
   {
-      var sql_query = "SELECT GS.id_db as id, GS.qte_min as min, Group_Concat(A.id_db) AS articles FROM groupes_sbd AS GS LEFT JOIN article_sbd AS ASBD ON ASBD.id_groupe_sbd = GS.id_db LEFT JOIN articles AS A ON ASBD.id_article = A.id_db WHERE classe = 'A' GROUP BY GS.id_db";
+    /*
+      I removed this "WHERE classe = 'A' just for testing be sure to add it soon !!"
+    */
+      var sql_query = "SELECT GS.id_db as id, GS.qte_min as min, Group_Concat(A.id_db) AS articles FROM groupes_sbd AS GS LEFT JOIN article_sbd AS ASBD ON ASBD.id_groupe_sbd = GS.id_db LEFT JOIN articles AS A ON ASBD.id_article = A.id_db GROUP BY GS.id_db";
       return DB.query(sql_query).then(
         function(sbds){
           return DB.fetchAll(sbds);
@@ -1425,6 +1554,7 @@ angular.module('starter.services', ['ngCordova'])
           return error;
         });
   }
+
   function dumpMarques()
   {
     return DB.query("SELECT * FROM marques;", []).then(function(results){
@@ -1544,7 +1674,7 @@ angular.module('starter.services', ['ngCordova'])
     console.log(JSON.stringify(article));
     var deferred = $q.defer();
     var sql_query = "INSERT INTO articles(id_db, prixAchat, nomArticle, prixVente, tva, uniteMesure, typeArticle, marqueArticle, unitConversion) values(?,?,?,?,?,?,?,?,?);"
-    var bindings = [article.id, article.price, article.fullDescription, article.salePrice, article.tva, 'UN', article.sousMarque.marque.partenaire.name, article.sousMarque.name, article.unitConversion];
+    var bindings = [article.id, article.price, article.fullDescription, article.salePrice, article.tva, 'UN', 'P&G', article.sousMarque.name, article.unitConversion];
     return DB.query(sql_query, bindings).then(
       function(article){
 
@@ -1934,7 +2064,7 @@ angular.module('starter.services', ['ngCordova'])
     time.setHours(0,0,0,0);
     time = time.getTime();
     var sql_query = "INSERT INTO missions(id_db, code_mission, client_id, route_id, date_start, date_max, finished, commande_id, problem, problemDescription, state, synced) values(?,?,?,?,?,?,?,?,?,?,?,?)";
-    var bindings = [mission.id, mission.codeMission, mission.client.id, mission.route.id, time, mission.maxDate, mission.finished, 0, mission.problem, mission.problemDescription, 0, 0];
+    var bindings = [mission.id, mission.codeMission, mission.client, mission.route, mission.date, mission.maxDate, mission.finished, 0, mission.problem, mission.problemDescription, 0, 0];
     return DB.query(sql_query, bindings).then(
       function(mission_id){
         return mission_id;
@@ -1971,15 +2101,17 @@ angular.module('starter.services', ['ngCordova'])
         {
           innerId = mission.id_db;
         }
-        $http.get("http://192.168.100.222:8082/newsales/rest/vendors/"+_idVendeur+"/missions/check").then(
+        $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_idVendeur+"/missions/check").then(
           function(mission, status, headers){
             console.log(mission);
             outerId = mission.data.id;
+            console.log("HIGHEST MISSION IN DB : "+innerId);
+            console.log("HIGHEST MISSION IN API : "+outerId);
             if(outerId > innerId)
             {
               console.log("Some updates remaining ...");
               var finalMissions = [];
-              $http.get("http://192.168.100.222:8082/newsales/rest/vendors/"+_idVendeur+"/missions/from/"+innerId).then(
+              $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_idVendeur+"/missions/from/"+innerId).then(
                 function(missions, status, headers){
                   deferred.resolve(missions.data);
                   var newMissions = [];
@@ -2096,17 +2228,17 @@ angular.module('starter.services', ['ngCordova'])
       var maxDB;
       var maxAPI;
       var routes = {
-        url : "http://192.168.100.222:8082/newsales/rest/vendors/"+idVendeur+"/roads/",
+        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+idVendeur+"/roads/",
         method : "GET"
       };
       var routesCheck = {
-        url : "http://192.168.100.222:8082/newsales/rest/vendors/"+idVendeur+"/roads/check",
+        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+idVendeur+"/roads/check",
         method : "GET"
       };
       function fromStartPoint(id, _id)
       {
         return {
-        url : "http://192.168.100.222:8082/newsales/rest/vendors/"+id+"/roads/from/"+_id,
+        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+id+"/roads/from/"+_id,
         method : "GET"
         };
       }
@@ -2263,9 +2395,9 @@ angular.module('starter.services', ['ngCordova'])
     };
 })
 
-.factory("Promotions", function(DB){
-  var self = this;
-  self.getAllPromotions = function(){
+.factory("Promotions", function(DB, $http){
+  
+  function getAllPromotions(){
     var sql_query = "SELECT * FROM promotions;";
     return DB.query(sql_query).then(
       function(result){
@@ -2273,7 +2405,7 @@ angular.module('starter.services', ['ngCordova'])
       });
   };
 
-  self.getClientPromotions = function(client_id){
+  function getClientPromotions(client_id){
     var id = "id";
     var qty = "qty";
     var sql_query = 'SELECT P.id_db AS "id", P.type, P.qte, P.melange, Group_Concat(DISTINCT PC.client_id) as clients, P.conditionning_unit AS "cu", P.max_steps AS "max", P.cummulable, P.ca, P.starts_at AS "starts", P.ends_at AS "ends", P.activated as "activated", Group_Concat(DISTINCT PI.promotion_secondary) AS "inclusions", Group_Concat(DISTINCT PE.promotion_secondary) AS "exclusions", "[" || Group_Concat(DISTINCT "{""id"":" || PA.article_id ||", ""qty"":" || ifnull(PA.qty, 0) || "}") || "]" AS "articles" , "[" || Group_Concat(DISTINCT "{""id"":" || GA.article_id ||", ""qty"":" || ifnull(GA.qte, 0) || ", ""designation"":""" || A.nomArticle || """}") || "]" AS "gratuites", PG.remise AS "remise" FROM promotions AS P LEFT JOIN promotion_client AS PC ON PC.promotion_id = P.id_db LEFT JOIN clients AS C ON C.id_db = PC.client_id LEFT JOIN promotion_article AS PA ON PA.promotion_id = P.id_db LEFT JOIN promotion_inclusion AS PI ON PI.promotion_primary = P.id_db LEFT JOIN promotion_exclusion AS PE ON PE.promotion_primary = P.id_db  LEFT JOIN promotion_gratuite AS PG ON PG.promotion_id = P.id_db LEFT  JOIN gratuite_article AS GA ON GA.promotion_gratuite_id = PG.id LEFT JOIN articles AS A ON A.id_db = GA.article_id WHERE (P.type == "PC" AND PC.client_id = ?) OR (P.type != "PC") GROUP BY P.id_db;';
@@ -2289,7 +2421,7 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  self.deletePromotion = function(_id){
+  function deletePromotion(_id){
     var sql_query  = "DELETE FROM promotions WHERE id = ?";
       var bindings = [_id];
       return DB.query(sql_query, bindings).then(
@@ -2300,8 +2432,235 @@ angular.module('starter.services', ['ngCordova'])
           return "Une erreur est survenu : "+error.message;
         });
   };
+  /*
+      
 
-  return self;
+
+      
+      
+      {
+        name : "promotion_article",
+        columns : [
+          { name : "id" , value : "integer primary key autoincrement" },
+          { name : "promotion_id" , value : "integer not null" },
+          { name : "article_id" , value : "integer not null" },
+          { name : "qty" , value : "integer" },
+          { name : "conditionning_unit" , value : "text" },
+          { name : "FOREIGN KEY(promotion_id)", value : "REFERENCES promotions(id_db)"},
+          { name : "FOREIGN KEY(article_id)", value : "REFERENCES articles(id_db)"},
+                  ]
+      },
+
+
+
+      {
+        name : "promotions",
+        columns : [
+          { name : "id" , value : "integer primary key autoincrement" },
+          { name : "id_db" , value : "integer unique not null" },
+          { name : "qte" , value : "integer" },
+          { name : "ca" , value : "long" },
+          { name : "max_steps", value : "integer" },
+          { name : "cummulable" , value : "boolean" }, 
+          { name : "type", value : "text not null"},
+          { name : "starts_at", value : "long not null"},
+          { name : "ends_at", value : "long not null"},
+          { name : "activated", value : "boolean not null"},
+          { name : "conditionning_unit", value : "text"},
+          { name : "melange", value : "boolean"}
+                  ]
+      },
+
+      
+
+  */
+
+
+  function syncPromotions(){
+    var request = {
+      url: "http://192.168.100.36:8082/newsales/rest/promotions/AllPromoParMois",
+      method: "GET"
+    };
+    $http(request).then(
+      function(success){
+        console.log("SUCCESSFULLY GOT ALL THE PROMOTIONS OF THE CURRENT MONTH");
+        if(typeof window.localStorage['promoAPI'] == "undefined")
+        {
+          window.localStorage['promoAPI'] = JSON.stringify(success.data);
+        }
+        angular.forEach(success.data, function(promotion){
+          addPromotion(promotion).then(
+            function(success){
+              console.log("THE PROMOTION successfully ADDED NOW SUB TABLES !!");
+              if(typeof success.insertId != "undefined");
+              {
+                if(promotion.type == 'PP' || promotion.type == 'PMT')
+                {
+                  angular.forEach(promotion.article_en_promo, function(article){
+                    promotionArticle(promotion.id, article)
+                    .then(
+                      function(success){
+                        console.log(JSON.stringify(success));
+                      }, 
+                      function(error){
+                        console.log(JSON.stringify(error));
+                      });
+                  });
+
+
+                  promotionGratuite(promotion.id, promotion.pourcentage).then(
+                      function(success){
+                        console.log(JSON.stringify(success));
+
+                        angular.forEach(promotion.article_gratuits, function(article){
+                          console.log(article);
+                          promotionGratuiteArticle(success.insertId, article[0].itemId, article[0].quantite).then(
+                            function(success){
+                              console.log(success);
+                            },
+                            function(error){
+                              console.log(error);
+                            });
+                        });
+
+                      }, 
+                      function(error)
+                      {
+                        console.log(JSON.stringify(error));
+                      });
+
+                  
+                }
+
+                else if(promotion.type == 'PC')
+                {
+                  angular.forEach(promotion.client, function(client){
+                    promotionClient(promotion.id, client)
+                    .then(
+                      function(success){
+                        console.log(JSON.stringify(success));
+                      }, 
+                      function(error){
+                        console.log(JSON.stringify(error));
+                      });
+                  });
+                }
+              }
+
+            }, 
+            function(error){
+              console.log(JSON.stringify(error));
+              return;
+            });
+        });
+
+      },
+      function(error){
+        console.log(JSON.stringify(error));
+      });
+
+
+
+  }
+
+
+  /*
+
+  {
+        name : "promotion_client",
+        columns : [
+          { name : "id" , value : "integer primary key autoincrement" },
+          { name : "promotion_id" , value : "integer" },
+          { name : "client_id" , value : "integer" },
+          { name : "FOREIGN KEY(promotion_id)", value : "REFERENCES promotions(id_db)"},
+          { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
+                  ]
+      },
+
+  */
+
+  function promotionClient(promotion_id, client_id)
+  {
+    var sql_query = "INSERT INTO promotion_client(promotion_id, client_id) VALUES(?,?);";
+    var bindings = [promotion_id, client_id];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        console.log(JSON.stringify(success));
+        return success;
+      }, 
+      function(error){
+        console.log(JSON.stringify(error));
+        return error;
+      }); 
+  }
+
+  function promotionGratuite(promotionId, remise)
+  {
+    var sql_query = "INSERT INTO promotion_gratuite(promotion_id, remise) VALUES(?,?);";
+    var bindings = [promotionId, remise];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        console.log(JSON.stringify(success));
+        return success;
+      }, 
+      function(error){
+        console.log(JSON.stringify(error));
+        return error;
+      }); 
+  }
+
+  function promotionGratuiteArticle(promotionGratuiteId, articleId, qty)
+  {
+    var sql_query = "INSERT INTO gratuite_article(promotion_gratuite_id, article_id, qte) VALUES(?,?,?);";
+    var bindings = [promotionGratuiteId, articleId, qty];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        console.log(JSON.stringify(success));
+        return success;
+      }, 
+      function(error){
+        console.log(JSON.stringify(error));
+        return error;
+      }); 
+  }
+  
+
+  function promotionArticle(id_db, article)
+  {
+    var sql_query = "INSERT INTO promotion_article(promotion_id, article_id, qty, conditionning_unit) VALUES (?,?,?,?);";
+    var bindings = [id_db, article.itemId, article.quantite, article.uconditionement];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+      })
+  }
+
+  function addPromotion(promotion)
+  {
+    var sql_query = "INSERT INTO promotions(id_db, qte, ca, max_steps, cummulable, type, starts_at, ends_at, activated, conditionning_unit, melange) VALUES(?,?,?,?,?,?,?,?,?,?,?);";
+    var bindings = [promotion.id, promotion.qte, promotion.montant, promotion.max_steps, promotion.cummulable == true ? 1 : 0, promotion.type, promotion.starts_at, promotion.ends_at, promotion.activated == true ? 1 : 0, promotion.conditionning_unit, promotion.melange == true ? 1 : 0];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        console.log(JSON.stringify(success));
+        return success;
+      }, 
+      function(error){
+        console.log(error);
+        return error;
+      });
+  }
+
+  return {
+    addPromotion :addPromotion,
+    promotionArticle :promotionArticle,
+    syncPromotions : syncPromotions,
+    getAllPromotions : getAllPromotions,
+    getClientPromotions :getClientPromotions,
+    deletePromotion :deletePromotion
+  };
 
 
 
@@ -2337,7 +2696,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function sync(){
     var deferred = $q.defer();
-    $http.get("http://192.168.100.222:8082/newsales/rest/clients/road/1/sync")
+    $http.get("http://192.168.100.222:8085/newsales/rest/clients/road/1/sync")
     .then(
       
       function(data, status, headers){
@@ -2355,7 +2714,7 @@ angular.module('starter.services', ['ngCordova'])
             console.log("YOUR CURRENT DATABASE IS NOT UP TO DATE !");
             console.log((idAPI-idDB)+" routes are waitiing to be pushed in your local DB");
             console.log("HERE IS THE ROUTES !!");
-            $http.get("http://192.168.100.222:8082/newsales/rest/clients/road/1/sync/"+idDB).then(
+            $http.get("http://192.168.100.222:8085/newsales/rest/clients/road/1/sync/"+idDB).then(
               function(data, status, headers){
                 var clients = data.data;
                 angular.forEach(clients, function(client){
@@ -2407,7 +2766,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function highestIDInDB()
   {
-    $http.get("http://192.168.100.222:8082/newsales/rest/roads/check")
+    $http.get("http://192.168.100.222:8085/newsales/rest/roads/check")
     .success(function(data, status, headers){
       console.log("THE HIGHEST ID IN DB IS : "+data.id);
     })

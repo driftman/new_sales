@@ -281,17 +281,18 @@ angular.module('starter.controllers', ['starter.services'])
                 updateIonicLoading('Tentative de connexion à NewSales ');
                 Accounts.connectFromAPI(object).then(
                     function(success){
+                        console.log(success);
                         var profileToProfile = {};
                         updateIonicLoading("Connexion réussi !");
-                        var data = success.data;
+                        var data = success.data.content.employee;
                         console.log(JSON.stringify(data));
-                        var _id_db = data.employee.id;
+                        var _id_db = success.data.content.employee.id;
                         var account = {
-                            id_db : data.employee.id,
-                            username : data.username,
-                            password : data.password,
-                            golden_points : data.employee.goldenPoints,
-                            golden_stores : data.employee.goldenPoints
+                            id_db : data.id,
+                            username : object.username,
+                            password : object.password,
+                            golden_points : data.gP,
+                            golden_stores : data.gS
                         };
                         Accounts.addAccount(account).then(
                                 function(success1){
@@ -301,11 +302,11 @@ angular.module('starter.controllers', ['starter.services'])
                                     {
                                         var profile = {
                                             id_db : _id_db,
-                                            name : data.firstName,
-                                            second_name : data.lastName,
-                                            address : data.address,
+                                            name : data.nom,
+                                            second_name : data.prenom,
+                                            address : data.adresse,
                                             email_address : data.email,
-                                            phone_number : data.telMobile,
+                                            phone_number : data.numeroGSM,
                                             id_account : success1.insertId
                                         };
                                         
@@ -314,6 +315,8 @@ angular.module('starter.controllers', ['starter.services'])
                                                 console.log(JSON.stringify(success2));
                                                 if(typeof success2.insertId !== "undefined")
                                                 {
+                                                    profile.golden_stores = account.golden_stores;
+                                                    profile.golden_points = account.golden_points;
                                                     window.localStorage['profile'] = JSON.stringify(profile);
                                                     updateIonicLoading("Votre espace personnel a été créé avec succes !");
                                                     $state.go("menu.entry");
@@ -364,7 +367,7 @@ angular.module('starter.controllers', ['starter.services'])
                                 updateIonicLoading("Problème technique");
                                 break;
                             default:
-                                updateIonicLoading("Problème de connexionnn");
+                                updateIonicLoading("Problème de connexion");
                                 break;
                         }
                     });
@@ -428,7 +431,7 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, $state, Routes, BrandFive, Commandes, Missions, Clients, Articles, Marques){
+.controller('EntryCtrl', function($scope, $rootScope, $timeout, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques){
     var infos;
     $scope.$on('$ionicView.beforeEnter', function() {
         if(window.localStorage['profile'] !== 'null')
@@ -446,41 +449,83 @@ angular.module('starter.controllers', ['starter.services'])
     };
     $scope.synchronization = function(){
 
+
+        
+        /*$ionicLoading.show({
+            template : "Synchronisation en cours ... "
+        });*/
+
+
+        SBD.syncSBDFromAPI();
+        Promotions.syncPromotions();
         Commandes.syncCommandes().then(
             function(success){
-               // Commandes.sendCommandeToAPI(success);
-               console.log(success);
+               Commandes.sendCommandeToAPI(success);
+               console.log(JSON.stringify(success));
             }, 
             function(error){
-                console.log(error);
+                console.log(JSON.stringify(error));
             });
 
-        /*Routes.syncRoutes(infos.id_db);
+        Routes.syncRoutes(infos.id_db);
         Missions.syncMissions(infos.id_db).then(
             function(success){
                 console.log(success);
             },
             function(error){
                 console.log(error.message)
-            });*/
+            });
 
-        /*Clients.syncClients(infos.id_db);*/
-       // Articles.syncArticles();
-        /*Marques.getAll().then(
+        Clients.syncClients(infos.id_db);
+        Articles.syncArticles();
+        Marques.getAll().then(
             function(success){
                 console.log(JSON.stringify(success));
             },
             function(error){
                 console.log(JSON.stringify(error));
-            });*/
-        /*BrandFive.addBrandFive();*/
+            });
+        BrandFive.addBrandFive({
+            id_db: 1,
+            code_marque: "GILLETTE",
+            name: "GILLETTE"
+        });
+        BrandFive.addBrandFive({
+            id_db: 4,
+            code_marque: "PANTENE",
+            name: "PANTENE"
+        });
+        BrandFive.addBrandFive({
+            id_db: 5,
+            code_marque: "ORALB",
+            name: "ORALB"
+        });
         /*Articles.getArticlesByMarque('GILLETTE').then(
             function(success){
                 console.log(JSON.stringify(success));
             },
             function(error){
                 console.log(JSON.stringify(error));
+            });
+        Articles.getArticlesByMarque('PANTENE').then(
+            function(success){
+                console.log(JSON.stringify(success));
+            },
+            function(error){
+                console.log(JSON.stringify(error));
+            });
+        Articles.getArticlesByMarque('ORALB').then(
+            function(success){
+                console.log(JSON.stringify(success));
+            },
+            function(error){
+                console.log(JSON.stringify(error));
             });*/
+        /*$timeout(
+            function(){
+                $ionicLoading.hide();
+            }, 
+            9000);*/
 
     };
 })
@@ -1557,7 +1602,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                     if(sbd.articles != null && sbd.articles.length > 0)
                                     {
                                         angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id == innerArticle.id)
+                                            if(article.id_db == innerArticle.id)
                                             {
                                                 innerArticle.qty = article.unit+(article.packet*10);        
                                             }
@@ -1581,7 +1626,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                             // FALSE BY DEFAULT !
                             var found = false;
                             angular.forEach(currentBasket.items, function(item){
-                                if(item.id == article.id)
+                                if(item.id_db == article.id_db)
                                 {
                                     // ARTICLE FOUND FOR THE CURRENT ITERATION
                                     found = true;
@@ -1668,12 +1713,12 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                             {
                                                 var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
                                                 var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id == promotions[j].articles[k].id)
+                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
                                                 {
                                                     console.log("FOUND IN CART");
                                                     count+=qty;
                                                     ca+=amount;
-                                                    items.push({ id: cart.items[l].id, qty: qty });
+                                                    items.push({ id: cart.items[l].id_db, qty: qty });
                                                 }
                                                 else
                                                 {
@@ -2017,7 +2062,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     var cartItems = items.items;
                     var inCart = false;
                     angular.forEach(cartItems, function(cartItem){
-                        if(article.id_db == cartItem.id)
+                        if(article.id_db == cartItem.id_db)
                         {
                             inCart = true;
                             angular.forEach(sbds, function(sbd){
@@ -2027,7 +2072,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                     var found = false;
                                     angular.forEach(sbd.articles, function(innerArticle){
                                         total+=innerArticle.qty;
-                                        if(cartItem.id == innerArticle.id)
+                                        if(cartItem.id_db == innerArticle.id)
                                         {
                                             found = true; 
                                         }
@@ -2080,7 +2125,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                 var found = false;
                                 angular.forEach(sbd.articles, function(innerArticle){
                                     total+=innerArticle.qty;
-                                    if(article.id == innerArticle.id)
+                                    if(article.id_db == innerArticle.id)
                                     {
                                         found = true; 
                                     }
@@ -2110,7 +2155,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                             if(article.groupeSBD != null && article.groupeSBD == sbd.id)
                                 {
                                     angular.forEach(sbd.articles, function(innerArticle){
-                                        if(article.id == innerArticle.id)
+                                        if(article.id_db == innerArticle.id)
                                         {
                                             innerArticle.qty = article.unit+(article.packet*10);        
                                         }
@@ -2128,7 +2173,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                         {
                             var found = false;
                             angular.forEach(currentBasket.items, function(item){
-                                if(item.id == article.id)
+                                if(item.id_db == article.id_db)
                                 {
                                     found = true;
                                     if(article.packet > 0)
@@ -2210,12 +2255,12 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                             {
                                                 var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
                                                 var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id == promotions[j].articles[k].id)
+                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
                                                 {
                                                     console.log("FOUND IN CART");
                                                     count+=qty;
                                                     ca+=amount;
-                                                    items.push({ id: cart.items[l].id, qty: qty });
+                                                    items.push({ id: cart.items[l].id_db, qty: qty });
                                                 }
                                                 else
                                                 {
@@ -2428,7 +2473,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         }
         for(var i = 0 ; i < cart.items.length || 0 ; i++)
         {
-            if(cart.items[i].id === article.id)
+            if(cart.items[i].id_db === article.id_db)
             {
                 cart.items.splice(i, 1);
                 window.localStorage['cart'] = JSON.stringify(cart);
@@ -2445,7 +2490,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                 {
                     for(var j = 0 ; j < sbds[i].articles.length ; j++)
                     {
-                        if(sbds[i].articles[j].id == article.id)
+                        if(sbds[i].articles[j].id == article.id_db)
                         {
                             sbds[i].articles[j].qty = 0;
                         }
@@ -2487,173 +2532,6 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 
     }
     refreshTotalBill();
-    $scope.finish = function(){
-        for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
-        {
-            if($scope.data.conflicts[i].inConflictWith.clicked == false)
-            {
-                for(var j = 0 ; j < promotions.length ; j++)
-                {
-                    for(var k = 0 ; k < $scope.data.conflicts[i].inConflictWith.promotions.length ; k++)
-                    {
-                        if(promotions[j].id == $scope.data.conflicts[i].inConflictWith.promotions[k])
-                        {
-                            promotions[j].consumed = false;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                for(var j = 0 ; j < promotions.length ; j++)
-                {
-                    for(var k = 0 ; k < $scope.data.conflicts[i].inConflictWith.promotions.length ; k++)
-                    {
-                        if(promotions[j].id == $scope.data.conflicts[i].inConflictWith.promotions[k])
-                        {
-                            promotions[j].consumed = true;
-                        }
-                    }
-                }
-            }
-            if($scope.data.conflicts[i].promotion.clicked == false)
-            {
-                console.log($scope.data.conflicts[i].promotion);
-                for(var j = 0 ; j < promotions.length ; j++)
-                {
-                    if(promotions[j].id == $scope.data.conflicts[i].promotion.promotion.id)
-                    {
-                        promotions[j].consumed = false;
-                    }
-                }
-            }
-            else
-            {
-                for(var j = 0 ; j < promotions.length ; j++)
-                {
-                    if(promotions[j].id == $scope.data.conflicts[i].promotion.promotion.id)
-                    {
-                        promotions[j].consumed = true;
-                    }
-                }
-            }
-        }
-        for(var i = 0 ; i < promotions.length ; i++)
-        {
-            if(promotions[i].consumed == true && promotions[i].inclusions != null && promotions[i].inclusions.length > 0)
-            {
-                for(var j = 0 ; j < promotions[i].inclusions.length ; j++)
-                {
-                    if(promotions[i].inclusions[j].consumed == false)
-                    {
-                        promotions[i].consumed = false;
-                        break;
-                    }
-                }
-            }
-        }
-        window.localStorage['promotions'] = JSON.stringify(promotions);
-        $state.go("app.cart");
-
-    };
-    $scope.hold = function(object){
-        if(typeof object.promotions != "undefined" && object.promotions.length > 0)
-        {
-            if(object.clicked)
-            {
-                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
-                {
-                    if($scope.data.conflicts[i].promotion.promotion.id == object.exclude)
-                    {
-                        $scope.data.conflicts[i].promotion.clicked = true;
-                    }
-                }
-                object.clicked = false;
-            }
-            else
-            {
-                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
-                {
-                    if($scope.data.conflicts[i].promotion.promotion.id == object.exclude)
-                    {
-                        $scope.data.conflicts[i].promotion.clicked = false;
-                    }
-                }
-                object.clicked = true;
-            }
-            console.log($scope.data.conflicts);
-        }
-        else
-        {
-            if(object.clicked)
-            {
-                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
-                {
-                    if(object.promotion.id == $scope.data.conflicts[i].inConflictWith.exclude)
-                    {
-                        $scope.data.conflicts[i].inConflictWith.clicked = true;
-                    }
-                }
-                object.clicked = false;
-            }
-            else
-            {
-                for(var i = 0 ; i < $scope.data.conflicts.length ; i++)
-                {
-                    if(object.promotion.id == $scope.data.conflicts[i].inConflictWith.exclude)
-                    {
-                        $scope.data.conflicts[i].inConflictWith.clicked = false;
-                    }
-                }
-                object.clicked = true;
-            }
-            console.log($scope.data.conflicts);
-        }
-    };
-    $scope.data = {};
-    $scope.data.conflicts = [];
-    for(var i = 0 ; i < promotions.length ; i++)
-    {
-        if(promotions[i].consumed == true && promotions[i].exclusions != null && promotions[i].exclusions.length > 0)
-        {
-
-           var object = {};
-           object.promotion = { exclude : [], promotion: promotions[i], clicked: true };
-           object.inConflictWith = { exclude : promotions[i].id, clicked: false, promotions : [], gratuites : [], remises : []};
-           console.log("Length promotion exclusion : "+promotions[i].exclusions.length);
-           for(var j = 0 ; j < promotions[i].exclusions.length ; j++)
-           {
-                for(var k = 0 ; k < promotions.length ; k++)
-                {
-
-                    if(promotions[i].exclusions[j] == promotions[k].id && promotions[k].consumed == true)
-                    {
-                        console.log(promotions[i].exclusions[j]);
-                        console.log(promotions[k]);
-                        object.inConflictWith.promotions.push(promotions[k].id);
-                        object.promotion.exclude.push(promotions[k].id);
-                        if(promotions[k].gratuites != null && promotions[k].gratuites.length > 0)
-                        {
-                            object.inConflictWith.gratuites = object.inConflictWith.gratuites.concat(promotions[k].gratuites);
-                        }
-                        if(promotions[k].remise != null && promotions[k].remise > 0)
-                        {
-                            object.inConflictWith.remises = object.inConflictWith.remises.concat(promotions[k].remise);
-                        }
-
-                    }
-                    else
-                    {
-                        console.log("0");
-                    }
-                }
-           }
-           if(!object.inConflictWith.promotions.length < 1)
-           {
-           $scope.data.conflicts.push(object);
-           }
-        }
-    }
 })
 
 .controller('RemainingCtrl', function($scope, $state, Articles){
@@ -2674,7 +2552,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         {
             for(var k = 0 ; k < cart.items.length ; k++)
             {
-                if(sbd[i].articles[j].id == cart.items[k].id)
+                if(sbd[i].articles[j].id == cart.items[k].id_db)
                 {
                     count+=((cart.items[k].packet*10) + (cart.items[k].unit));
                 }
@@ -2698,7 +2576,12 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
             }
         }
     }
-    array = Array.from(new Set(array));
+    var workAroundObject = {};
+    for(var i = 0 ; i < array.length ; i++)
+    {
+        workAroundObject[array[i]] = "-";
+    }
+    array = Object.keys(workAroundObject);
     if(array.length == 0)
     {
         $state.go("app.cart");
@@ -2713,7 +2596,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                 article.promotions = article.promotions != null ? article.promotions.split(', ').map(Number) : null;
                 var found = false;
                 angular.forEach(cart.items, function(cartItem){
-                    if(cartItem.id == article.id)
+                    if(cartItem.id_db == article.id_db)
                     {
                         found = true;
                         $scope.articles.push(cartItem);
@@ -2761,7 +2644,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                 var found = false;
                                 angular.forEach(sbd.articles, function(innerArticle){
                                     total+=innerArticle.qty;
-                                    if(article.id == innerArticle.id)
+                                    if(article.id_db == innerArticle.id)
                                     {
                                         found = true; 
                                     }
@@ -2815,7 +2698,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                     if(sbd.articles != null && sbd.articles.length > 0)
                                     {
                                         angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id == innerArticle.id)
+                                            if(article.id_db == innerArticle.id)
                                             {
                                                 innerArticle.qty = article.unit+(article.packet*10);        
                                             }
@@ -2929,12 +2812,12 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                             {
                                                 var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
                                                 var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id == promotions[j].articles[k].id)
+                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
                                                 {
                                                     console.log("FOUND IN CART");
                                                     count+=qty;
                                                     ca+=amount;
-                                                    items.push({ id: cart.items[l].id, qty: qty });
+                                                    items.push({ id: cart.items[l].id_db, qty: qty });
                                                 }
                                                 else
                                                 {
@@ -3148,7 +3031,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                 {
                     for(var j = 0 ; j < sbds[i].articles.length ; j++)
                     {
-                        if(sbds[i].articles[j].id == article.id)
+                        if(sbds[i].articles[j].id == article.id_db)
                         {
                             sbds[i].articles[j].qty = 0;
                         }
@@ -3283,7 +3166,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                 {
                     for(var j = 0 ; j < sbds[i].articles.length ; j++)
                     {
-                        if(sbds[i].articles[j].id == article.id)
+                        if(sbds[i].articles[j].id == article.id_db)
                         {
                             sbds[i].articles[j].qty = 0;
                         }
@@ -3336,7 +3219,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     var found = false;
                     angular.forEach(sbd.articles, function(innerArticle){
                         total+=innerArticle.qty;
-                        if(article.id == innerArticle.id)
+                        if(article.id_db == innerArticle.id)
                         {
                             found = true; 
                         }
@@ -3353,6 +3236,10 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         refreshTotalBill();
     }
     function refreshBrand(brandName){
+        $ionicLoading.show({
+                template: "chargement ..."
+            });
+            
         refreshTotalBill();
         $scope.totalBill = 0;
         var testItems = [];
@@ -3398,7 +3285,13 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     article.unit = 0;
                     article.inCart = false;
                     article.done = article.groupeSBD == null ? true : false;
-                    article.promotions = article.promotions != null ? article.promotions.split(', ').map(Number) : null;
+                    if(article.promotions != null)
+                    {
+                        if(article.promotions.length > 0)
+                        {
+                            article.promotions = article.promotions.split(', ').map(Number)
+                        }
+                    }
                     var items = JSON.parse(window.localStorage['cart'] || '{}');
                     var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
                     angular.forEach(sbds, function(sbd){
@@ -3408,7 +3301,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                             var found = false;
                             angular.forEach(sbd.articles, function(innerArticle){
                                 total+=innerArticle.qty;
-                                if(article.id == innerArticle.id)
+                                if(article.id_db == innerArticle.id)
                                 {
                                     found = true; 
                                 }
@@ -3422,8 +3315,9 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     var cartItems = items.items;
                     var inCart = false;
                     angular.forEach(cartItems, function(cartItem){
-                        if(article.id_db == cartItem.id)
+                        if(article.id_db == cartItem.id_db)
                         {
+                            console.log("IN CART !!");
                             inCart = true;
                             angular.forEach(sbds, function(sbd){
                                 if(cartItem.groupeSBD != null && cartItem.groupeSBD == sbd.id)
@@ -3434,7 +3328,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                    {
                                          angular.forEach(sbd.articles, function(innerArticle){
                                             total+=innerArticle.qty;
-                                            if(cartItem.id == innerArticle.id)
+                                            if(cartItem.id_db == innerArticle.id)
                                             {
                                                 found = true; 
                                             }
@@ -3453,6 +3347,14 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                             console.log(cartItem);
                             $scope.articles.push(cartItem);
                         }
+                        else
+                        {
+                            console.log("_____________");
+                            console.log("NOT IN CART !");
+                            console.log(JSON.stringify(cartItem));
+                            console.log(JSON.stringify(article));
+                            console.log("_____________");
+                        }
                     });
                     if(!inCart)
                     {
@@ -3465,6 +3367,9 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
             function(error){
                 console.log(error.message);
             });
+        $timeout(function(){
+                $ionicLoading.hide();
+            }, 1000);
     }
     $scope.back = false;
     $scope.forw = true;
@@ -3495,7 +3400,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                                     if(sbd.articles != null && sbd.articles.length > 0)
                                     {
                                         angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id == innerArticle.id)
+                                            if(article.id_db == innerArticle.id)
                                             {
                                                 innerArticle.qty = article.unit+(article.packet*10);        
                                             }
@@ -3849,6 +3754,8 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 
     Marques.getBrandFiveFromLocalDB().then(
         function(brandfives){
+            console.log("BRANDFIVES !");
+            console.log("3725");
             console.log(JSON.stringify(brandfives));
             $scope.brandFives = brandfives;
             $scope.currentBrand = $scope.brandFives[$scope.currentStep];
