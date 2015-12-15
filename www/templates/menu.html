@@ -14,7 +14,7 @@
     <ion-side-menu side="left">
         <ion-header-bar class="dark-bg expanded" style="background: url('img/delivery.jpg'); background-position : left;">
             <span class="avatar" style="background: url('img/avatar.png'); background-size: cover;"></span>
-            <h2>John DOE</h2>
+            <h2>{{}}</h2>
         </ion-header-bar>
         <ion-content class="stable-bg has-expanded-header">
             <ion-list>
@@ -22,19 +22,19 @@
                         Mon Espace
                         <i style="color: rgb(0, 150, 136);" class="icon ion-ios-pulse-strong red-ionicon "></i>
                     </ion-item>
-                <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.routes">
+                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.routes">
                         Mes Routes
                     <i style="color: rgb(244, 67, 54);" class="icon ion-map red-ionicon "></i>
                 </ion-item>
-                <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.promotions">
+                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.promotions">
                         Promotions
                     <i style="color: rgb(239, 108, 0);" class="icon ion-android-bulb red-ionicon "></i>
                 </ion-item>
-                <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="test()">
+                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="test()">
                         SBD
                     <i style="color: #2196F3;" class="icon ion-pricetag red-ionicon "></i>
                 </ion-item>
-                <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.clients">
+                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.clients">
                         Mes Clients
                     <i style="color: rgba(255, 87, 34, 0.9);" class="icon ion-ios-people red-ionicon "></i>
                 </ion-item>

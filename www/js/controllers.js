@@ -17,6 +17,7 @@ angular.module('starter.controllers', ['starter.services'])
         });
     }
 
+
     ////////////////////////////////////////
     // Layout Methods
     ////////////////////////////////////////
@@ -38,6 +39,8 @@ angular.module('starter.controllers', ['starter.services'])
             }
         }
     };
+
+    $scope.profile = JSON.parse(window.localStorage['profile'] || '{}');
     $scope.test = function(){
         window.open('img/test.pdf', '_blank', 'location=yes');
     };
@@ -169,12 +172,12 @@ angular.module('starter.controllers', ['starter.services'])
 .controller('LoginCtrl', function($scope, $rootScope, $timeout, $cordovaToast, $ionicLoading,
     $stateParams, $ionicSideMenuDelegate, $state, $ionicModal, ionicMaterialInk, Accounts, Profile, Clients) {
 
-    $scope.$on('$ionicView.beforeEnter', function() {
+    /*$scope.$on('$ionicView.beforeEnter', function() {
         if(typeof window.localStorage['profile'] != 'undefined')
         {
             $state.go("menu.entry");
         }
-    });
+    });*/
     $rootScope.infos = {};
     $scope.$parent.clearFabs();
     $timeout(function() {
@@ -203,6 +206,7 @@ angular.module('starter.controllers', ['starter.services'])
     var trustedUser = null;
     var subCurrentUser = null;
     $scope.question = "";
+    
     function updateIonicLoading(message)
     {
         $ionicLoading.hide();
@@ -250,8 +254,6 @@ angular.module('starter.controllers', ['starter.services'])
         });   
       Accounts.getAccountByUserNameAndPassword(object.username, object.password).then(
         function(user){
-            window.localStorage['profile'] = JSON.stringify(user);
-            console.log("THIS IS ITTT : "+user);
             if(typeof user === "undefined")
             {
                 updateIonicLoading('Erreur fatale !');
@@ -259,21 +261,35 @@ angular.module('starter.controllers', ['starter.services'])
             }
             if(user != null && user.first_login === 1)
             {
+                window.localStorage['profile'] = JSON.stringify(user);
                 updateIonicLoading('Connexion réussi !');
-                console.log(JSON.stringify(user));
                 current_user = user;
-                console.log(user);
-                $scope.modal_change_password.show();
+                $timeout(function(){
+                    if(user.fonction == "vendeur")
+                    {
+                        $state.go("menu.entry");
+                    }
+                    else if(user.fonction == "livreur")
+                    {
+                        $state.go("menu.entry2");
+                    }
+                }, 2000);
 
             }
             else if( user != null && user.first_login === 0)
             {
+                window.localStorage['profile'] = JSON.stringify(user);
                 updateIonicLoading('Connexion réussi !');
-                console.log(JSON.stringify(user));
                 current_user = user;
-                console.log(user);
                 $timeout(function(){
-                    $state.go("menu.entry")
+                    if(user.fonction == "vendeur")
+                    {
+                        $state.go("menu.entry");
+                    }
+                    else if(user.fonction == "livreur")
+                    {
+                        $state.go("menu.entry2");
+                    }
                 }, 2000);
             }
             else
@@ -291,9 +307,11 @@ angular.module('starter.controllers', ['starter.services'])
                             id_db : data.id,
                             username : object.username,
                             password : object.password,
-                            golden_points : data.gP,
-                            golden_stores : data.gS
+                            golden_points : success.data.content.fonction == 'vendeur' ? data.gP : 0,
+                            golden_stores : success.data.content.fonction == 'vendeur' ? data.gS : 0 ,
+                            fonction : success.data.content.fonction
                         };
+                        console.log(account);
                         Accounts.addAccount(account).then(
                                 function(success1){
                                     console.log("addAccount !");
@@ -317,9 +335,17 @@ angular.module('starter.controllers', ['starter.services'])
                                                 {
                                                     profile.golden_stores = account.golden_stores;
                                                     profile.golden_points = account.golden_points;
+                                                    profile.fonction = account.fonction;
                                                     window.localStorage['profile'] = JSON.stringify(profile);
                                                     updateIonicLoading("Votre espace personnel a été créé avec succes !");
-                                                    $state.go("menu.entry");
+                                                    if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "vendeur")
+                                                    {
+                                                        $state.go("menu.entry");
+                                                    }
+                                                    else if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "livreur")
+                                                    {
+                                                        $state.go("menu.entry2");
+                                                    }
                                                 }
                                                 else
                                                 {
@@ -378,6 +404,7 @@ angular.module('starter.controllers', ['starter.services'])
             
         });
     };
+    
     $scope.reponse = function(reponse){
         if(object !== null)
         {
@@ -431,10 +458,11 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, $timeout, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques){
+.controller('EntryCtrlLivreur', function($scope, Livreur, Articles, Marques, Missions){
+
     var infos;
     $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] !== 'null')
+        if(typeof window.localStorage['profile'] != 'undefined')
         {
             infos = JSON.parse(window.localStorage['profile']);
             $scope.infos = infos;
@@ -444,23 +472,72 @@ angular.module('starter.controllers', ['starter.services'])
             $state.go("menu.login");
         }
     });
+    $scope.synchronization = function(){
+        console.log("test");
+        Missions.getNonSyncedLivredMissions().then(
+            function(success){
+                angular.forEach(success, function(row){
+                    Missions.setMissionLivredInAPI(row.id_db).then(
+                        function(success){
+                            Missions.setMissionToSynced(row.id_db).then(
+                            function(success){
+                                console.log(success);
+                            }, 
+                            function(error){
+                                console.log(error);
+                            });
+                        }, 
+                        function(error){
+                            console.log(error);
+                        });
+                })
+            }, 
+            function(error){
+                console.log(error);
+            });
+        Livreur.synchronization(infos.id_db);
+        Articles.syncArticles();
+        Marques.getAll().then(
+            function(success){
+                console.log(JSON.stringify(success));
+            },
+            function(error){
+                console.log(JSON.stringify(error));
+            });
+    };
+})
+
+.controller('EntryCtrl', function($scope, $rootScope, $timeout, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques){
+    
+    $scope.$on('$ionicView.beforeEnter', function() {
+        if(typeof window.localStorage['profile'] != 'undefined')
+        {
+            $scope.infos = JSON.parse(window.localStorage['profile']);
+        }
+        else
+        {
+            $state.go("menu.login");
+        }
+    });
     $scope.test = function(){
         window.open('img/test.pdf', '_blank', 'location=yes');
     };
+    $scope.infos = JSON.parse(window.localStorage['profile']);
+    var infos = JSON.parse(window.localStorage['profile']);
     $scope.synchronization = function(){
 
 
         
-        /*$ionicLoading.show({
+        $ionicLoading.show({
             template : "Synchronisation en cours ... "
-        });*/
+        });
 
 
         SBD.syncSBDFromAPI();
         Promotions.syncPromotions();
         Commandes.syncCommandes().then(
             function(success){
-               Commandes.sendCommandeToAPI(success);
+               //Commandes.sendCommandeToAPI(success);
                console.log(JSON.stringify(success));
             }, 
             function(error){
@@ -500,7 +577,7 @@ angular.module('starter.controllers', ['starter.services'])
             code_marque: "ORALB",
             name: "ORALB"
         });
-        /*Articles.getArticlesByMarque('GILLETTE').then(
+        Articles.getArticlesByMarque('GILLETTE').then(
             function(success){
                 console.log(JSON.stringify(success));
             },
@@ -520,12 +597,12 @@ angular.module('starter.controllers', ['starter.services'])
             },
             function(error){
                 console.log(JSON.stringify(error));
-            });*/
-        /*$timeout(
+            });
+        $timeout(
             function(){
                 $ionicLoading.hide();
             }, 
-            9000);*/
+            9000);
 
     };
 })
@@ -571,6 +648,31 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$on('$ionicView.beforeEnter', function() {
         $ionicSlideBoxDelegate.update();
     });
+
+
+    $scope.center = {
+            lat: 33.565721, 
+            lng: -7.626388,
+            zoom: 13
+        };
+    $scope.markers = { 
+            m2: {
+                lat: 33.565721, 
+                lng: -7.626388,
+                focus: true,
+                draggable: false,
+                message: "<h5><b>Votre client est ici !</b></h5>",
+                icon: {
+                    iconUrl: 'img/red.png',
+                    iconSize:     [46, 46], // size of the icon
+                    shadowSize:   [50, 64], // size of the shadow
+                    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+                    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+                }
+            } 
+
+        };
+
     var clientObject;
     $scope.goClient = function(){
         $ionicLoading.show({
@@ -582,7 +684,8 @@ angular.module('starter.controllers', ['starter.services'])
             client_id: $scope.client.id_db,
             date_start: startDay.getTime(),
             state: 0,
-            synced: false
+            synced: false,
+            entryDate : Date.now()
         };
         if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
         {
@@ -697,13 +800,8 @@ angular.module('starter.controllers', ['starter.services'])
         });
 
 
-    angular.extend($scope, {
-        client: {
-            lat: 33.565721, 
-            lng: -7.626388,
-            zoom: 12
-        },
-        markers: {
+        
+        /*markers: {
             m1: {
                 lat: 33.533333,
                 lng: -7.583333,
@@ -733,11 +831,15 @@ angular.module('starter.controllers', ['starter.services'])
                 }
             } 
 
-        },
+        },*/
+
+
+    /*angular.extend($scope, {
+        
         client2: {
             lat: 33.533333,
             lng: -7.583333,
-            zoom: 17
+            zoom: 13
         },
         markers2: {
             m1: {
@@ -745,7 +847,7 @@ angular.module('starter.controllers', ['starter.services'])
                 lng: -7.583333,
                 focus: true,
                 draggable: false,
-                message: "Client",
+                message: $scope,
                 icon: {
                     iconUrl: 'img/red.png',
                     iconSize:     [46, 46], // size of the icon
@@ -774,7 +876,7 @@ angular.module('starter.controllers', ['starter.services'])
                 }
             }
         }
-            });
+            });*/
 
 
         
@@ -791,6 +893,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.showHeader();
     $scope.$parent.setHeaderFab('left');
     $scope.infos = JSON.parse(window.localStorage['profile']);
+    var profile = JSON.parse(window.localStorage['profile']);
     $scope.address = "";
     $scope.noMoreItemsAvailable = false;
     $scope.data.missions = [];
@@ -823,7 +926,7 @@ angular.module('starter.controllers', ['starter.services'])
             requestDate.setHours(0,0,0,0);
             var time = requestDate.getTime();
             console.log("Between : "+new Date(time)+" and : "+new Date((time+24*60*60*1000)));
-            Missions.getMissionsBetween(time, time+24*60*60*1000).then(
+            Missions.getMissionsBetween(time, time+24*60*60*1000, profile.id_db).then(
                 function(missions){
                     
                     angular.forEach(missions, function(mission){
@@ -838,7 +941,7 @@ angular.module('starter.controllers', ['starter.services'])
         
     };
 
-    Missions.getTodaysMissions(todayMs, todayMs+24*60*60*1000).then(
+    Missions.getTodaysMissions(todayMs, profile.id_db).then(
             function(missions){
                 console.log(missions);
                 $scope.missions = [];
@@ -859,7 +962,7 @@ angular.module('starter.controllers', ['starter.services'])
         });
         $timeout(function(){
         $ionicLoading.hide();
-        Missions.getTodaysMissions(todayMs).then(
+        Missions.getTodaysMissions(todayMs, profile.id_db).then(
             function(missions){
                 angular.forEach(missions, function(mission){
                     $scope.missions.push(mission);
@@ -878,7 +981,7 @@ angular.module('starter.controllers', ['starter.services'])
         });
         $timeout(function(){
             $ionicLoading.hide();
-            Missions.getOtherMissions(todayMs).then(
+            Missions.getOtherMissions(todayMs, profile.id_db).then(
                 function(missions){
                     console.log(missions);
                     angular.forEach(missions, function(mission){
@@ -893,6 +996,8 @@ angular.module('starter.controllers', ['starter.services'])
 
 
     $scope.goToClient = function(mission){
+        console.log(mission);
+        mission.entryDate = Date.now();
         window.localStorage['mission'] = JSON.stringify(mission);
         $state.go("app.client", {id : mission.client_id});
     };
@@ -1027,6 +1132,93 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
 
     
 })
+.controller('Profile2Ctrl', function($scope, $ionicSideMenuDelegate, $timeout, $state, $ionicPopup, $ionicModal, ionicMaterialMotion, ionicMaterialInk, Livreur, Missions){
+    $scope.profile = JSON.parse(window.localStorage['profile'] || '{}');
+    var profile = JSON.parse(window.localStorage['profile'] || '{}');
+    $scope.$parent.clearFabs();
+    $ionicSideMenuDelegate.canDragContent(true);
+    $scope.$parent.showHeader();
+    $scope.isExpanded = false;
+    $scope.$parent.setExpanded(false);
+    $scope.$parent.setHeaderFab(false);
+    $timeout(function() {
+        ionicMaterialMotion.slideUp({
+            selector: '.slide-up'
+        });
+    }, 1000);
+
+    $timeout(function() {
+        ionicMaterialMotion.fadeSlideInRight({
+            startVelocity: 1000
+        });
+    }, 1500);
+
+    // Set Ink
+    ionicMaterialInk.displayEffect();
+    $scope.missions = [];
+    $scope.mission = {};
+    Livreur.getLivreurMission(profile.id_db).then(
+        function(success){
+            console.log(success);
+            angular.forEach(success, function(mission){
+                mission.lignes = JSON.parse(mission.lignes);
+                $scope.missions.push(mission);
+            })
+        }, 
+        function(error){
+            console.log(error);
+        });
+
+    $scope.showAlert = function() {
+       var alertPopup = $ionicPopup.alert({
+         title: 'Succès',
+         template: 'La livraison a bien été confirmé'
+       });
+     };
+
+    $scope.valid = function(id)
+    {
+        Missions.setMissionLivreurToLivred(id).then(
+            function(success){
+                console.log(success);
+                $scope.modal.hide();
+                $ionicPopup.alert({
+                     title: 'Succès',
+                     template: 'La livraison a bien été confirmé'
+                   });
+            }, 
+            function(error){
+                console.log(error);
+            })
+    }
+
+    $ionicModal.fromTemplateUrl('delivery.html', {
+        scope: $scope,
+        animation: 'slide-in-up'
+      }).then(function(modal) {
+        $scope.modal = modal;
+      });
+      $scope.openModal = function(mission) {
+        $scope.mission =mission;
+        $scope.modal.show();
+      };
+      $scope.closeModal = function() {
+        $scope.modal.hide();
+      };
+      //Cleanup the modal when we're done with it!
+      $scope.$on('$destroy', function() {
+        $scope.modal.remove();
+      });
+      // Execute action on hide modal
+      $scope.$on('modal.hidden', function() {
+        // Execute action
+      });
+      // Execute action on remove modal
+      $scope.$on('modal.removed', function() {
+        // Execute action
+      });
+    
+})
 
 .controller('ProfileCtrl', function($scope, $rootScope, $stateParams, $ionicSlideBoxDelegate,
     Routes, SynchronizationService,$ionicLoading, Profile, $cordovaToast, Commandes, BrandFive, Missions, LigneCommandes,
@@ -1046,7 +1238,8 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.$parent.setHeaderFab(false);
     console.log($rootScope.infos);
     $scope.unfinishedMissions = [];
-$scope.infos = JSON.parse(window.localStorage['profile']);    $scope.toggle = function () {
+    $scope.infos = JSON.parse(window.localStorage['profile'] || "{}"); 
+    $scope.toggle = function () {
       $scope.type = $scope.type === 'PolarArea' ?
         'Pie' : 'PolarArea';
     };
@@ -1425,8 +1618,8 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         $scope.confirm();
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
         var mission = JSON.parse(window.localStorage['mission'] || '{}');
+        mission.exitDate = Date.now();
         mission.state = true;
-        console.log(mission)
         if(cart.mission == null || typeof mission.id_mission == "undefined")
         {
             console.log("need mission");
@@ -1511,15 +1704,14 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 
     function addCommande(mission_id, client_id)
     {
-        console.log("THIS IS THE MISSION ID");
-        console.log(mission_id);
+        var finalCart = JSON.parse(window.localStorage['cart'] || '[]');
         var code_commande = "CM"+Date.now();
         Commandes.addCommande(code_commande, mission_id, client_id).then(
             function(success){
                 console.log(success);
                 
                 var commande_id = success.insertId;
-                var items = cart.items;
+                var items = finalCart.items;
                 if(typeof commande_id === "number")
                 {
 
@@ -1543,10 +1735,11 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     });
 
                     console.log("ABOUT TO UPDATE MISSION WITH ID : "+mission_id+", AND INJECT COMMANDE : "+commande_id+" TO IT !");
+                    var m = JSON.parse(window.localStorage['mission']);
                     if(missionDB)
                     {
                         console.log("THIS IS A MISSION FROM API");
-                        Missions.setMissionToSucceed(mission_id, commande_id).then(
+                        Missions.setMissionToSucceed(mission_id, commande_id, m.entryDate, Date.now()).then(
                         function(success){
                             console.log(success);
                         }, 

@@ -1,0 +1,98 @@
+<ion-view view-title="{{ profile.name}} {{ profile.second_name}}">
+    <ion-content ng-class="{expanded:$scope.isExpanded}">
+        <div class="hero slide-up" style="
+  background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
+  background:    -moz-linear-gradient(90deg, #870000 10%, #190A05 90%); /* FF3.6+ */
+  background:     -ms-linear-gradient(90deg, #870000 10%, #190A05 90%); /* IE10 */
+  background:      -o-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Opera 11.10+ */
+  background:         linear-gradient(90deg, #870000 10%, #190A05 90%); /* W3C */
+  background:           #B71C1C; /* Ila 7madet ga3 */
+        ">
+            <div class="content">
+                <div class="avatar" style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
+                <h3><a class="light">{{ profile.name}} {{ profile.second_name}} - Livreur</a></h3>
+                <br><br>
+            </div>
+        </div>
+
+        <h4 class="content padding double-padding-x" style="color: #B71C1C; font-weight: 900; text-align: center;">Livraisons du jour :</h4>
+        <div class="key_map_container" style="margin: 0 auto;">
+            <span class="key_map" style="text-align: center;">
+                <i style="color: green; font-size: 16.5px;" class="icon ion-android-bus"></i> Livré &nbsp; &nbsp;
+                <i style="color: orange; font-size: 16.5px;" class="icon ion-android-bus"></i> Non livré &nbsp; &nbsp;
+                <i style="color: red; font-size: 16.5px;" class="icon ion-android-bus"></i> En attente
+            </span>
+        </div>
+
+        <ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
+            <ion-item
+            collection-repeat="mission in missions"
+            item="mission"
+            ng-click="openModal(mission)" 
+            style="font-size: 25px; border-bottom: 1px solid grey; padding: 0;" 
+            class="item-no-padding">
+                <div>Etat : <i style="color: {{ mission.state | flag }}; font-size: 25
+                  px;" class="icon ion-android-bus"></i> </div> 
+                  <p style=" font-weight: 600; margin: 0; margin-top: 5px;">Adresse : {{ mission.address }}</p>
+                <p style=" font-weight: 600; margin: 0;">Nom client : {{ mission.prenom | uppercase}} {{ mission.nom | uppercase}} </p>
+                <p style=" font-weight: 600; margin: 0;">Code visite : {{ mission.code_mission }}</p>
+                <ion-option-button class="button-calm icon ion-android-walk" style="color: #FFF;"></ion-option-button>
+                <ion-option-button class="button-balanced icon ion-map" style="color: #FFF;"></ion-option-button>
+            </ion-item>
+        </ion-list>
+
+
+
+
+        <script id="delivery.html" type="text/ng-template">
+          <ion-modal-view>
+            <ion-header-bar style="background: #B71C1C;">
+              <h1 class="title" font-weight: 600;>Livraison : {{ mission.prenom | uppercase}} {{ mission.nom | uppercase}}</h1>
+            </ion-header-bar>
+            <div class="bar bar-subheader" style="background-color: #B71C1C; height: 250px;">
+              <div class="row" style="color: white; border: none;">
+                  <div class="col" style="border: none;">
+                    <b>- Code visite: </b> {{ mission.code_mission }}<br>
+                    <b>- Nom client: </b> {{ mission.nom }} {{ mission.prenom }}
+                  </div>
+                  <div class="col" style="border: none;">
+                    <b>- Code commande: </b> {{ mission.code_commande }}<br>
+                    <b>- Adresse: </b> {{ mission.address }}
+                  </div>
+              </div>
+              <div class="row" style="border: none;">
+                <div class="col" style="border: none;">
+                  <button ng-click="valid(mission.id_db)" style="min-width: 100%; max-width: 100%;" class="button button-balanced">
+                    valider commande
+                  </button>
+                </div>
+              </div>
+              <div class="row" style="border: none;">
+                <div class="col" style="border: none;">
+                  <button style="min-width: 100%; max-width: 100%;" class="button button-assertive">
+                    déclarer problème
+                  </button>
+                </div>
+              </div>
+
+            </div>
+            <ion-content style="margin-top: 250px;">
+              
+              <div class="row" style="margin: 0; padding: 0; color: white; background-color: #B71C1C; border: 1px solid #B71C1C;">
+                <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>code</b></span></div>
+                <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>désignation</b></span></div>
+                <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;"><b>unité(s)</b></span></div> 
+                <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;"><b>paquet(s)</b></span></div> 
+              </div>
+              <div class="row" ng-repeat="ligne in mission.lignes" style="margin: 0; padding: 0; border-bottom: 1px solid #AF1B1B;">
+                <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>{{ ligne.id_article }}</b></span></div>
+                <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;">{{ ligne.designation }}</span></div>
+                <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;">{{ ligne.unite }}</span></div> 
+                <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;">{{ ligne.caisse }}</span></div> 
+              </div> 
+            </ion-content>
+          </ion-modal-view>
+        </script>
+
+    </ion-content>
+</ion-view>

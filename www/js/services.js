@@ -6,11 +6,11 @@ var DB_CONFIG = {
       {
         name : "clients",
         check_url : "http://localhost:8082/newsales/rest/vendor/roads/check",
-        synchronize_url : "http://localhost:8085/newsales/rest/roads/sync/",
+        synchronize_url : "http://localhost:8080/newsales/rest/roads/sync/",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "id_db" , value : "integer unique not null" },
-          { name : "code_client", value : "text unique not null" },
+          { name : "code_client", value : "text" },
           { name : "address" , value : "text" },
           { name : "lat" , value : "long" },
           { name : "lng" , value : "long" },
@@ -20,7 +20,7 @@ var DB_CONFIG = {
           { name : "golden_store", value : "long"},
           { name : "chiffreAffaire", value : "long"},
           { name : "classe", value : "text"},
-          { name : "route", value : "integer not null"}
+          { name : "route", value : "integer"}
               ]
       },
 
@@ -125,21 +125,42 @@ var DB_CONFIG = {
         name: "missions",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
-          { name : "id_db" , value : "integer" },
+          { name : "id_db" , value : "integer unique" },
           { name : "code_mission", value : "text" },
-          { name : "client_id" , value : "integer not null" },
-          { name : "route_id", value : "integer not null"},
-          { name : "date_start" , value : "long not null" },
+          { name : "client_id" , value : "integer" },
+          { name : "route_id", value : "integer"},
+          { name : "date_start" , value : "long" },
           { name : "date_max" , value : "long" },
-          { name : "finished", value : "boolean not null"},
+          { name : "finished", value : "boolean"},
           { name : "commande_id", value : "integer"},
-          { name : "problem", value : "boolean not null"},
+          { name : "problem", value : "boolean"},
           { name : "problemDescription", value : "text"},
-          { name : "state", value : "boolean not null" },
-          { name : "synced", value : "boolean not null"},
+          { name : "state", value : "boolean" },
+          { name : "synced", value : "boolean"},
+          { name : "livreur", value : "long"},
+          { name : "entryDate", value : "long"},
+          { name : "exitDate", value : "long"},
           { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
           { name : "FOREIGN KEY(route_id)", value : "REFERENCES routes(id_db)"},
           { name : "FOREIGN KEY(commande_id)", value : "REFERENCES commandes(id)"}
+                  ]
+      },
+
+      {
+        name: "missions_livreur",
+        columns : [
+          { name : "id_db" , value : "integer unique primary key not null" },
+          { name : "code_mission", value : "text" },
+          { name : "client_id" , value : "integer" },
+          { name : "finished", value : "boolean"},
+          { name : "commande_id", value : "integer"},
+          { name : "problem", value : "boolean"},
+          { name : "problemDescription", value : "text"},
+          { name : "state", value : "boolean" },
+          { name : "synced", value : "boolean"},
+          { name : "livreur", value : "long"},
+          { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
+          { name : "FOREIGN KEY(commande_id)", value : "REFERENCES commandes_livreur(id_db)"}
                   ]
       },
 
@@ -157,6 +178,18 @@ var DB_CONFIG = {
       },
 
       {
+        name : "commandes_livreur",
+        columns : [
+          { name : "id_db" , value : "integer primary key" },
+          { name : "code_commande", value : "text unique not null" },
+          { name : "id_mission", value : "integer unique not null"},
+          { name : "id_client", value : "integer not null"},
+          { name : "FOREIGN KEY(id_mission)", value : "REFERENCES missions_livreur(id_db)"},
+          { name : "FOREIGN KEY(id_client)", value : "REFERENCES clients(id_db)"},
+                  ]
+      },
+
+      {
         name : "ligneCommandes",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
@@ -169,6 +202,23 @@ var DB_CONFIG = {
           { name : "FOREIGN KEY(id_article)", value : "REFERENCES articles(id)"}
                   ]
       },
+
+
+      {
+        name : "ligneCommandes_livreur",
+        columns : [
+          { name : "id" , value : "integer primary key autoincrement" },
+          { name : "id_commande" , value : "integer not null" },
+          { name : "id_article", value : "integer not null" },
+          { name : "packet", value : "integer not null"},
+          { name : "unit", value : "integer not null"},
+          { name : "pu_ht", value : "long not null"},
+          { name : "FOREIGN KEY(id_commande)", value : "REFERENCES commandes(id)"},
+          { name : "FOREIGN KEY(id_article)", value : "REFERENCES articles(id)"}
+                  ]
+      },
+
+
 
        {
         name : "promotions",
@@ -282,8 +332,9 @@ var DB_CONFIG = {
           { name : "question_secrete" , value : "text not null"},
           { name : "reponse_secrete" , value : "text not null"},
           { name : "bloque", value : "boolean not null"},
-          { name : "golden_points", value : "long not null"},
-          { name : "golden_stores", value : "long not null"}
+          { name : "golden_points", value : "long"},
+          { name : "golden_stores", value : "long"},
+          { name : "fonction", value : "text"}
         ]
       },
 
@@ -728,7 +779,7 @@ angular.module('starter.services', ['ngCordova'])
   function syncSBDFromAPI()
   {
     var request = {
-      url: 'http://192.168.100.136:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
+      url: 'http://localhost:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
       method: 'GET'
     };
     $http(request).then(
@@ -788,7 +839,8 @@ angular.module('starter.services', ['ngCordova'])
     getAllCommandes : getAllCommandes,
     getCommandeByMission : getCommandeByMission,
     getCommandesByClient : getCommandeByClient,
-    getAllLigneCommandesByCommande : getAllLigneCommandesByCommande
+    getAllLigneCommandesByCommande : getAllLigneCommandesByCommande,
+    getLivreurMission : getLivreurMission
   };
 
   function findArticleInLastCommande(_idCommande, _idArticle)
@@ -824,11 +876,182 @@ angular.module('starter.services', ['ngCordova'])
   }
 
 })
+.factory("Livreur", function($http, DB, $q, Missions, Clients, Commandes, LigneCommandes){
+  function getHighestInDB(idVendeur)
+  {
+    //First get the highest mission in local db !
+    var sql_query = "SELECT id_db FROM missions_livreur WHERE livreur = ? ORDER BY id_db DESC LIMIT 1";
+    var bindings = [idVendeur];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return DB.fetch(success);
+    },
+      function(error){
+        return error;
+      });
+  }
+
+
+  function getHighestInApi(_idLivreur)
+  {
+    var request = {
+      url: "http://localhost:8080/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
+      method: "GET"
+    };
+    return $http(request);
+  }
+
+  function getAllFromApi(_idLivreur)
+  {
+    var request = {
+      url: "http://localhost:8080/newsales/rest/livreurs/"+_idLivreur+"/missions",
+      method: "GET"
+    };
+    return $http(request);
+  }
+
+
+  function getFromAPointApi(_idLivreur, point)
+  {
+    var request = {
+      url: "http://localhost:8080/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
+      method: "GET"
+    };
+    return $http(request);
+  }
+  
+  function addMissionsSpecialLivreur(missions, _idLivreur)
+  {
+    angular.forEach(missions, function(mission){
+        Clients.getClient(mission.client.id).then(
+          function(success){
+            if(success == null)
+            {
+              console.log(mission.client);
+              Clients.addClientLivreur(mission.client).then(
+                function(success){
+                  console.log(success);
+                }, 
+                function(error){
+                  console.log(error);
+                });
+            }
+          }, 
+          function(error){
+            console.log(error);
+          });
+
+        var object = {
+          id : mission.id,
+          codeMission : mission.codeMission,
+          client : mission.client.id
+        };
+        Missions.addMissionLivreur(object, _idLivreur).then(
+          function(success){
+            console.log(success);
+            Commandes.addCommandeLivreur(mission.commande.id, "CE"+Date.now(), mission.id, mission.client.id).then(
+              function(success){
+                console.log(success);
+                angular.forEach(mission.commande.lignesCommandes, function(ligne){
+                  var ligneCommande = {
+                    id: ligne.item.id,
+                    unit: ligne.unite,
+                    packet: ligne.paquet,
+                    prixVente: ligne.item.salePrice
+                  };
+                  LigneCommandes.addLigneCommandeLivreur(ligneCommande, mission.commande.id).then(
+                    function(success){
+                      console.log(success);
+                    }, 
+                    function(errir){
+                      console.log(error);
+                    });
+                });
+
+              }, 
+              function(error){
+                console.log(error);
+            });
+          }, 
+          function(error){
+            console.log(error);
+          });
+
+        
+  });
+  }
+
+  function getLivreurMission(_idLivreur)
+  {
+    var sql_query = 'SELECT ML.id_db, ML.state AS state,  ML.code_mission, CLI.nom AS nom, CLI.address AS address, CLI.prenom AS prenom, CL.code_commande, CL.id_db AS id_commande, "["||Group_Concat("{ ""id_article"": "||LCL.id_article||", ""designation"": """||ART.nomArticle||""", ""unite"": "||LCL.unit||",  ""prix"": "||LCL.pu_ht||", ""caisse"": "||LCL.packet||" }")||"]" as lignes from missions_livreur AS ML LEFT JOIN clients AS CLI ON CLI.id_db = ML.client_id LEFT JOIN commandes_livreur AS CL ON CL.id_mission = ML.id_db LEFT JOIN ligneCommandes_livreur AS LCL ON LCL.id_commande = CL.id_db LEFT JOIN articles AS ART ON ART.id_db = LCL.id_article where livreur = ? GROUP BY ML.id_db';
+    var bindings = [_idLivreur];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return DB.fetchAll(success);
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+  function synchronization(_idLivreur)
+  {
+    //First we get the local highest id !
+    var highestIDDB;
+    var highestIDAPI;
+    getHighestInDB(_idLivreur).then(
+      function(success){
+        console.log(success);
+        if(success == null)
+        {
+          getAllFromApi(_idLivreur).then(
+            function(success){
+              addMissionsSpecialLivreur(success.data, _idLivreur);
+            }, 
+            function(error){
+              return error;
+            });
+        }
+        else
+        {
+          highestIDDB = success.id_db_livreur;
+          getHighestInApi(_idLivreur).then(
+            function(success){
+              highestIDAPI = success.data;
+              if(highestIDAPI > highestIDDB)
+              {
+                getFromAPointApi(_idLivreur, highestIDDB).then(
+                  function(success){
+                    addMissionsSpecialLivreur(success.data, _idLivreur);
+                  }, 
+                  function(error){
+                    console.log(error);
+                  })
+              }
+            }, 
+            function(error){
+              console.log(error);
+            });
+        }      
+      }, 
+      function(error){
+        console.log(error);
+      });
+  }
+
+
+  return {
+    synchronization : synchronization,
+    getLivreurMission : getLivreurMission
+  };
+
+})
 
 .factory("LigneCommandes", function(DB){
   return {
     getLigneCommande : getLigneCommande,
     addLigneCommande : addLigneCommande,
+    addLigneCommandeLivreur :addLigneCommandeLivreur,
     pastPurchacedQuantity : pastPurchacedQuantity
   };
 
@@ -845,7 +1068,20 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function pastPurchacedQuantity(_idArticle, _idMission)
+  function addLigneCommandeLivreur(ligneCommande, _idCommande)
+  {
+    var sql_query = "INSERT INTO ligneCommandes_livreur(id_commande, id_article, unit, packet, pu_ht) values(?,?,?,?,?);"
+    var bindings = [_idCommande, ligneCommande.id, ligneCommande.unit, ligneCommande.packet, ligneCommande.prixVente];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+ function pastPurchacedQuantity(_idArticle, _idMission)
   {
     var sql_query = "SELECT (LC.unit+LC.packet*10) as qty FROM ligneCommandes AS LC JOIN commandes AS C ON C.id = LC.id_commande JOIN clients AS CC ON CC.id_db = C.id_client WHERE LC.id_article = ? AND C.id_client = (SELECT lient_id FROM missions WHERE id_db = ?)  ORDER BY LC.id DESC LIMIT 3";
     var bindings = [_idArticle, _idMission];
@@ -879,6 +1115,7 @@ angular.module('starter.services', ['ngCordova'])
     getCommandesByClient : getCommandesByClient,
     getCommande : getCommande,
     addCommande : addCommande,
+    addCommandeLivreur : addCommandeLivreur,
     getLastCommande : getLastCommande,
     getCAClient : getCAClient,
     getCAVendeur : getCAVendeur,
@@ -892,7 +1129,7 @@ angular.module('starter.services', ['ngCordova'])
     angular.forEach(commandes, function(commande){
       commande.lignes = JSON.parse(commande.lignes);
       var request = {
-        url: "http://192.168.100.222:8085/newsales/rest/orders/add",
+        url: "http://localhost:8080/newsales/rest/orders/add",
         method: "POST",
         data: commande
       };
@@ -920,7 +1157,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function syncCommandes()
   {
-    var sql_query = 'SELECT M.id AS mobile, M.client_id AS client, M.route_id AS route, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 GROUP BY C.id';
+    var sql_query = 'SELECT M.id_db AS mobile, M.client_id AS client, M.route_id AS route, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 GROUP BY C.id';
     return DB.query(sql_query).then(
       function(success){
         console.log("869");
@@ -956,6 +1193,19 @@ angular.module('starter.services', ['ngCordova'])
         return error;
       });
   }
+
+  function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
+    var sql_query = "INSERT INTO commandes_livreur(id_db, code_commande, id_mission, id_client) values(?,?,?,?);";
+    var bindings = [id_commande, code_commande, id_mission, id_client];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+  
 
   function getCommande(_id)
   {
@@ -1144,7 +1394,6 @@ angular.module('starter.services', ['ngCordova'])
     var bindings = [username, password];
     return DB.query(sql_query, bindings)
       .then(function(result){
-        //console.log("RESULT : "+JSON.stringify(result));
           return DB.fetch(result);
         }, function(error){
           console.log(error.message);
@@ -1156,15 +1405,15 @@ angular.module('starter.services', ['ngCordova'])
   {
     var req = {
       method : "PUT",
-      url : "http://192.168.100.222:8085/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
+      url : "http://localhost:8080/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
     };
     return $http(req);
   }
 
   function addAccount(account)
   {
-    var sql_query = "INSERT INTO accounts(id_db, username, password, first_login, question_secrete, reponse_secrete, bloque, golden_points, golden_stores) values(?,?,?,?,?,?,?,?,?);";
-    var bindings = [account.id_db, account.username, account.password, 1, "", "", 0, account.golden_points, account.golden_stores];
+    var sql_query = "INSERT INTO accounts(id_db, username, password, first_login, question_secrete, reponse_secrete, bloque, golden_points, golden_stores, fonction) values(?,?,?,?,?,?,?,?,?,?);";
+    var bindings = [account.id_db, account.username, account.password, 1, "", "", 0, account.golden_points, account.golden_stores, account.fonction];
     return DB.query(sql_query, bindings).then(
       function(success){
         return success;
@@ -1212,7 +1461,8 @@ angular.module('starter.services', ['ngCordova'])
     getClient : getClient,
     addNewClient : addNewClient,
     addGoldenStore : addGoldenStore,
-    updateClientCoords : updateClientCoords
+    updateClientCoords : updateClientCoords,
+    addClientLivreur : addClientLivreur
   };
 
   function addGoldenStore(_idClient, points)
@@ -1255,6 +1505,20 @@ angular.module('starter.services', ['ngCordova'])
   }
 
 
+  function addClientLivreur(client)
+  {
+    var sql_query = "INSERT INTO clients(id_db, code_client, address, lat, lng, nom, prenom, email) values(?,?,?,?,?,?,?,?)";
+    var bindings = [client.id, "CE65"+Math.round(Math.random()*10000), client.address, client.lat, client.lng, client.nom, client.prenom, client.email];
+    return DB.query(sql_query, bindings).then(
+      function(data){
+        return data;
+      },
+      function(error){
+        return error;
+      });
+  }
+
+
 
   function getGreatClient(){
     var sql_query = "SELECT * FROM clients ORDER BY id_db DESC LIMIT 1";
@@ -1287,14 +1551,14 @@ angular.module('starter.services', ['ngCordova'])
           innerId = data.id_db;
           console.log("1179 :"+innerId);
         }
-      $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_id+"/clients/check").then(
+      $http.get("http://localhost:8080/newsales/rest/vendors/"+_id+"/clients/check").then(
         function(data, status, headers){
            console.log(data.data);
           var outerId = data.data.id;
           if(innerId < outerId)
           {
             console.log("some updates are waiting ...");
-            $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
+            $http.get("http://localhost:8080/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
               function(data, status, headers){
                 angular.forEach(data.data, function(client){
                   var object = {};
@@ -1414,7 +1678,7 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     var req = {
       method :"GET",
-      url : "http://192.168.100.222:8085/newsales/rest/brandfive"
+      url : "http://localhost:8080/newsales/rest/brandfive"
     };
     return $http(req).then(
       function(brandFive, status, headers){
@@ -1466,7 +1730,7 @@ angular.module('starter.services', ['ngCordova'])
   function syncAllArticles()
   {
     var params = {
-      url: "http://192.168.100.222:8085/newsales/rest/items",
+      url: "http://localhost:8080/newsales/rest/items",
       method: "GET"
     };
     $http(params).then(
@@ -1497,7 +1761,7 @@ angular.module('starter.services', ['ngCordova'])
           console.log("BASE DE DONNEE NON VIDE  !!");
           highestIDDB = success.id_db;
           var request = {
-            url: "http://192.168.100.222:8085/newsales/rest/items/sync",
+            url: "http://localhost:8080/newsales/rest/items/sync",
             method: 'GET'
           };
 
@@ -1527,7 +1791,7 @@ angular.module('starter.services', ['ngCordova'])
   function syncArticlesFrom(_id)
   {
     var request = {
-      url: "http://192.168.100.222:8085/newsales/rest/items/from/"+_id,
+      url: "http://localhost:8080/newsales/rest/items/from/"+_id,
       method: 'GET'
     };
     $http(request).then(
@@ -1815,10 +2079,63 @@ angular.module('starter.services', ['ngCordova'])
     getMissionsBetween : getMissionsBetween,
     addLocalMission : addLocalMission,
     setMissionToSucceedLocal : setMissionToSucceedLocal,
-    setToSynced : setToSynced
+    setToSynced : setToSynced,
+    addMissionLivreur : addMissionLivreur,
+    setMissionLivreurToLivred : setMissionLivreurToLivred,
+    getNonSyncedLivredMissions : getNonSyncedLivredMissions,
+    setMissionLivredInAPI : setMissionLivredInAPI,
+    setMissionToSynced : setMissionToSynced
 
 
   };
+
+  function setMissionToSynced(id)
+  {
+    var sql_query = "UPDATE missions_livreur SET synced = 1 WHERE id_db = ?;";
+    var bindings = [id];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+  function setMissionLivredInAPI(id)
+  {
+    var request = {
+      url: "http://localhost:8080/newsales/rest/livreurs/sync/"+id,
+      method: "GET"
+    };
+
+    return $http(request);
+  }
+
+  function getNonSyncedLivredMissions()
+  {
+    var sql_query = "SELECT id_db FROM missions_livreur WHERE finished = 1 AND synced = 0;";
+    return DB.query(sql_query).then(
+      function(success){
+        return DB.fetchAll(success);
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+  function setMissionLivreurToLivred(id)
+  {
+    var sql_query = "UPDATE missions_livreur SET finished = 1, state = 1 WHERE id_db = ?;";
+    var bindings = [id];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return DB.fetch(success);
+      },
+      function(error){
+        return error;
+      });
+  }
 
   function setToSynced(_idDB, _idMission)
   {
@@ -1838,7 +2155,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function setEntryDate(mission_id, dateValue)
   {
-    var sql_query = "UPDATE missions SET started_at = ? WHERE id_db = ?";
+    var sql_query = "UPDATE missions SET entryDate = ? WHERE id = ?";
     var bindings = [mission_id, dateValue];
     return DB.query(sql_query, bindings).then(function(success){
       return success;
@@ -1850,7 +2167,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function setExitDate(mission_id, dateValue)
   {
-    var sql_query = "UPDATE missions SET ended_at = ? WHERE id_db = ?";
+    var sql_query = "UPDATE missions SET ecitDate = ? WHERE id = ?";
     var bindings = [mission_id, dateValue];
     return DB.query(sql_query, bindings).then(function(success){
       return success;
@@ -1860,10 +2177,10 @@ angular.module('starter.services', ['ngCordova'])
     });
   }
 
-  function getTodaysMissions(now)
+  function getTodaysMissions(now, _idVendeur)
   { 
-      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start = ?";
-      var bindings = [now]
+      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start = ? AND route_id IN(SELECT id_db FROM routes WHERE vendeur = ?)";
+      var bindings = [now, _idVendeur]
       return DB.query(sql_query, bindings).then(function(missions){
         return DB.fetchAll(missions);
       },
@@ -1872,10 +2189,10 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function getMissionsBetween(now, time)
+  function getMissionsBetween(now, time, _idVendeur)
   { 
-      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client  FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start >= ? AND date_start < ?";
-      var bindings = [now, time]
+      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client  FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start >= ? AND date_start < ? AND route_id IN(SELECT id_db FROM routes WHERE vendeur = ?)";
+      var bindings = [now, time, _idVendeur]
       return DB.query(sql_query, bindings).then(function(missions){
         return DB.fetchAll(missions);
       },
@@ -1884,10 +2201,10 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function getOtherMissions(current_time)
+  function getOtherMissions(current_time, _idVendeur)
   {
-      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client  FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start > ? AND state = 1";
-      var bindings = [current_time];
+      var sql_query = "SELECT M.id as id_mission, M.code_mission, M.client_id, M.route_id, M.state, C.lat, C.lng, C.nom, C.prenom, C.code_client  FROM missions AS M JOIN clients AS C ON C.id_db = M.client_id WHERE date_start > ? AND state = 1 AND route_id IN(SELECT id_db FROM routes WHERE vendeur = ?)";
+      var bindings = [current_time, _idVendeur];
       return DB.query(sql_query, bindings).then(function(success){
         return DB.fetchAll(success);
       },
@@ -1910,7 +2227,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function getMission(mission_id)
   {
-    var sql_query = "SELECT client_id FROM missions WHERE id_db = ?";
+    var sql_query = "SELECT client_id FROM missions WHERE id = ?";
     var bindings = [mission_id];
     return DB.query(sql_query, bindings).then(
       function(mission){
@@ -1934,10 +2251,10 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function setMissionToSucceed(_idMission, commande_id)
+  function setMissionToSucceed(_idMission, commande_id, entryDate, exitDate)
   {
-    var sql_query = "UPDATE missions SET state = ?, commande_id = ? WHERE id_db = ?";
-    var bindings = [1, commande_id, _idMission];
+    var sql_query = "UPDATE missions SET state = ?, commande_id = ?, entryDate = ?, exitDate = ? WHERE id = ?";
+    var bindings = [1, commande_id, entryDate, exitDate, _idMission];
     return DB.query(sql_query, bindings).then(
       function(success){
         return success;
@@ -2036,7 +2353,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function getFinishedMissions()
   {
-    var sql_query = "SELECT * FROM missions WHERE state = 1 OR state = 2 LIMIT 5";
+    var sql_query = "SELECT * FROM missions WHERE state = 1 OR state = 2 LIMIT 5 ";
     return DB.query(sql_query).then(
       function(missions){
         return DB.fetchAll(missions);
@@ -2046,10 +2363,12 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function getHighestMission()
+  function getHighestMission(id_vendeur)
   {
-    var sql_query = "SELECT * FROM missions ORDER BY id_db DESC LIMIT 1";
-    return DB.query(sql_query).then(
+    console.log(id_vendeur);
+    var sql_query = "SELECT * FROM missions WHERE id_db > 0 AND route_id IN(SELECT id_db FROM routes WHERE vendeur = ?) ORDER BY id_db DESC LIMIT 1";
+    var bindings =[id_vendeur]
+    return DB.query(sql_query, bindings).then(
       function(mission){
         return DB.fetch(mission);
       }, 
@@ -2073,6 +2392,19 @@ angular.module('starter.services', ['ngCordova'])
         return error;
       });
   }
+  function addMissionLivreur(mission, _idLivreur)
+  {
+    var sql_query = "INSERT INTO missions_livreur(id_db, code_mission, client_id, state, synced, livreur, finished) values(?,?,?,?,?,?,?)";
+    var bindings = [mission.id, mission.codeMission, mission.client, 0, 0, _idLivreur, 0];
+    return DB.query(sql_query, bindings).then(
+      function(mission_id){
+        return mission_id;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+  
 
   function addLocalMission(mission)
   {
@@ -2091,7 +2423,7 @@ angular.module('starter.services', ['ngCordova'])
   {
     var deferred = $q.defer();
     var innerId, outerId;
-    getHighestMission().then(
+    getHighestMission(_idVendeur).then(
       function(mission){
       if(mission == null)
         {
@@ -2101,7 +2433,7 @@ angular.module('starter.services', ['ngCordova'])
         {
           innerId = mission.id_db;
         }
-        $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_idVendeur+"/missions/check").then(
+        $http.get("http://localhost:8080/newsales/rest/vendors/"+_idVendeur+"/missions/check").then(
           function(mission, status, headers){
             console.log(mission);
             outerId = mission.data.id;
@@ -2111,7 +2443,7 @@ angular.module('starter.services', ['ngCordova'])
             {
               console.log("Some updates remaining ...");
               var finalMissions = [];
-              $http.get("http://192.168.100.222:8085/newsales/rest/vendors/"+_idVendeur+"/missions/from/"+innerId).then(
+              $http.get("http://localhost:8080/newsales/rest/vendors/"+_idVendeur+"/missions/from/"+innerId).then(
                 function(missions, status, headers){
                   deferred.resolve(missions.data);
                   var newMissions = [];
@@ -2228,17 +2560,17 @@ angular.module('starter.services', ['ngCordova'])
       var maxDB;
       var maxAPI;
       var routes = {
-        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+idVendeur+"/roads/",
+        url : "http://localhost:8080/newsales/rest/vendors/"+idVendeur+"/roads/",
         method : "GET"
       };
       var routesCheck = {
-        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+idVendeur+"/roads/check",
+        url : "http://localhost:8080/newsales/rest/vendors/"+idVendeur+"/roads/check",
         method : "GET"
       };
       function fromStartPoint(id, _id)
       {
         return {
-        url : "http://192.168.100.222:8085/newsales/rest/vendors/"+id+"/roads/from/"+_id,
+        url : "http://localhost:8080/newsales/rest/vendors/"+id+"/roads/from/"+_id,
         method : "GET"
         };
       }
@@ -2478,7 +2810,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function syncPromotions(){
     var request = {
-      url: "http://192.168.100.36:8082/newsales/rest/promotions/AllPromoParMois",
+      url: "http://localhost:8080/newsales/rest/promotions/AllPromoParMois",
       method: "GET"
     };
     $http(request).then(
@@ -2696,7 +3028,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function sync(){
     var deferred = $q.defer();
-    $http.get("http://192.168.100.222:8085/newsales/rest/clients/road/1/sync")
+    $http.get("http://localhost:8080/newsales/rest/clients/road/1/sync")
     .then(
       
       function(data, status, headers){
@@ -2714,7 +3046,7 @@ angular.module('starter.services', ['ngCordova'])
             console.log("YOUR CURRENT DATABASE IS NOT UP TO DATE !");
             console.log((idAPI-idDB)+" routes are waitiing to be pushed in your local DB");
             console.log("HERE IS THE ROUTES !!");
-            $http.get("http://192.168.100.222:8085/newsales/rest/clients/road/1/sync/"+idDB).then(
+            $http.get("http://localhost:8080/newsales/rest/clients/road/1/sync/"+idDB).then(
               function(data, status, headers){
                 var clients = data.data;
                 angular.forEach(clients, function(client){
@@ -2766,7 +3098,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function highestIDInDB()
   {
-    $http.get("http://192.168.100.222:8085/newsales/rest/roads/check")
+    $http.get("http://localhost:8080/newsales/rest/roads/check")
     .success(function(data, status, headers){
       console.log("THE HIGHEST ID IN DB IS : "+data.id);
     })

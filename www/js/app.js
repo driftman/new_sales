@@ -53,6 +53,16 @@ angular.module('starter',
         }
     })
 
+     .state('menu.entry2', {
+        url: '/entry2',
+        views: {
+            'menuContent': {
+                templateUrl: 'templates/entryLivreur.html',
+                controller: 'EntryCtrlLivreur'
+            }
+        }
+    })
+
     .state('menu.login', {
         url: '/login',
         views: {
@@ -250,6 +260,22 @@ angular.module('starter',
             'fabContent': {
                 template: '<button ui-sref="menu.entry" style="background-color: #B71C1C;" id="fab-profile" class="button button-fab button-fab-bottom-right button-energized-900"><i class="icon ion-home"></i></button>',
                 controller: 'ProfileCtrl'
+                }
+            }
+        
+    })
+
+
+    .state('app.profile2', {
+        url: '/profile2',
+        views: {
+            'menuContent': {
+                templateUrl: 'templates/profile2.html',
+                controller: 'Profile2Ctrl'
+            },
+            'fabContent': {
+                template: '<button ui-sref="menu.entry2" style="background-color: #B71C1C;" id="fab-profile" class="button button-fab button-fab-bottom-right button-energized-900"><i class="icon ion-home"></i></button>',
+                controller: 'Profile2Ctrl'
                 }
             }
         
