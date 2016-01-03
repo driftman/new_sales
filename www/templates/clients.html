@@ -20,17 +20,20 @@
                   collection-item-width="'100%'"
                   item="client"
                   ng-click="goClient(client.id_db)"
-                  style="border-bottom : 2px solid black;">
+                  style="border-bottom : 2px solid #B71C1C;;">
           <img ng-src="img/red.png">
-          <h2 style="font-weight: 700;">Adresse : {{ client.address }}</h2>
-                <p>Nom : {{ client.prenom }} {{ client.nom}}</p>
-                <p>Code Client : {{ client.code_client }}</p>
-                <p>Localisation : {{ client.lat }}, {{ client.lng }} </p>
+          <h2 style="font-weight: 700; color: #B71C1C;">Nom : {{ client.prenom }} {{ client.nom}}</h2>
+                <p><b>Adresse :</b> {{ client.address }}</p>
+                <p><b>Code Client : </b>{{ client.code_client }}</p>
                 <p><b>C.A : </b> {{ client.chiffreAffaire }} DHS</p>
-                <p><b>Points Golden Store </b> {{ client.golden_store }}</p>
+                <p><b>Points Golden Store : </b> {{ client.golden_store != 'undefined' ? client.golden_store : 0 }}</p>
         </ion-item>
 
       </ion-list>
+      
+
+
+
         <script id="my-modal.html" type="text/ng-template">
           <ion-modal-view>
             <ion-header-bar>
@@ -43,5 +46,8 @@
             </ion-content>
           </ion-modal-view>
         </script>
+
     </ion-content>
+    
+
 </ion-view>

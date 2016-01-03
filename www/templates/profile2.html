@@ -26,7 +26,7 @@
 
         <ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
             <ion-item
-            collection-repeat="mission in missions"
+            collection-repeat="mission in missions | orderBy:'state'"
             item="mission"
             ng-click="openModal(mission)" 
             style="font-size: 25px; border-bottom: 1px solid grey; padding: 0;" 
@@ -62,28 +62,22 @@
               </div>
               <div class="row" style="border: none;">
                 <div class="col" style="border: none;">
-                  <button ng-click="valid(mission.id_db)" style="min-width: 100%; max-width: 100%;" class="button button-balanced">
+                  <button ng-click="valid(mission)" style="min-width: 100%; max-width: 100%;" class="button button-balanced">
                     valider commande
                   </button>
                 </div>
               </div>
-              <div class="row" style="border: none;">
-                <div class="col" style="border: none;">
-                  <button style="min-width: 100%; max-width: 100%;" class="button button-assertive">
-                    déclarer problème
-                  </button>
-                </div>
-              </div>
+              
 
             </div>
             <ion-content style="margin-top: 250px;">
-              
               <div class="row" style="margin: 0; padding: 0; color: white; background-color: #B71C1C; border: 1px solid #B71C1C;">
-                <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>code</b></span></div>
+                <div class="col" style=" border: none; margin: 0; padding: 5px;"> <span style="font-size: 13px;"><b>code</b></span></div>
                 <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>désignation</b></span></div>
                 <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;"><b>unité(s)</b></span></div> 
                 <div class="col" style=" border: none; margin: 0; padding: 0;">        <span style="font-size: 13px;"><b>paquet(s)</b></span></div> 
               </div>
+              
               <div class="row" ng-repeat="ligne in mission.lignes" style="margin: 0; padding: 0; border-bottom: 1px solid #AF1B1B;">
                 <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;"><b>{{ ligne.id_article }}</b></span></div>
                 <div class="col" style=" border: none; margin: 0; padding: 0;"> <span style="font-size: 13px;">{{ ligne.designation }}</span></div>

@@ -39,21 +39,24 @@ angular.module('starter.controllers', ['starter.services'])
             }
         }
     };
-
-    $scope.profile = JSON.parse(window.localStorage['profile'] || '{}');
+    var profile = JSON.parse(window.localStorage['profile'] || '{}');
+    $scope.profile = profile;
+    $scope.goProfile = function(){
+        if(profile.fonction == 'livreur')
+        {
+            $state.go("app.profile2");
+        }
+        else if(profile.fonction == 'vendeur')
+        {
+            $state.go("app.profile");
+        }
+        else
+        {
+            console.log("R.A.S");
+        }
+    };
     $scope.test = function(){
         window.open('img/test.pdf', '_blank', 'location=yes');
-    };
-    $scope.synchronization = function(){
-        Missions.syncMissions($scope.infos.account.id_db).then(
-            function(success){
-                console.log(success);
-            },
-            function(error){
-                console.log(error.message)
-            });
-
-        Clients.syncClients($scope.infos.account.id_db);
     };
     $scope.logout = function(){
         $ionicLoading.show({
@@ -171,13 +174,6 @@ angular.module('starter.controllers', ['starter.services'])
 
 .controller('LoginCtrl', function($scope, $rootScope, $timeout, $cordovaToast, $ionicLoading,
     $stateParams, $ionicSideMenuDelegate, $state, $ionicModal, ionicMaterialInk, Accounts, Profile, Clients) {
-
-    /*$scope.$on('$ionicView.beforeEnter', function() {
-        if(typeof window.localStorage['profile'] != 'undefined')
-        {
-            $state.go("menu.entry");
-        }
-    });*/
     $rootScope.infos = {};
     $scope.$parent.clearFabs();
     $timeout(function() {
@@ -236,30 +232,22 @@ angular.module('starter.controllers', ['starter.services'])
                 $scope.error_forgot_password=true;
             });
     };
-    /*Profile.getProfiles(
-        function(success){
-            console.log("235: "+JSON.stringify(success));
-        }, function(error){
-            console.log("237: "+JSON.stringify(error));
-        });
-    Clients.getAllClients(
-        function(success){
-            console.log(JSON.stringify(success));
-        }, function(error){
-            console.log(JSON.stringify(error));
-        });*/
     $scope.login = function(object) {  
         $ionicLoading.show({
           template : 'Connexion en cours ...'
         });   
-      Accounts.getAccountByUserNameAndPassword(object.username, object.password).then(
+        console.log(typeof object);
+      if(typeof object != "undefined" && typeof object.username != "undefined" && typeof object.password != "undefined")
+      {
+        Accounts.getAccountByUserNameAndPassword(object.username, object.password).then(
         function(user){
+            console.log(user);
             if(typeof user === "undefined")
             {
                 updateIonicLoading('Erreur fatale !');
                 return;
             }
-            if(user != null && user.first_login === 1)
+            if(user != null && user.first_login == 1)
             {
                 window.localStorage['profile'] = JSON.stringify(user);
                 updateIonicLoading('Connexion réussi !');
@@ -300,16 +288,18 @@ angular.module('starter.controllers', ['starter.services'])
                         console.log(success);
                         var profileToProfile = {};
                         updateIonicLoading("Connexion réussi !");
-                        var data = success.data.content.employee;
+                        var data = success.data.content.mobile.employee;
                         console.log(JSON.stringify(data));
-                        var _id_db = success.data.content.employee.id;
+                        var _id_db = success.data.content.mobile.employee.id;
+                        var goldenPointsVendeur = data.goldenPoints != null ? data.goldenPoints : 0;
+                        console.log(typeof data.goldenPoints);
                         var account = {
                             id_db : data.id,
                             username : object.username,
                             password : object.password,
-                            golden_points : success.data.content.fonction == 'vendeur' ? data.gP : 0,
-                            golden_stores : success.data.content.fonction == 'vendeur' ? data.gS : 0 ,
-                            fonction : success.data.content.fonction
+                            golden_points : success.data.content.mobile.fonction == 'vendeur' ? goldenPointsVendeur : 0,
+                            golden_stores : success.data.content.mobile.fonction == 'vendeur' ? goldenPointsVendeur : 0 ,
+                            fonction : success.data.content.mobile.fonction
                         };
                         console.log(account);
                         Accounts.addAccount(account).then(
@@ -324,7 +314,7 @@ angular.module('starter.controllers', ['starter.services'])
                                             second_name : data.prenom,
                                             address : data.adresse,
                                             email_address : data.email,
-                                            phone_number : data.numeroGSM,
+                                            phone_number : data.telMobile != null ? data.telMobile : "0663310772",
                                             id_account : success1.insertId
                                         };
                                         
@@ -393,7 +383,7 @@ angular.module('starter.controllers', ['starter.services'])
                                 updateIonicLoading("Problème technique");
                                 break;
                             default:
-                                updateIonicLoading("Problème de connexion");
+                                updateIonicLoading("Username ou mot de passe incorrecte .");
                                 break;
                         }
                     });
@@ -403,6 +393,11 @@ angular.module('starter.controllers', ['starter.services'])
             console.log(JSON.stringify(message));
             
         });
+      }
+      else
+      {
+        updateIonicLoading("Veuillez remplir tout les champs !");
+      }
     };
     
     $scope.reponse = function(reponse){
@@ -458,22 +453,20 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('EntryCtrlLivreur', function($scope, Livreur, Articles, Marques, Missions){
+.controller('EntryCtrlLivreur', function($scope, Livreur, $ionicPopup, $ionicLoading, $timeout, Articles, Marques, Missions){
 
-    var infos;
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(typeof window.localStorage['profile'] != 'undefined')
-        {
-            infos = JSON.parse(window.localStorage['profile']);
-            $scope.infos = infos;
-        }
-        else
-        {
-            $state.go("menu.login");
-        }
-    });
+    var infos = JSON.parse(window.localStorage['profile']);
     $scope.synchronization = function(){
-        console.log("test");
+        $ionicLoading.show({
+            template : "Synchronisation en cours ..."
+        });
+        $timeout(function(){
+            $ionicLoading.hide();
+            $ionicPopup.alert({
+             title: 'Terminé',
+             template: 'Synchronisation terminée !'
+           });
+        }, 3000);
         Missions.getNonSyncedLivredMissions().then(
             function(success){
                 angular.forEach(success, function(row){
@@ -504,56 +497,101 @@ angular.module('starter.controllers', ['starter.services'])
             function(error){
                 console.log(JSON.stringify(error));
             });
+
+
+        
     };
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, $timeout, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques){
+.controller('EntryCtrl', function($scope, $rootScope, DumpDB, ca,  $timeout, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
     
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(typeof window.localStorage['profile'] != 'undefined')
-        {
-            $scope.infos = JSON.parse(window.localStorage['profile']);
-        }
-        else
-        {
-            $state.go("menu.login");
-        }
-    });
+    $scope.ca = ca.ca;
     $scope.test = function(){
         window.open('img/test.pdf', '_blank', 'location=yes');
     };
     $scope.infos = JSON.parse(window.localStorage['profile']);
     var infos = JSON.parse(window.localStorage['profile']);
     $scope.synchronization = function(){
-
-
-        
         $ionicLoading.show({
-            template : "Synchronisation en cours ... "
+            template : "Synchronisation en cours ..."
         });
-
-
-        SBD.syncSBDFromAPI();
-        Promotions.syncPromotions();
-        Commandes.syncCommandes().then(
+        SynchronisationV2.syncV2(2).then(
             function(success){
-               //Commandes.sendCommandeToAPI(success);
+                console.log(success);
+            }, 
+            function(error){
+                console.log(error);
+            }).finally(function(){
+                $timeout(function(){
+                    $ionicLoading.hide();
+                }, 1000);
+            });
+        /*Commandes.syncCommandes().then(
+            function(success){
+               Commandes.sendCommandeToAPI(success);
                console.log(JSON.stringify(success));
             }, 
             function(error){
                 console.log(JSON.stringify(error));
             });
+*/
 
-        Routes.syncRoutes(infos.id_db);
-        Missions.syncMissions(infos.id_db).then(
+
+        /*var array = [
+        
+        'update marque SET logo = "img/always.jpg" WHERE marqueArticle like "%ALWA%";',
+        'update marque SET logo = "img/PAMPERS.jpg" WHERE marqueArticle like "%PAMPERS%";',
+        'update marque SET logo = "img/ARIEL.jpg" WHERE marqueArticle like "%ARIE%";',
+        'update marque SET logo = "img/ACE.png" WHERE marqueArticle like "%ACE%";', 
+        'update marque SET logo = "img/KOLESTONE.jpg" WHERE marqueArticle like "%KOLESTO%";',
+        'update marque SET logo = "img/gillette.png" WHERE marqueArticle like "%GILLETT%";',
+        'update marque SET logo = "img/HS.jpg" WHERE marqueArticle like "%H&S%";',
+       ' update marque SET logo = "img/MRPROPRE.png" WHERE marqueArticle like "%MRPROPRE%"; ',
+        'update marque SET logo = "img/PANTENE.png" WHERE marqueArticle like "%PANT%";',
+        'update marque SET logo = "img/tide.jpg" WHERE marqueArticle like "%TID%"',
+        'update marque SET logo = "img/PANTENE.png" WHERE marqueArticle like "%PANT%"',
+        'update marque SET logo = "img/PRETPLUS.jpg" WHERE marqueArticle like "%PLUS%"',
+        'update marque SET logo = "img/FAIRY.jpg" WHERE marqueArticle like "%FAIR%"',
+        'update marque SET logo = "img/DOWNY.gif" WHERE marqueArticle like "%DOW%"',
+        'update marque SET logo = "img/DURACELL.png" WHERE marqueArticle like "%DURACELL%"'];
+
+        DumpDB.dump(array);
+
+        $ionicLoading.show({
+            template : "Synchronisation en cours ..."
+        });
+
+
+
+        $timeout(function(){
+            $ionicLoading.hide();
+            $ionicPopup.alert({
+             title: 'Terminé',
+             template: 'Synchronisation terminée !'
+           });
+        }, 8000);*/
+
+        /*SBD.syncSBDFromAPI();
+        Promotions.syncPromotions();
+        Commandes.syncCommandes().then(
+            function(success){
+               Commandes.sendCommandeToAPI(success);
+               console.log(JSON.stringify(success));
+            }, 
+            function(error){
+                console.log(JSON.stringify(error));
+            });
+*/
+        //Routes.syncRoutes(infos.id_db);
+        /*Missions.syncMissions(infos.id_db).then(
             function(success){
                 console.log(success);
             },
             function(error){
                 console.log(error.message)
-            });
+            });*/
 
-        Clients.syncClients(infos.id_db);
+       /* Clients.syncClients(infos.id_db);
         Articles.syncArticles();
         Marques.getAll().then(
             function(success){
@@ -562,10 +600,16 @@ angular.module('starter.controllers', ['starter.services'])
             function(error){
                 console.log(JSON.stringify(error));
             });
+        ///////////////////////////////////////////
         BrandFive.addBrandFive({
             id_db: 1,
             code_marque: "GILLETTE",
             name: "GILLETTE"
+        });
+        BrandFive.addBrandFive({
+            id_db: 2,
+            code_marque: "DURACELL",
+            name: "DURACELL"
         });
         BrandFive.addBrandFive({
             id_db: 4,
@@ -577,32 +621,12 @@ angular.module('starter.controllers', ['starter.services'])
             code_marque: "ORALB",
             name: "ORALB"
         });
-        Articles.getArticlesByMarque('GILLETTE').then(
-            function(success){
-                console.log(JSON.stringify(success));
-            },
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-        Articles.getArticlesByMarque('PANTENE').then(
-            function(success){
-                console.log(JSON.stringify(success));
-            },
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-        Articles.getArticlesByMarque('ORALB').then(
-            function(success){
-                console.log(JSON.stringify(success));
-            },
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-        $timeout(
-            function(){
-                $ionicLoading.hide();
-            }, 
-            9000);
+        BrandFive.addBrandFive({
+            id_db: 3,
+            code_marque: "DURACELL",
+            name: "DURACELL"
+        });*/
+        /////////////////////////////////////////////
 
     };
 })
@@ -625,7 +649,10 @@ angular.module('starter.controllers', ['starter.services'])
     $document,
     $cordovaGeolocation,
     $state,
-    $ionicLoading)
+    $ionicLoading,
+    CallSteps,
+    checkPoint,
+    EntryPoint)
 {
     $scope.$parent.clearFabs();
     $scope.$parent.showHeader();
@@ -633,6 +660,9 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
     $scope.vente = typeof window.localStorage['cart'] == "undefined";
+    $scope.checkPoint = function(){
+        $state.go(checkPoint);
+    };
     console.log($scope.vente);
 
     // Set Motion
@@ -649,11 +679,10 @@ angular.module('starter.controllers', ['starter.services'])
         $ionicSlideBoxDelegate.update();
     });
 
-
     $scope.center = {
             lat: 33.565721, 
             lng: -7.626388,
-            zoom: 13
+            zoom: 15
         };
     $scope.markers = { 
             m2: {
@@ -675,6 +704,32 @@ angular.module('starter.controllers', ['starter.services'])
 
     var clientObject;
     $scope.goClient = function(){
+        var steps = [];
+        CallSteps.get().then(
+            function(success){
+                for(var i = 0 ; i < success.length ; i++)
+                {
+                    var object = {
+                        rank: success[i].rank,
+                        title: success[i].title,
+                        name: success[i].name
+                    };
+                    if(success[i].rank == 1)
+                    {
+                        object.active = true;
+                    }
+                    else
+                    {
+                        object.active = false;
+                    }
+                    steps.push(object);
+                }
+                window.localStorage['callSteps'] = JSON.stringify(steps);
+                EntryPoint.prepare();
+            }, 
+            function(error){
+                console.log(error);
+            });
         $ionicLoading.show({
             template : "Préparation de la visite en cours ..."
         });
@@ -687,7 +742,7 @@ angular.module('starter.controllers', ['starter.services'])
             synced: false,
             entryDate : Date.now()
         };
-        if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
+        /*if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
         {
                 var posOptions = {timeout: 10000, enableHighAccuracy: false};
                 $cordovaGeolocation
@@ -713,7 +768,7 @@ angular.module('starter.controllers', ['starter.services'])
         else
         {
             console.log("no need !");
-        }
+        }*/
         if(typeof window.localStorage['mission'] == "undefined")
         {
             window.localStorage['mission'] = JSON.stringify(mission);
@@ -729,7 +784,15 @@ angular.module('starter.controllers', ['starter.services'])
         $timeout(
             function(){
                 $ionicLoading.hide();
-                $state.go("app.brandfive");
+                var callSteps = JSON.parse(window.localStorage['callSteps']);
+                for(var i = 0 ; i < callSteps.length ; i++)
+                {
+                    if(callSteps[i].active)
+                    {
+                        $state.go(callSteps[i].name);
+                        console.log("Go to : "+callSteps[i].name)
+                    }
+                }
             }, 2500);
         
         
@@ -738,9 +801,30 @@ angular.module('starter.controllers', ['starter.services'])
     var clientName;
     Clients.getClient($stateParams.id).then(
         function(client){
+            // TO MAKE SURE NO ERROR WILL OCCURE !!
+            if(typeof client.lat != "undefined" && typeof client.lng != "undefined")
+            {
+                if(client.lat != null && client.lng != null)
+                {
+                    if(client.lat != 0 && client.lng != 0)
+                    {
+                        $scope.center.lat =  $scope.markers.m2.lat = client.lat;
+                        $scope.center.lng =  $scope.markers.m2.lng = client.lng;
+                    }
+                }
+            }
+            $scope.markers.m2.message = '<h5><b style="color: #B71C1C;">'+ client.nom+" "+client.prenom+"</b></h5> <br>Adresse : "+ client.address+"<br> Telephone : 0651239689";
             $scope.client = client;
             clientObject = client;
             clientName  = clientObject.name;
+        }, 
+        function(error){
+            console.log(error.message);
+        });
+    Commandes.getCAVendeur().then(
+        function(result){
+            console.log(result);
+            $scope.caVendeur = result.ca;
         }, 
         function(error){
             console.log(error.message);
@@ -883,9 +967,11 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('RoutesCtrl', function($scope, $ionicLoading, $rootScope, $ionicModal,
-    Missions, Clients,
+.controller('RoutesCtrl', function($scope, $ionicLoading, $ionicPopup, $rootScope, $ionicModal,
+    Missions, Clients, Commandes,
     $ionicSideMenuDelegate, $state, $timeout, ionicMaterialMotion, ionicMaterialInk){
+    $scope.ca = 0;
+    $scope.missions = [];
     $scope.data = {};
     var length = 0;
     var scrollPosition = 0;
@@ -897,7 +983,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.address = "";
     $scope.noMoreItemsAvailable = false;
     $scope.data.missions = [];
-    $scope.missions = [];
+    
     /****************************************************/
     $scope.days = [];
     var today = new Date(Date.now());
@@ -912,9 +998,6 @@ angular.module('starter.controllers', ['starter.services'])
     }
     /***************************************************/
     $scope.day = 0;
-
-
-
     $scope.test = function(){
         $scope.missions = [];
         $ionicLoading.show({
@@ -940,11 +1023,8 @@ angular.module('starter.controllers', ['starter.services'])
         }, 1000);
         
     };
-
-    Missions.getTodaysMissions(todayMs, profile.id_db).then(
+    Missions.getTodaysMissions(profile.id_db).then(
             function(missions){
-                console.log(missions);
-                $scope.missions = [];
                 angular.forEach(missions, function(mission){
                     $scope.missions.push(mission);
                 });
@@ -953,16 +1033,13 @@ angular.module('starter.controllers', ['starter.services'])
                 console.log(error.message);
             });
 
-
     $scope.today = function(){
-
         $scope.missions = [];
         $ionicLoading.show({
             template: "chargement ..."
         });
         $timeout(function(){
-        $ionicLoading.hide();
-        Missions.getTodaysMissions(todayMs, profile.id_db).then(
+            Missions.getTodaysMissions(profile.id_db).then(
             function(missions){
                 angular.forEach(missions, function(mission){
                     $scope.missions.push(mission);
@@ -971,7 +1048,8 @@ angular.module('starter.controllers', ['starter.services'])
             function(error){
                 console.log(error.message);
             });
-            }, 1000);
+            $ionicLoading.hide();
+        }, 1000);
     };
 
     $scope.retard = function(){
@@ -981,7 +1059,7 @@ angular.module('starter.controllers', ['starter.services'])
         });
         $timeout(function(){
             $ionicLoading.hide();
-            Missions.getOtherMissions(todayMs, profile.id_db).then(
+            Missions.getOtherMissions(profile.id_db).then(
                 function(missions){
                     console.log(missions);
                     angular.forEach(missions, function(mission){
@@ -996,10 +1074,19 @@ angular.module('starter.controllers', ['starter.services'])
 
 
     $scope.goToClient = function(mission){
-        console.log(mission);
-        mission.entryDate = Date.now();
-        window.localStorage['mission'] = JSON.stringify(mission);
-        $state.go("app.client", {id : mission.client_id});
+        if( (mission.state == null) || (mission.state == 0) )
+        {
+            mission.entryDate = Date.now();
+            window.localStorage['mission'] = JSON.stringify(mission);
+            $state.go("app.client", {id : mission.client_id});
+        }
+        else
+        {
+            console.log(mission);
+            $ionicPopup.alert({
+                title : "Visité !"
+            });
+        }
     };
 
     
@@ -1102,14 +1189,14 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.setHeaderFab('left');
     // Set Motion
     ionicMaterialMotion.fadeSlideInRight();
-$scope.infos = JSON.parse(window.localStorage['profile']);
+    var infos = JSON.parse(window.localStorage['profile']);
+    $scope.infos = infos;
     // Set Ink
     $scope.clients = [];
     $scope.sync = function(){
         Clients.syncClients(1);
     };
-    var profile = JSON.parse(window.localStorage['profile']);
-    Clients.getAllClients().then(
+    Clients.getAllClients(infos.id_db).then(
 
         function(clients){
             console.log(JSON.stringify(clients));
@@ -1119,10 +1206,8 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
                     $scope.clients.push(client);
                 });
             $scope.routes = Object.keys(routes);
-            console.log($scope.routes);
         }, 
         function(error){
-            console.log("924");
             console.log(JSON.stringify(error));
         });
     $scope.goClient = function(_id){
@@ -1176,11 +1261,12 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
        });
      };
 
-    $scope.valid = function(id)
+    $scope.valid = function(mission)
     {
-        Missions.setMissionLivreurToLivred(id).then(
+        Missions.setMissionLivreurToLivred(mission.id_db).then(
             function(success){
                 console.log(success);
+                mission.state = 1;
                 $scope.modal.hide();
                 $ionicPopup.alert({
                      title: 'Succès',
@@ -1201,6 +1287,15 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
       $scope.openModal = function(mission) {
         $scope.mission =mission;
         $scope.modal.show();
+        if(mission.state == 1 || mission.finished == 1)
+        {
+            console.log("WHAT !!");
+        }
+        else
+        {
+            $scope.mission =mission;
+            $scope.modal.show();
+        }
       };
       $scope.closeModal = function() {
         $scope.modal.hide();
@@ -1220,15 +1315,25 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
     
 })
 
-.controller('ProfileCtrl', function($scope, $rootScope, $stateParams, $ionicSlideBoxDelegate,
+.controller('ProfileCtrl', function($scope,  $rootScope, $stateParams, $ionicSlideBoxDelegate,
     Routes, SynchronizationService,$ionicLoading, Profile, $cordovaToast, Commandes, BrandFive, Missions, LigneCommandes,
-    $ionicSideMenuDelegate, $state, $timeout, ionicMaterialMotion, ionicMaterialInk) {
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(typeof window.localStorage['profile'] == 'undefined')
-        {
-            $state.go("menu.login");
-        }
-    });
+    $ionicSideMenuDelegate, Surveys, $state, $timeout, ionicMaterialMotion, ionicMaterialInk, ca) {
+    Surveys.getFormattedSurveys().then(
+        function(success){
+            console.log(success);
+        }, 
+        function(error){
+            console.log(error);
+        });
+
+
+    /*.then(
+        function(success){
+            console.log(success);
+        }, 
+        function(error){
+            console.log(error);
+        });*/
     // Set Header
     $scope.$parent.clearFabs();
     $ionicSideMenuDelegate.canDragContent(true);
@@ -1236,29 +1341,21 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
-    console.log($rootScope.infos);
-    $scope.unfinishedMissions = [];
-    $scope.infos = JSON.parse(window.localStorage['profile'] || "{}"); 
+    $scope.ca = ca.ca;
+    $scope.finishedMissions = [];
+    var infos = JSON.parse(window.localStorage['profile'] || "{}"); 
+    $scope.infos = infos;
     $scope.toggle = function () {
       $scope.type = $scope.type === 'PolarArea' ?
         'Pie' : 'PolarArea';
     };
     $scope.labels = ["Clients facturés", "Clients en attente", "Clients avec problème"];
     $scope.commandes = [];
-    $scope.ca = 0;
     $ionicSlideBoxDelegate.update();
     $scope.brandfive = [];
     $scope.gp = 0;
-    Profile.getGPAccount().then(function(ca){$scope.gp = ca.golden_points; }, function(){err})
-    Commandes.getCAVendeur().then(
-        function(result){
-            console.log(result);
-            $scope.ca = result.ca;
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-    BrandFive.getCABrandFive().then(
+    Profile.getGPAccount().then(function(ca){$scope.gp = ca.golden_points; }, function(){err});
+    BrandFive.getCABrandFive(infos.id_db).then(
         function(brands){
             console.log(brands);
             angular.forEach(brands, function(brand){
@@ -1269,7 +1366,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
             console.log(error.message);
         });
 
-    Missions.countMissions().then(
+    Missions.countMissions(infos.id_db).then(
         function(result){
             console.log(result);
             $scope.data = [];
@@ -1279,92 +1376,6 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
         function(error){
             console.log(error.message);
         });
-
-    $scope.colours = ['#1EF9A1','#F44336'];
-
-    Missions.getMissionsWithCommande().then(
-        function(missions){
-            angular.forEach(missions, function(mission){
-                Commandes.getCommande(mission.commande_id).then(
-                    function(commandes){
-                        angular.forEach(commandes, function(commande){
-                            var finalCommande = {};
-                            finalCommande.commande = commande;
-                            LigneCommandes.getLigneCommande(commande.id).then(
-                            function(ligneCommandes){
-                                finalCommande.ligneCommandes = ligneCommandes;
-                                angular.forEach(ligneCommandes, function(ligne){
-                                    $scope.ca += (ligne.qte*ligne.pu_ttc);
-                                });
-                            }, 
-                            function(error){
-                                console.log(error.message);
-                            });
-                        });
-                    }, 
-                    function(error){
-                        console.log("erreur");
-                    });
-            });
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-
-    Missions.getMissions5WithCommande().then(
-        function(missions){
-            angular.forEach(missions, function(mission){
-                Commandes.getCommande(mission.commande_id).then(
-                    function(commandes){
-                        angular.forEach(commandes, function(commande){
-                            var finalCommande = {};
-                            finalCommande.commande = commande;
-                            LigneCommandes.getLigneCommande(commande.id).then(
-                            function(ligneCommandes){
-                                finalCommande.ligneCommandes = ligneCommandes;
-                                $scope.commandes.push(finalCommande);
-                                $ionicSlideBoxDelegate.update();
-                                finalCommande = {};
-                            }, 
-                            function(error){
-                                console.log(error.message);
-                            });
-                        });
-                    }, 
-                    function(error){
-                        console.log("erreur");
-                    });
-            });
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-
-    $scope.test = function(){
-        Commandes.getCommandesByClient(1).then(
-            function(commandes){
-                console.log(JSON.stringify(commandes));
-            }, 
-            function(error){
-                console.log(error);
-            });
-    }
-    $scope.synchronize = function() {
-        $cordovaToast
-        .show('Synchronisation en cours ...', 'short', 'bottom')
-        .then(function(){});
-         SynchronizationService.sync().then(
-            function(success){
-                $cordovaToast
-                .show(success, 'short', 'bottom')
-                .then(function(){});
-            },
-            function(error){
-                $cordovaToast
-                .show(error, 'short', 'bottom')
-                .then(function(){});
-            });
-    };
     // Set Motion
     $timeout(function() {
         ionicMaterialMotion.slideUp({
@@ -1380,19 +1391,16 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
 
     // Set Ink
     ionicMaterialInk.displayEffect();
-
-    $scope.all = function(){
-        $state.go("app.routes", { code : 1});
-    };
-
-    $scope.today = function(){
-        $state.go("app.routes", { code : 0});
-    };
     
-    Missions.getFinishedMissions().then(
+    Missions.getFinishedMissions(infos.id_db).then(
         function(missions){
             angular.forEach(missions, function(mission){
-                $scope.unfinishedMissions.push(mission);
+                if(mission.code_mission == null)
+                {
+                    mission.code_mission = '-';
+                }
+                console.log(mission);
+                $scope.finishedMissions.push(mission);
             });
         }, 
         function(error){
@@ -1403,30 +1411,24 @@ $scope.infos = JSON.parse(window.localStorage['profile']);
 
 })
 
-.controller('BrandsCtrl', function($scope, $state, Commandes, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] === 'null')
-        {
-            $state.go("menu.login");
-        }
-        Missions.getFinishedMission($scope.idMission).then(
-        function(mission){
-            if(mission !== null)
+.controller('BrandsCtrl', function($scope, $state, Commandes, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
+    console.log(position);
+    $scope.hasNext = position.hasNext;
+    $scope.hasPrevious = position.hasPrevious;
+    $scope.next = function(){
+        if(position.hasNext)
             {
-                window.localStorage.removeItem('cart');
-                $state.go("menu.entry");
+                $state.go(position.nextStep.name);
             }
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-        if(typeof window.localStorage['cart'] == "undefined")
-        {
-            $state.go('menu.login');
-        }
-    });
-    console.log($stateParams.mission);
-$scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
+    };
+    $scope.previous = function(){
+        if(position.hasPrevious)
+            {
+                $state.go(position.previousStep.name);
+            }
+    };
+    $scope.ca = 0;
+    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
     $scope.totalBill = 0;
     var currentCart = JSON.parse(window.localStorage['cart'] || '{}');
      function refreshTotalBill()
@@ -1481,9 +1483,10 @@ $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
 
 .controller('AddCtrl', function($scope, $timeout, $ionicLoading, $cordovaGeolocation, Missions, Clients){
       var posOptions = {timeout: 10000, enableHighAccuracy: false};
+      $scope.ca = 0;
       $scope.client = {};
       $scope.routes = [];
-$scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocation
+      $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocation
         .getCurrentPosition(posOptions)
         .then(function (position) {
             $scope.client.lat  = position.coords.latitude;
@@ -1526,13 +1529,24 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
       };
 })
 
-.controller('CartCtrl', function($state, $stateParams, $timeout, $scope, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles){
-    $scope.$on('$ionicView.beforeEnter', function(){
-        if(typeof window.localStorage['cart'] == "undefined")
-        {
-            $state.go("app.profile");
-        }
-    });
+.controller('CartCtrl', function($state, $stateParams, $timeout, $scope, $ionicPopup, ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+    console.log(position);
+    $scope.hasNext = position.hasNext;
+    $scope.hasPrevious = position.hasPrevious;
+    $scope.next = function(){
+        if(position.hasNext)
+            {
+                $state.transitionTo(position.nextStep.name);
+            }
+    };
+    $scope.previous = function(){
+        if(position.hasPrevious)
+            {
+                $state.transitionTo(position.previousStep.name);
+            }
+    };
+    $scope.ca = ca.ca;
+    $scope.hasModes = false;
     var cart = JSON.parse(window.localStorage['cart'] || '{}');
     var canFinish = JSON.parse(window.localStorage['done'] || 'false');
     $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.canFinish = canFinish;
@@ -1558,6 +1572,128 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
             $scope.data.client = mission.client_id;
         });
     }
+    $scope.choice = {
+        id: 0,
+        details : []
+    };
+    $scope.datepickerObject = {
+      titleLabel: 'Choisir une date',  //Optional
+      todayLabel: "Aujourd'hui",  //Optional
+      closeLabel: "Fermer",  //Optional
+      setLabel: 'confirmer',  //Optional
+      setButtonType : 'button-assertive',  //Optional
+      todayButtonType : 'button-assertive',  //Optional
+      closeButtonType : 'button-assertive',  //Optional
+      inputDate: new Date(),  //Optional
+      mondayFirst: true,  //Optional
+      disabledDates: [], //Optional
+      weekDaysList: ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"], //Optional
+      monthList: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre"], //Optional
+      templateType: 'popup', //Optional
+      showTodayButton: 'true', //Optional
+      modalHeaderColor: 'bar-positive', //Optional
+      modalFooterColor: 'bar-positive', //Optional
+      from: new Date(), //Optional
+      to: new Date(new Date().getTime() + 31 * 24 * 60 *60 * 1000),  //Optional
+      callback: function (val) {  //Mandatory
+        datePickerCallback(val);
+      },
+      dateFormat: 'dd-MM-yyyy', //Optional
+      closeOnSelect: false, //Optional
+    };
+
+    function datePickerCallback(val)
+    {
+        if(typeof(val) !== "undefined")
+        {
+            $scope.datepickerObject.inputDate = val;
+            countDiscount($scope.currentMethod.remises, (val.getTime() - new Date().getTime())/(24*60*60*1000));
+        }
+        else
+        {
+            $ionicPopup.alert({
+                title : "Veuillez choisir une date"
+            });
+        }
+    }
+
+    function getMaxDelayRemise(array)
+    {
+        var max = array[0].max;
+        console.log(array);
+        for(var j = array.length ; j >= 0 ; j--)
+        {
+            for(var k = 1 ;  k < j ; k++)
+            {
+                var first = array[k-1];
+                var second = array[k];
+                if(first.max > second.max)
+                {
+                    max = first.max;
+                }
+            }
+        }
+        return max;
+    }
+    $scope.modalities = false;
+    $scope.currentMethod = {};
+    $scope.currentDiscount = 0;
+    $scope.change = function(id)
+    {
+        var max = 0;
+        for(var i = 0 ; i < payments.length ; i++)
+        {
+            if(payments[i].id == id)
+            {
+                $scope.currentMethod = payments[i];
+                countDiscount(payments[i].remises, (new Date($scope.datepickerObject.inputDate.setHours(0,0,0,0)).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+                if(payments[i].remises.length > 0)
+                {
+                    $scope.modalities = true;
+                }
+                $scope.choice.details = [];
+                if(payments[i].remises.length > 1)
+                {
+                    max = getMaxDelayRemise(payments[i].remises);
+                    $scope.datepickerObject.to =  new Date(new Date().getTime() + max * 24 * 60 *60 * 1000);
+                }
+                else
+                {
+                    $scope.currentDiscount = payments[i].remises[0].remise;
+                }
+            }
+            
+        }
+        $scope.details = [];
+    }
+    function countDiscount(discounts, difference)
+    {
+        difference = difference < 0 ? -1*difference : difference;
+        $scope.currentDiscount = 0;
+        for(var i = 0 ; i < discounts.length ; i++)
+        {
+            if(difference >= discounts[i].min && difference < discounts[i].max)
+            {
+                $scope.currentDiscount = discounts[i].remise;
+                return;
+            }
+        }
+        $scope.currentDiscount = 0;
+    }
+    var payments = [];
+    $scope.paymentMethods = [];
+    ModePaiement.getAll().then(
+        function(success){
+            payments = success;
+            angular.forEach(success, function(payment){
+                payment.remises = JSON.parse(payment.remises);
+                console.log(payment);
+                $scope.paymentMethods.push(payment);
+            });
+        }, 
+        function(error){    
+            console.log(error);
+        });
     function addGiftsToCart()
     {
         if(canFinish)
@@ -1688,6 +1824,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
             Accounts.addGoldenPoints(profile.id_db, count).then(
                 function(success){
                     console.log(success);
+                    profile.golden_stores = profile.golden_stores + count;
                 }, 
                 function(error){
                     console.log(error);
@@ -1766,6 +1903,8 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                 window.localStorage.removeItem('marques');
                 window.localStorage.removeItem('mission');
                 window.localStorage.removeItem('done');
+                window.localStorage.removeItem('callSteps');
+                window.localStorage.removeItem('surveys');
             }, 
             function(error){
                 console.log(error);
@@ -2140,29 +2279,95 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 
 })
 
-.controller('BrandCtrl', function($scope, $state, Promotions, Missions, $stateParams, Articles, LigneCommandes){
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(window.localStorage['profile'] === 'null')
-        {
-            $state.go("menu.login");
-        }
-        Missions.getFinishedMission($scope.idMission).then(
-        function(mission){
-            if(mission !== null)
+.controller('SurveyCtrl', function($scope, position, Surveys, $state, $ionicPopup){
+    /*******************************PROPER TO CALL STEPS*********************************/
+    $scope.hasNext = position.hasNext;
+    $scope.hasPrevious = position.hasPrevious;
+    $scope.next = function(){
+         var surveys = angular.copy($scope.surveys);
+         var remainings = false;
+         for(var i = 0 ; i < surveys.length ; i++)
+         {
+            if(surveys[i].required && surveys[i].choosen == "none")
             {
-                window.localStorage.removeItem('cart');
-                $state.go("menu.entry");
+                remainings = true;
             }
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-        if(typeof window.localStorage['cart'] == "undefined")
-        {
-            $state.go('menu.login');
-        }
+         }
+         if(remainings && !JSON.parse(window.localStorage['surveys']).done)
+         {
+            $ionicPopup.alert({
+                title: "Incomplet !",
+                buttons: [
+                    {
+                        text: "Terminer",
+                        type: "button-assertive",
+                        cssClass: "assertive-survey"
+                    }
+                ],
+                template: '<span style="font-size: 12px; font-weight: 600;">Veuillez compléter le questionnaire.</span>'
+            });
+         }
+         else if (JSON.parse(window.localStorage['surveys']).done)
+         {
+            $state.transitionTo(position.nextStep.name);
+         }
+         else
+         {
+            console.log("About to add them to local DB !");
+            Surveys.addSurveyClientAnswers(surveys, JSON.parse(window.localStorage['mission']).client_id).then(
+            function(success){
+                var popUp = $ionicPopup.alert({
+                    title: "Terminé !",
+                    buttons : [
+                        {
+                            text: position.hasNext ? "étape suivante" : "OK",
+                            onTap: function(event){
+                                if(position.hasNext)
+                                {
+                                    $state.transitionTo(position.nextStep.name);
+                                }
+                                else
+                                {
+                                    popUp.close();
+                                }
+                            },
+                            type: "button-assertive",
+                        }
+                              ],
+                    template: '<span style="font-size: 12px; font-weight: 600;">Le questionnaire à bien été enregistré !</span>'
+                });
+                window.localStorage['surveys'] =  JSON.stringify({ done: true, surveys: surveys});
+            }, 
+            function(error){
+                console.log(error);
+            });
+         }
+        //$state.transitionTo(position.nextStep.name);
+    };
+    $scope.previous = function(){
+        $state.transitionTo(position.previousStep.name);
+    };
+    /*******************************--------------------*********************************/
+    $scope.surveys = [];
+    var surveys = JSON.parse(window.localStorage['surveys'] || '[]');
+    angular.forEach(surveys.surveys, function(survey, index){
+        survey.choosen = "none";
+        if(index % 2 == 0)
+            survey.required = true;
+        $scope.surveys.push(survey);
     });
-    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.marque = $stateParams.name;
+    $scope.clicked = function(){
+        console.log($scope.surveys);
+    };
+    $scope.changed = function($index){
+        console.log($index);
+    };
+})
+
+.controller('BrandCtrl', function($scope, $state, Promotions, Commandes, Missions, $stateParams, Articles, LigneCommandes){
+    $scope.ca = 0;
+    $scope.infos = JSON.parse(window.localStorage['profile']);    
+    $scope.marque = $stateParams.name;
     $scope.articles = [];
     $scope.totalBill = 0;
     $scope.cnt = 0;
@@ -2701,6 +2906,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 })
 
 .controller('ExclusionsCtrl', function($scope,$state){
+    $scope.ca = 0;
     var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
     $scope.infos = JSON.parse(window.localStorage['profile']);
     function refreshTotalBill()
@@ -2727,8 +2933,22 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
     refreshTotalBill();
 })
 
-.controller('RemainingCtrl', function($scope, $state, Articles){
-    
+.controller('RemainingCtrl', function($scope, $state, Articles, position){
+    $scope.hasNext = position.hasNext;
+    $scope.hasPrevious = position.hasPrevious;
+    $scope.next = function(){
+        if(position.hasNext)
+            {
+                $state.go(position.nextStep.name);
+            }
+    };
+    $scope.previous = function(){
+        if(position.hasPrevious)
+            {
+                $state.go(position.previousStep.name);
+            }
+    };
+    $scope.ca = 0;
     refreshTotalBill();
     var cart = JSON.parse(window.localStorage['cart'] || '{}');
     var sbd = JSON.parse(window.localStorage['sbd'] || '[]');
@@ -3239,35 +3459,29 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
     };
 })
 
-.controller('BrandFiveCtrl', function($http, $scope, $ionicLoading, $stateParams, $state, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes){
-
+.controller('BrandFiveCtrl', function($http, $scope, $ionicLoading, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+    
     window.localStorage['done'] = typeof window.localStorage['done'] == "undefined" ? JSON.stringify(false) : JSON.parse(window.localStorage['done']);
-    $scope.$on('$ionicView.beforeEnter', function() {
-        if(typeof window.localStorage['profile'] == 'undefined')
-        {
-            $state.go("menu.login");
-        }
-        Missions.getFinishedMission($scope.idMission).then(
-        function(mission){
-            if(mission != null)
+    console.log(position);
+    $scope.hasNext = position.hasNext;
+    $scope.hasPrevious = position.hasPrevious;
+    $scope.next = function(){
+        if(position.hasNext)
             {
-                window.localStorage.removeItem('cart');
-                $state.go("menu.entry");
+                $state.go(position.nextStep.name);
             }
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-    });
-     $scope.infos = JSON.parse(window.localStorage['profile']);
+    };
+    $scope.previous = function(){
+        if(position.hasPrevious)
+            {
+                $state.go(position.previousStep.name);
+            }
+    };
+    $scope.infos = JSON.parse(window.localStorage['profile']);
     var mission = JSON.parse(window.localStorage['mission'] || '{}');
-    var firstEntry = { mission : typeof mission.id_mission == "undefined" ? null : mission.id_mission, items : [] };
-    $scope.idMission = $stateParams.mission;
     $scope.change = function(){
         refreshBrandRealTime();
     };
-    window.localStorage['cart'] = typeof window.localStorage['cart'] != 'undefined' ? window.localStorage['cart'] : JSON.stringify(firstEntry);
-    console.log(window.localStorage['cart']);
     $scope.totalBill = 0;
     $scope.articles = [];
     $scope.cnt = 0;
@@ -3280,53 +3494,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         }
     });
 
-    if(typeof window.localStorage['promotions'] == 'undefined')
-    {
-        
-       Promotions.getClientPromotions(1).then(
-        function(result){
-            console.log(result);
-            var articles = [];
-            var promotions = [];
-            angular.forEach(result, function(promotion){
-                promotion.articles = promotion.articles != null ? JSON.parse(promotion.articles) : [];
-                promotion.inclusions = promotion.inclusions != null ? promotion.inclusions.split(',').map(Number) : [];
-                promotion.exclusions = promotion.exclusions != null ? promotion.exclusions.split(',').map(Number) : [];
-                promotion.gratuites = promotion.gratuites != null ? JSON.parse(promotion.gratuites) : [];
-                promotion.consumed = false;
-                console.log(promotion);
-            });
-            window.localStorage['promotions'] = JSON.stringify(result);
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-    }
-    if(typeof window.localStorage['sbd'] == 'undefined')
-    {
-        Articles.getArticleWithSBD().then(
-        function(result){
-            console.log(result);
-            var sbds = [];
-            angular.forEach(result, function(sbd){
-                var object = {};
-                object.id = sbd.id;
-                object.min = sbd.min;
-                object.articles = [];
-                var array = sbd.articles != null ? sbd.articles.split(",").map(Number) : [];
-                angular.forEach(array, function(_id){
-                    var article = { id : _id, qty : 0};
-                    object.articles.push(article);
-                });
-                object.qty = 0;
-                sbds.push(object);
-            });
-            window.localStorage['sbd'] = JSON.stringify(sbds);
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-    }
+    
     $scope.clicked = function(article){
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
         var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
@@ -3375,7 +3543,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
 
     $scope.toBrands = function(){
         refreshBrandRealTime();
-        $state.go('app.brands', { mission : $stateParams.mission });
+        $state.go('app.brands');
     };
 
     function refreshTotalBill()
@@ -3446,7 +3614,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     window.localStorage['marques'] == '{}';
                 }
                 var marques = JSON.parse(window.localStorage['marques'] || '{}');
-                if(typeof marques[brandName] == 'undefined')
+                if(articles.length > 0 && typeof marques[brandName] == 'undefined')
                 {
                     marques[brandName] = articles;
                     window.localStorage['marques'] = JSON.stringify(marques);
@@ -3566,7 +3734,7 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
     }
     $scope.back = false;
     $scope.forw = true;
-    $scope.otherBrands = JSON.parse(window.localStorage['done'] || 'false');
+    $scope.done = JSON.parse(window.localStorage['done'] || 'false');
     var defaultStep = 0;
     $scope.currentStep = defaultStep;
     $scope.marques = [];
@@ -3916,21 +4084,13 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
                     $scope.back = true;
                     var result = $scope.currentStep+=1;
                     $scope.currentBrand = $scope.brandFives[$scope.currentStep];
-                    console.log("current brand :");
-                    console.log(JSON.stringify($scope.currentBrand));
-                    console.log(JSON.stringify($scope.currentBrand));
                     refreshBrand($scope.currentBrand.name);
                     if($scope.currentStep == $scope.brandFives.length - 1)
                     {
                         $scope.forw = false;
-                        $scope.otherBrands = true;
+                        $scope.done = true;
                         window.localStorage['done'] = JSON.stringify(true);
                     }
-                }
-                else
-                {
-                    $scope.forw = false;
-                    $scope.otherBrands = true;
                 }
             }
     };
@@ -3941,7 +4101,18 @@ $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocat
         }
         else
         {
-            $state.go("app.cart");
+            if(JSON.parse(window.localStorage['cart']).items.length > 0)
+            {
+                $state.go("app.cart");
+            }
+            else
+            {
+                $ionicPopup.alert({
+                    title: '<h3>Panier vide !</h3>',
+                    template: "<b>Le panier doit contenir au moins un article.</b>"
+                });
+            }
+            
         }
     };
 

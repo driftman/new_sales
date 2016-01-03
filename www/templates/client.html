@@ -1,4 +1,4 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20." ng-class="{expanded:$scope.isExpanded}">
+<ion-view view-title="C.A : {{ caVendeur | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts" ng-class="{expanded:$scope.isExpanded}">
     <ion-content >
     <div class="list card" style="box-shadow: 0px 10px 10px 0 #B71C1C;">
   <div class="item">
@@ -14,7 +14,7 @@
     </div>
     <div class="row">
         <div class="col"><b><b>Adresse : </b></b></div>
-        <div class="col">{{ client.address }}</div>
+        <div class="col" style="overflow: hidden;">{{ client.address }}</div>
     </div>
     <div class="row">
         <div class="col"><b>Telephone : </b></div>
@@ -44,7 +44,7 @@
  </div>
 <br><br>
   <div class="card">
-  	<h2 class="item" style="color: #B71C1C; font-size : 22px;"> Les 5 dernières factures : </h2>
+  	<h2 class="item" style="color: #B71C1C; font-size : 22px;"> Top 5 factures : </h2>
   </div>
         <ion-slide-box show-pager="true" on-slide-changed="onSlideChanged(index)" active-slide="currentIndex">
           <ion-slide ng-repeat = "commande in commandes">
@@ -141,19 +141,20 @@
                 padding: 0;
                 overflow: hidden;
                 text-align: center;">{{ ligne.total + (ligne.total * 0.20) | number : 2}}</div>
+
             </div>
             
-            <div class="row">
-                <div class="col offset" style="border-left: 1px solid black; border-top: 1px solid black;"></div>
-                <div class="col offset" style="border-top: 1px solid black;"></div>
-                <div class="col" style="background-color: #ADA7A7;">TOTAL H.T</div>
-                <div class="col">0 DHS</div>
+            <div class="row" style="border: none;">
+                <div class="col offset" style="border-left: 1px solid black; border-top: 1px solid black; border: none;"></div>
+                <div class="col offset" style="border-top: 1px solid black; border: none;"></div>
+                <div class="col" style="background-color: #ADA7A7; border: none;">TOTAL H.T</div>
+                <div class="col" style="border: none;">{{ commande.ligneCommandes | total }} DHS</div>
             </div>
-            <div class="row">
-                <div class="col offset" style="border-left: 1px solid black; border-bottom: 1px solid black;"></div>
-                <div class="col offset" style="border-bottom: 1px solid black;"></div>
-                <div class="col" style="background-color: #ADA7A7;">TOTAL T.T.C</div>
-                <div class="col">0 DHS</div>
+            <div class="row" style="border: none;">
+                <div class="col offset" style="border-left: 1px solid black; border-bottom: 1px solid black; border: none;"></div>
+                <div class="col offset" style="border-bottom: 1px solid black; border: none;"></div>
+                <div class="col" style="background-color: #ADA7A7; border: none;">TOTAL T.T.C</div>
+                <div class="col" style="border: none;">0 DHS</div>
             </div>
 
           </ion-slide>
@@ -168,7 +169,7 @@
 
     </ion-content>
     <div class="bar bar-footer bar-assertive" ng-show="!vente">
-        <div class="title" ui-sref="app.brandfive">Vous devez finir la vente précedente !</div>
+        <div class="title" ng-click="checkPoint()">Vous devez finir la vente précedente !</div>
     </div>
     <div class="bar bar-footer bar-balanced" ng-show="vente">
         <div class="title" ng-click="goClient()">Commencer la vente</div>

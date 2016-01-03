@@ -7,7 +7,28 @@
 angular.module('starter', 
     ['ionic', 'starter.controllers', 'starter.services', 'ionic-material', 'ionMdInput','ngCordova',  'leaflet-directive', 'chart.js'])
 
-.run(function($ionicPlatform, $cordovaSQLite, $timeout, DB) {
+.run(function($ionicPlatform, $cordovaSQLite, $timeout, $rootScope, DB, $state) {
+
+
+    $rootScope.$on('$stateChangeStart', 
+        function(event, toState, toParams, fromState, fromParams)
+        { 
+            if((toState.name == "app.survey") && (typeof(window.localStorage['survey']) == "undefined"))
+            {
+                event.preventDefault();
+                $state.transitionTo("app.profile");
+            }
+            if((toState.name == "menu.login") && !(typeof(window.localStorage['profile']) == "undefined"))
+            {
+                event.preventDefault();
+                $state.transitionTo("menu.entry");
+            }
+            if((toState == "app.profile") && (typeof(window.localStorage['profile']) == "undefined"))
+            {
+                event.preventDefault();
+                $state.transitionTo("menu.login");
+            }
+        })
 
     
     $ionicPlatform.ready(function(){
@@ -26,14 +47,17 @@ angular.module('starter',
 .config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
     // Turn off caching for demo simplicity's sake
     $ionicConfigProvider.views.maxCache(0);
-
+    $ionicConfigProvider.views.transition('none');
     $stateProvider
 
     .state('app', {
         url: '/app',
         abstract: true,
         templateUrl: 'templates/menu.html',
-        controller: 'AppCtrl'
+        controller: 'AppCtrl',
+        data : {
+            authentication : true
+        }
     })
 
      .state('menu', {
@@ -49,6 +73,11 @@ angular.module('starter',
             'menuContent': {
                 templateUrl: 'templates/entry.html',
                 controller: 'EntryCtrl'
+            }
+        },
+        resolve : {
+            ca : function(Commandes){
+                return Commandes.getCAVendeur(JSON.parse(window.localStorage['profile']).id_db);
             }
         }
     })
@@ -128,6 +157,12 @@ angular.module('starter',
             'fabContent': {
                 template: '',
         }}
+        ,
+        resolve : {
+            position : function(CallSteps){
+                return CallSteps.checkForSteps("app.remainings");
+            }
+        }
     })
 
 
@@ -179,11 +214,16 @@ angular.module('starter',
             'fabContent': {
                 template: ''
             }
+        },
+        resolve : {
+            position : function(CallSteps){
+                return CallSteps.checkForSteps("app.brandfive");
+            }
         }
     })
 
     .state('app.brands', {
-        url : "/brands/:mission",
+        url : "/brands",
         views : {
             'menuContent': {
                 templateUrl: 'templates/brands.html',
@@ -191,6 +231,11 @@ angular.module('starter',
             },
             'fabContent': {
                 template: ''
+            }
+        }
+        ,resolve : {
+            position : function(CallSteps){
+                return CallSteps.checkForSteps("app.brands");
             }
         }
     })
@@ -233,6 +278,14 @@ angular.module('starter',
             'fabContent': {
                 template: ''
             }
+        },
+        resolve : {
+            position : function(CallSteps){
+                return CallSteps.checkForSteps("app.cart");
+            },
+            ca : function(Commandes){
+                return Commandes.getCAVendeur(JSON.parse(window.localStorage['profile']).id_db);
+            }
         }
     })
 
@@ -252,6 +305,11 @@ angular.module('starter',
     
     .state('app.profile', {
         url: '/profile',
+        resolve : {
+            ca : function(Commandes){
+                return Commandes.getCAVendeur(JSON.parse(window.localStorage['profile']).id_db);
+            }
+        },
         views: {
             'menuContent': {
                 templateUrl: 'templates/profile.html',
@@ -264,7 +322,6 @@ angular.module('starter',
             }
         
     })
-
 
     .state('app.profile2', {
         url: '/profile2',
@@ -281,8 +338,28 @@ angular.module('starter',
         
     })
 
+    .state('app.survey', {
+        url: '/survey',
+        views: {
+            'menuContent': {
+                templateUrl: 'templates/survey.html',
+                controller: 'SurveyCtrl'
+            }
+        },
+        resolve : {
+            position : function(CallSteps){
+                return CallSteps.checkForSteps("app.survey");
+            }
+        }
+    })
+
     .state('app.routes',{
         url : '/routes',
+        resolve : {
+            todayMissions : function(Missions){
+                return Missions.getTodaysMissions(JSON.parse(window.localStorage['profile']).id_db);
+            }
+        },
         views : {
             'menuContent' : {
                 templateUrl : 'templates/routes.html',
@@ -297,6 +374,11 @@ angular.module('starter',
 
     .state('app.client', {
         url: '/clients/:id',
+        resolve : {
+            checkPoint : function(CallSteps){
+                return CallSteps.checkPoint();
+            }
+        },
         views : {
             'menuContent': {
                 templateUrl: 'templates/client.html',
@@ -308,6 +390,7 @@ angular.module('starter',
                 controller: ''
             }
         });
+
 
 /*.state('app.forgot-password', {
         url: '/forgot-password',

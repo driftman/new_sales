@@ -172,12 +172,9 @@
             
 	</ion-content>
   <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
-    <div class="title">
-
-    	Total : {{totalBill | promotion }} DHS 
-
-        <a ui-sref="app.cart" style="float: right; font-size: 35px;"> <i class="icon ion-android-arrow-forward"></i></a>
-        
-
-  </div>
+  <div class="title">
+      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <span ng-click="cart()">Total : {{totalBill | promotion }} DHS</span>
+      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+    </div>
 </ion-view>

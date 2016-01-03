@@ -1,4 +1,4 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
+<ion-view view-title="C.A : {{ ca | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts">
     <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
        <div 
        style="
@@ -59,8 +59,7 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
-                border-right: 2px solid white;
+                font-weight: 900;
                 text-align: left;">désignation({{cnt}})</div>
                 
                 <div class="col col-15" 
@@ -72,7 +71,6 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
-                border-right: 2px solid white;
                 float: left;">unité</div>
                 <div class="col col-15" 
                 style="
@@ -83,7 +81,6 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
-                    border-right: 2px solid white;
                 float: left;">caisse</div>
                 <div class="col col-15" 
                 style="
@@ -94,7 +91,6 @@
                 border: none;
                 font-size: 14px; 
                 font-weight: 900; 
-                    border-right: 2px solid white;
                 float: left;">total</div>
                 <div class="col" 
                 style="
@@ -115,7 +111,6 @@
           margin: 0;
           margin-top: 60px;
           padding: 0;">
-            
             <div class="item" 
             style="
             margin: 0;
@@ -124,7 +119,7 @@
             border: none;
             border-bottom: 1px solid rgba(0,0,0,0.2);
             min-height: 0px;
-            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD' track by $index">
+            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD' | orderBy: 'promotions' track by $index">
                 <div class="row" style="
                 background-color: {{ article | backgroundSBD }};
                 margin: 0;
@@ -194,11 +189,16 @@
             
 	</ion-content>
   <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
-    <div class="title">
+    <!-- <div class="title">
         <a ng-click="goCart()" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
-        Total : {{totalBill | promotion }} DHS <a ng-show="otherBrands" ng-click = "toBrands()" > <i style="float: right;
+        Total : {{totalBill | promotion }} DHS <a ng-show="nextStep" ng-click = "next()" > <i style="float: right;
     font-weight: 900;
-    font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div> 
+    font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div>  -->
+    <div class="title">
+      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <span ng-click="cart()">Total : {{totalBill | promotion }} DHS</span>
+      <a ng-click="next()" ng-show="hasNext && done" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+    </div>
 
   </div>
 </ion-view>

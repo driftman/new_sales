@@ -1,4 +1,4 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
+<ion-view view-title="C.A : {{ ca | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts">
 	<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C;
 	max-height: 20px;">
        <div class="row" style="
@@ -56,11 +56,11 @@
                 float: left;">total</div>
               </div>
     </div>
-    <ion-content ng-class="{expanded:$scope.isExpanded}">
-    	<div class="list" style="
+    <ion-content scroll="true" ng-class="{expanded:$scope.isExpanded}">
+    	<ion-scroll style="
           margin: 0;
-          margin-top: 20px;
-          margin-bottom: 65px;
+          margin-top: 30px;
+          height: 300px;
           background-color: white;
           padding: 0;">
             <div class="item" 
@@ -116,6 +116,7 @@
                 border: none;"><span style="color: green; font-weight: 900;" ng-bind="((item.packet*10)+(item.unit))*item.prixVente"></span></div>
                 </div>
             </div>
+
             <div class="item" 
             style="
             margin: 0;
@@ -130,106 +131,30 @@
               margin-top: 30px;
               margin: 0;
               padding: 0;">
-              	<div style=" width: 20px; padding: 0;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                font-size: 14px; 
-                font-weight: 900; 
-                text-align: left;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
                 <div class="col col-50" 
                 style="
                 border: none;
-                border-bottom: 1px solid #B71C1C;
-			    border-left: 1px solid #B71C1C;
-			    border-right: 1px solid #B71C1C;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">Total HT</div>
-              </div>
-            </div>
-            <div class="item" 
-            style="
-            margin: 0;
-            padding: 0;
-            min-height: 0;
-            border: none;
-            min-height: 0px;
-            text-align: left;">
-              <div class="row" style="
-              margin: 0; 
-              margin-top: 30px;
-              margin: 0;
-              padding: 0;">
-              	<div style=" width: 20px; padding: 0;"></div>
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">Total HT : </span></div>
                 <div class="col col-50" 
                 style="
                 border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
-                text-align: left;"></div>
-                <div class="col col-15" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
-                <div class="col col-50"
-                style="
-                border: none;
-                border-bottom: 1px solid black;
-			    border-left: 1px solid black;
-			    border-right: 1px solid black;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;">{{ data.items | total | promotion }} DHS</div>
+                float: left;
+                background-color: #B71C1C;">{{ data.items | total | promotion }} DHS</div>
               </div>
             </div>
             <div class="item" 
@@ -246,7 +171,6 @@
               margin-top: 30px;
               margin: 0;
               padding: 0;">
-              	<div style=" width: 20px; padding: 0;"></div>
                 <div class="col col-50" 
                 style="
                 border: none;
@@ -255,27 +179,50 @@
                 text-align: center;
                 font-size: 14px; 
                 font-weight: 900; 
-                text-align: left;"></div>
-                <div class="col col-15" 
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">ESCOMPTEPMT : </span></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                background-color: #B71C1C;">{{ '- '+currentDiscount+' %' }}</div>
+              </div>
+            </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+                <div class="col col-50"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;
                 font-size: 14px; 
                 font-weight: 900; 
-                float: left;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">Total TTC : </span></div>
                 <div class="col col-50"
                 style="
                 border: none;
@@ -288,77 +235,51 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">Total TTC</div>
-              </div>
-            </div>
-            <div class="item" 
-            style="
-            margin: 0;
-            padding: 0;
-            min-height: 0;
-            border: none;
-            min-height: 0px;
-            text-align: left;">
-              <div class="row" style="
-              margin: 0; 
-              margin-top: 30px;
-              margin: 0;
-              padding: 0;">
-              	<div style=" width: 20px; padding: 0;"></div>
-                <div class="col col-50" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                font-size: 14px; 
-                font-weight: 900; 
-                text-align: left;"></div>
-                <div class="col col-15" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;"></div>
-                <div class="col col-50"
-                style="
-                border: none;
-                border-bottom: 1px solid black;
-			    border-left: 1px solid black;
-			    border-right: 1px solid black;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                font-size: 14px; 
-                font-weight: 900; 
-                float: left;">{{ totalBill | promotion }} DHS </div>
+                background-color: #B71C1C;">{{ totalBill | promotion }} DHS </div>
               </div>
             </div>
           </div>
+      </ion-scroll>
+
+      <div class="row">
+
+        <div class="col">
+            <h5 style="    
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;" >Modalités de paiement</h5>
+            <ion-list>
+              <ion-radio style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="change(payment.id)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
+            </ion-list>
+        </div>
+
+        <div class="col" ng-show="modalities">
+            <h5 style="    
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;" >Date Echéance</h5>
+            <ionic-datepicker input-obj="datepickerObject">
+              <button class="button button-block button-positive"> {{datepickerObject.inputDate | date:'dd - MMMM - yyyy'}}</button>
+            </ionic-datepicker>
+        </div>
+
       </div>
+      
 
 	</ion-content>
 	
 </ion-view>
-<div class="bar bar-footer bar-balanced">
+<div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
+      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <span ng-click="pay()">Total : {{totalBill | promotion }} DHS</span>
+      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+    </div>
+    <!--<div class="title">
         <a ng-show="true" ng-click = "pay()" ng-show="recovery" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-card"></i></a>
         Total : {{ totalBill | promotion }} DHS 
-        <a ng-click="confirm()"> <i style="float: right; font-weight: 900; font-size: 35px;" class="icon ion-android-done-all"></i></a><!-- 
-        <a ng-click="" ng-show="true"> <i style="float: left; font-weight: 900; font-size: 35px;" class="icon ion-android-print"></i></a> -->
-    </div> 
+        <a ng-click="confirm()"> <i style="float: right; font-weight: 900; font-size: 35px;" class="icon ion-android-done-all"></i></a>
+        <a ng-click="" ng-show="true"> <i style="float: left; font-weight: 900; font-size: 35px;" class="icon ion-android-print"></i></a>
+
+    </div>-->
 	</div>

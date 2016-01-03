@@ -22,7 +22,12 @@
     {
       "locator": "https://github.com/apache/cordova-plugin-whitelist.git#r1.0.0",
       "id": "cordova-plugin-whitelist"
-    }
+    },
+    {
+      "locator": "https://github.com/litehelpers/Cordova-sqlite-storage.git",
+      "id": "cordova-sqlite-storage"
+    },
+    "ionic-plugin-keyboard"
   ],
   "cordovaPlatforms": [
     "android"
