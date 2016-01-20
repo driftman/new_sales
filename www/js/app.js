@@ -8,16 +8,11 @@ angular.module('starter',
     ['ionic', 'starter.controllers', 'starter.services', 'ionic-material', 'ionMdInput','ngCordova',  'leaflet-directive', 'chart.js'])
 
 .run(function($ionicPlatform, $cordovaSQLite, $timeout, $rootScope, DB, $state) {
-
-
-    $rootScope.$on('$stateChangeStart', 
+        
+        /*$rootScope.$on('$stateChangeStart', 
         function(event, toState, toParams, fromState, fromParams)
         { 
-            if((toState.name == "app.survey") && (typeof(window.localStorage['survey']) == "undefined"))
-            {
-                event.preventDefault();
-                $state.transitionTo("app.profile");
-            }
+            
             if((toState.name == "menu.login") && !(typeof(window.localStorage['profile']) == "undefined"))
             {
                 event.preventDefault();
@@ -28,26 +23,29 @@ angular.module('starter',
                 event.preventDefault();
                 $state.transitionTo("menu.login");
             }
-        })
+        });*/
 
     
-    $ionicPlatform.ready(function(){
-        if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
-        cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-        }
-        if (window.StatusBar) {
-            StatusBar.styleDefault();
-        }
-    });
-   DB.init();
-
+        $ionicPlatform.ready(function(){
+            if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
+            cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+            }
+            if (window.StatusBar) {
+                StatusBar.styleDefault();
+            }
+          DB.init();
+        });
+        
+         
+         
           
 })
 
-.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider) {
-    // Turn off caching for demo simplicity's sake
+.config(function($stateProvider, $urlRouterProvider, $ionicConfigProvider, $httpProvider) {
+    
     $ionicConfigProvider.views.maxCache(0);
     $ionicConfigProvider.views.transition('none');
+    $httpProvider.interceptors.push('httpRequestInterceptor');
     $stateProvider
 
     .state('app', {
@@ -66,6 +64,19 @@ angular.module('starter',
         templateUrl: 'templates/noSideBar.html',
         controller: 'AppCtrl'
     })
+
+     .state('app.cartLivreur', {
+        url: '/cartLivreur',
+        views : {
+            'menuContent': {
+                templateUrl: 'templates/cartLivreur.html',
+                controller: 'CartLivreurCtrl'
+            },
+            'fabContent': {
+                template: ''
+            }
+        }
+     })
 
      .state('menu.entry', {
         url: '/entry',
@@ -126,11 +137,7 @@ angular.module('starter',
             'menuContent': {
                 templateUrl: 'templates/clients.html',
                 controller: 'ClientsCtrl'
-            },
-            'fabContent': {
-                template: '<button ui-sref="app.add" style="background-color: #B71C1C;" id="fab-profile" class="button button-fab button-fab-bottom-right button-energized-900"><i class="icon ion-person-add"></i></button>',
-                controller: 'ClientsCtrl'
-        }
+            }
         }
     })
 
@@ -248,7 +255,7 @@ angular.module('starter',
                 controller: 'AddCtrl'
             },
             'fabContent': {
-                template: '<button ui-sref="app.entry" style="background-color: #B71C1C;" id="fab-profile" class="button button-fab button-fab-bottom-right button-energized-900"><i class="icon ion-home"></i></button>',
+                template: '<button ng-click="goHome()" style="background-color: #B71C1C;" id="fab-profile" class="button button-fab button-fab-bottom-right button-energized-900"><i class="icon ion-home"></i></button>',
                 controller: 'AddCtrl'
                 }
             }
@@ -406,5 +413,9 @@ angular.module('starter',
         });*/
 
     // if none of the above states are matched, use this as the fallback
-    $urlRouterProvider.otherwise('/menu/login');
+    //$urlRouterProvider.otherwise('/menu/login');
+     $urlRouterProvider.otherwise( function($injector, $location) {
+            var $state = $injector.get("$state");
+            $state.go("menu.login");
+        });
 });

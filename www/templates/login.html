@@ -18,9 +18,31 @@ background:           #B71C1C; /* Ila 7madet ga3 */
                 </div>
             </div>
         </div>
-        <div class="list" style="margin-right: 25px">
-            <ion-md-input onfocus="onFocus(this)" placeholder="Username" highlight-color="balanced" type="text" ng-model="object.username"></ion-md-input>
-            <ion-md-input onfocus="onFocus(this)" placeholder="Password" highlight-color="energized" type="password" ng-model="object.password"></ion-md-input>
+        <div class="list" style="margin-right: 30px; margin-top: 20px;">
+            <label class="item item-input" style="">
+              <input type="text" placeholder="Username" ng-model="object.username" 
+              style=" 
+              margin-left: 15px; color: white; font-size: 16px; background-color: rgba(0,0,0,.6);
+              bottom: 0;
+              color: #fff;
+              letter-spacing: .25rem;
+              padding: 20px 10px;
+              position: relative;
+              z-index: 1;">
+            </label>
+            <label class="item item-input">
+              <input type="password" placeholder="Password"  ng-model="object.password" 
+              style=" 
+              margin-left: 15px; color: white; font-size: 16px; background-color: rgba(0,0,0,.6);
+              bottom: 0;
+              color: #fff;
+              letter-spacing: .25rem;
+              padding: 20px 10px;
+              position: relative;
+              z-index: 1;">
+            </label>
+            <!-- <ion-md-input onfocus="onFocus(this)" placeholder="Username" highlight-color="balanced" type="text" ng-model="object.username"></ion-md-input>
+            <ion-md-input onfocus="onFocus(this)" placeholder="Password" highlight-color="energized" type="password" ng-model="object.password"></ion-md-input> -->
             <script>
             function onFocus(x) {
                 x.style.border-bottom = "2px solid black";

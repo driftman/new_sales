@@ -1,12 +1,19 @@
 
+/*myapp
+
+myapp.config(function ($httpProvider) {
+    $httpProvider.interceptors.push('httpRequestInterceptor');
+});
+
+*/
 var DB_CONFIG = { 
-    name : "new_sales",
+    name : "new_sales141",
     tables : 
     [
       {
         name : "clients",
-        check_url : "http://localhost:8082/rest/vendor/roads/check",
-        synchronize_url : "http://localhost:8082/rest/roads/sync/",
+        check_url : "http://192.168.100.181:8082/newsales/rest/vendor/roads/check",
+        synchronize_url : "http://192.168.100.181:8082/newsales/rest/roads/sync/",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "id_db" , value : "integer unique not null" },
@@ -20,8 +27,9 @@ var DB_CONFIG = {
           { name : "golden_store", value : "long"},
           { name : "chiffreAffaire", value : "long"},
           { name : "classe", value : "text"},
-          { name : "route", value : "integer"}
-              ]
+          { name : "route", value : "integer"},
+          { name : "timestamp", value : "long not null"}
+                   ]
       },
 
       {
@@ -35,13 +43,54 @@ var DB_CONFIG = {
       },
 
       {
+        name: "plan_tarifaire",
+        columns : [
+          { name : "id", value : "integer unique not null"},
+          { name : "startDate", value: "date not null"},
+          { name : "endDate", value : "date not null"},
+          { name : "actif", value : "long not null"},
+          { name : "itemId", value : "integer not null"},
+          { name : "prixArticle", value : "double not null"},
+          { name : "FOREIGN KEY(itemId)", value : "REFERENCES articles(id_db)"}
+
+                  ]
+      },
+
+      {
+        name: "quota_vendeur",
+        columns: [
+          { name : "id", value : "integer primary key" },
+          { name : "itemId", value : "integer not null"},
+          { name : "qty", value : "long"},
+          { name : "value", value: "double"},
+          { name : "debut", value: "date"},
+          { name : "fin", value: "date"},
+          { name : "FOREIGN KEY(itemId)", value: "REFERENCES articles(id_db)"}
+                 ]
+      },
+
+
+      {
+        name: "stock_livreur",
+        columns : [
+          { name : "id" , value : "integer primary key autoincrement" },
+          { name : "packet", value : "long not null" },
+          { name : "unit", value : "long not null"},
+          { name : "item", value : "long not null"},
+          { name : "livreur_id", value : "long not null"},
+          { name : "FOREIGN KEY(item)", value : "REFERENCES articles(id_db)"}
+                  ]
+      },
+
+      {
         name: "surveys",
         columns : [
           { name : "id", value : "integer primary key autoincrement"},
           { name : "question", value : "text not null"},
           { name : "answers", value : "text not null"},
           { name : "required", value : "boolean"},
-          { name : "activity", value : "text"}
+          { name : "activity", value : "text"},
+          { name : "type", value : "long"}
                   ]
       },
 
@@ -94,7 +143,9 @@ var DB_CONFIG = {
           { name : "marqueArticle", value : "long not null"},
           { name : "sousMarqueArticle", value : "long not null"},
           { name : "unitConversion", value : "long not null"},
-          { name : "logo", value : "text"}
+          { name : "remise", value : "boolean"},
+          { name : "logo", value : "text"},
+          { name : "timestamp", value : "long not null"}
                   ]
       },
 
@@ -117,7 +168,8 @@ var DB_CONFIG = {
           { name : "code", value : "text not null" },
           { name : "nom", value : "text not null"},
           { name : "desactive", value : "long not null" },
-          { name : "vendeur", value : "integer not null"}
+          { name : "vendeur", value : "integer not null"},
+          { name : "timestamp", value : "long not null"}
                   ]
       },
 
@@ -199,6 +251,7 @@ var DB_CONFIG = {
           { name : "livreur", value : "long"},
           { name : "entryDate", value : "long"},
           { name : "exitDate", value : "long"},
+          { name : "timestamp", value : "long not null default 0"},
           { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
           { name : "FOREIGN KEY(route_id)", value : "REFERENCES routes(id_db)"},
           { name : "FOREIGN KEY(commande_id)", value : "REFERENCES commandes(id)"}
@@ -218,6 +271,7 @@ var DB_CONFIG = {
           { name : "state", value : "boolean" },
           { name : "synced", value : "boolean"},
           { name : "livreur", value : "long"},
+          { name : "timestamp", value : "long not null"},
           { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
           { name : "FOREIGN KEY(commande_id)", value : "REFERENCES commandes_livreur(id_db)"}
                   ]
@@ -231,6 +285,11 @@ var DB_CONFIG = {
           { name : "code_commande", value : "text unique not null" },
           { name : "id_mission", value : "integer unique not null"},
           { name : "id_client", value : "integer not null"},
+          { name: "promotions", value : "text"},
+          { name : "paymentId", value : "integer"},
+          { name : "paymentDate", value : "double"},
+          { name : "remise", value : "long"},
+          { name : "sbd", value : "integer"},
           { name : "FOREIGN KEY(id_mission)", value : "REFERENCES missions(id)"},
           { name : "FOREIGN KEY(id_client)", value : "REFERENCES clients(id_db)"},
                   ]
@@ -240,9 +299,11 @@ var DB_CONFIG = {
         name : "commandes_livreur",
         columns : [
           { name : "id_db" , value : "integer primary key" },
-          { name : "code_commande", value : "text unique not null" },
-          { name : "id_mission", value : "integer unique not null"},
+          { name : "code_commande", value : "text not null" },
+          { name : "id_mission", value : "integer not null"},
           { name : "id_client", value : "integer not null"},
+          { name: "promotions", value : "text"},
+          { name : "sbd", value : "integer"},
           { name : "FOREIGN KEY(id_mission)", value : "REFERENCES missions_livreur(id_db)"},
           { name : "FOREIGN KEY(id_client)", value : "REFERENCES clients(id_db)"},
                   ]
@@ -257,6 +318,8 @@ var DB_CONFIG = {
           { name : "packet", value : "integer not null"},
           { name : "unit", value : "integer not null"},
           { name : "pu_ht", value : "long not null"},
+          { name : "remise", value: "double"},
+          { name : "isGift", value: "boolean"},
           { name : "FOREIGN KEY(id_commande)", value : "REFERENCES commandes(id)"},
           { name : "FOREIGN KEY(id_article)", value : "REFERENCES articles(id)"}
                   ]
@@ -272,6 +335,9 @@ var DB_CONFIG = {
           { name : "packet", value : "integer not null"},
           { name : "unit", value : "integer not null"},
           { name : "pu_ht", value : "long not null"},
+          { name : "remise", value: "double"},
+          { name : "isGift", value: "boolean"},
+          { name : "idLigne", value : "long"},
           { name : "FOREIGN KEY(id_commande)", value : "REFERENCES commandes(id)"},
           { name : "FOREIGN KEY(id_article)", value : "REFERENCES articles(id)"}
                   ]
@@ -330,6 +396,7 @@ var DB_CONFIG = {
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "promotion_id" , value : "integer" },
           { name : "remise" , value : "integer" },
+          { name : "priorite", value : "integer"},
           { name : "FOREIGN KEY(promotion_id)", value : "REFERENCES promotions(id_db)"}
                   ]
       },
@@ -385,6 +452,7 @@ var DB_CONFIG = {
         columns : [
           { name : "id" , value : "integer primary key autoincrement " },
           { name : "id_db" , value : "integer unique not null" },
+          { name : "token", value : "string not null"},
           { name : "username" , value : "text unique not null " },
           { name : "password" , value : "text not null " },
           { name : "first_login" , value : "boolean not null "},
@@ -393,7 +461,8 @@ var DB_CONFIG = {
           { name : "bloque", value : "boolean not null"},
           { name : "golden_points", value : "long"},
           { name : "golden_stores", value : "long"},
-          { name : "fonction", value : "text"}
+          { name : "fonction", value : "text"},
+          { name : "activite", value : "long not null"}
         ]
       },
 
@@ -419,16 +488,79 @@ angular.module('starter.services', ['ngCordova'])
 
 .filter('backgroundSBD', function(){
   return function(input){
-
-    if(input.groupeSBD != null && input.done == false)
+    var qtyCs = input.packet + Math.trunc(input.unit/input.unitConversion);
+    var value = ( (input.packet * input.unitConversion) + input.unit) * input.prixVente;
+    if(input.quotaQTY != 0 || input.quotaVALUE != 0)
     {
-      return '#42A5F5';
+      console.log("THIS ARTICLE IS UNDER QUOTA !!");
+      if(input.quotaQTY != 0)
+      {
+        if(qtyCs > input.quotaQTY)
+        {
+          return "#DAA9A9;";
+        }
+        else
+        {
+          if(input.groupeSBD != null && input.done == false)
+          {
+            return '#42A5F5';
+          }
+          else
+          {
+            return 'transparent';
+          }
+        }
+      }
+      else
+      {
+        if(value > input.quotaVALUE)
+        {
+          console.log("VALUE : "+value+", QUOTA VALUE : "+input.quotaVALUE);
+          return "#DAA9A9;";
+        }
+        else
+        {
+          if(input.groupeSBD != null && input.done == false)
+          {
+            return '#42A5F5';
+          }
+          else
+          {
+            return 'transparent';
+          }
+        }
+      }
+    }
+    else if(input.quotaQTY == 0 && input.quotaVALUE == 0)
+    {
+      return "#DAA9A9;";
     }
     else
     {
-      return 'transparent';
+      if(input.groupeSBD != null && input.done == false)
+      {
+        return '#42A5F5';
+      }
+      else
+      {
+        return 'transparent';
+      }
     }
 
+  };
+})
+
+.filter('surveyFilter', function(){
+  return function(surveys, type){
+    var finalSurveys = [];
+    for(var i = 0 ; i < surveys.length ; i++)
+    {
+      if(surveys[i].type == type)
+      {
+        finalSurveys.push(surveys[i]);
+      }
+    }
+    return finalSurveys;
   };
 })
 
@@ -489,6 +621,48 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
+.filter('quota', function(){
+  return function(article){
+    if(article.quotaQTY != 0 || article.quotaVALUE != 0)
+    {
+      if(article.quotaQTY != 0)
+      {
+        return article.quotaQTY;
+      }
+      else
+      {
+        if(article.uniteMesure == "CS")
+        {
+          return Math.trunc(article.quotaVALUE / article.prixVente);
+        }
+        else
+        {
+          return Math.trunc( (article.quotaVALUE / article.unitConversion) / article.prixVente );
+        }
+        
+      }
+    }
+    else
+    {
+      return 0;
+    }
+  };
+})
+
+.filter('filterTTCWithRemise', function(){
+  return function(item){
+    var qty = (item.packet*item.unitConversion) + item.unit;
+    var prixHT = item.prixVente * qty;
+    var prixTTC = prixHT + prixHT*(item.tva/100);
+    if(item.remise != null && item.remise > 0)
+    {
+      var remiseTTC =  prixTTC - prixTTC*(item.remise/100);
+      return remiseTTC;
+    }
+    return prixTTC;
+  };
+})
+
 
 .filter('clientNotNull', function(){
   return function(input){
@@ -500,6 +674,38 @@ angular.module('starter.services', ['ngCordova'])
       }
     }
     return input;
+  };
+})
+
+
+.filter('orderLivreur', function(){
+  return function(items)
+  { 
+    var output = [];
+    var outOfStock = [], gifts = [], regular = [];
+    for(var i = 0 ; i < items.length - 1 ; i++)
+    {
+      var item = items[i];
+      var itemStock = (item.packetStock*item.unitConversion) + item.unitStock;
+      var itemCurrentQty = (item.packet*item.unitConversion) + item.unit;
+      if(!Boolean(item.isGift) && itemStock < itemCurrentQty)
+      {
+        outOfStock.push(item);
+      }
+      else if(Boolean(item.isGift))
+      {
+        gifts.push(item);
+      }
+      else
+      {
+        regular.push(item);
+      }
+    }
+    output = output.concat(regular);
+    output = output.concat(gifts);
+    output = output.concat(outOfStock);
+    return output;
+
   };
 })
 
@@ -533,11 +739,94 @@ angular.module('starter.services', ['ngCordova'])
 })
 
 .filter('total', function(){
-  return function(items){
+  return function(items, param, isLivreur){
     var total = 0;
-    angular.forEach(items, function(item){
-      total+=((item.packet*10+item.unit)*item.prixVente);
-    });
+    if(isLivreur)
+    {
+      angular.forEach(JSON.parse(window.localStorage['cart']).items, function(item){
+        var totalStock = (item.packetStock * item.unitConversion) + item.unitStock;
+        var totalItem = (item.packet * item.unitConversion) + item.unit;
+        if(!Boolean(item.isGift) && !(totalItem > totalStock))
+        {
+          var qty = (item.packet*item.unitConversion) + item.unit;
+          var prixHT = item.prixVente * qty;
+          var prixTTC = prixHT + prixHT*(20/100);
+          if(item.remise != null && item.remise > 0)
+          {
+            var remiseTTC =  prixTTC - prixTTC*(item.remise/100);
+            var remiseHT = prixHT - prixHT*(item.remise/100);
+            if(param == "ht")
+            {
+              total+=remiseTTC;
+            }
+            else
+            {
+              total+=remiseTTC;
+            }
+            
+          }
+          else
+          {
+            if(param == "ht")
+            {
+              total+=prixHT;
+            }
+            else
+            {
+              total+=prixTTC;
+            }
+          }
+        }
+      });
+    }
+    else
+    {
+      angular.forEach(JSON.parse(window.localStorage['cart']).items, function(item){
+        if(item.prixVente != 0)
+        {
+          console.log(item)
+          var qty = (item.packet*item.unitConversion) + item.unit;
+          var prixHT = item.prixVente * qty;
+          var prixTTC = prixHT + prixHT*(20/100);
+          if(param == "ht")
+          {
+            total+=prixHT;
+          }
+          else
+          {
+            total+=prixTTC;
+          }
+          //console.log("qty: "+qty+" prixHT: "+prixHT+" prixTTC: "+prixTTC);
+          /*if(item.remise != null && item.remise > 0)
+          {
+            var remiseTTC =  prixTTC - item.remise;
+            var remiseHT = prixHT - item.remise;
+            console.log("remiseTTC: "+remiseTTC+" remiseHT: "+remiseHT);
+            if(param == "ht")
+            {
+              total+=remiseTTC;
+            }
+            else
+            {
+              total+=remiseTTC;
+            }
+            
+          }
+          else
+          {
+            if(param == "ht")
+            {
+              total+=prixHT;
+            }
+            else
+            {
+              total+=prixTTC;
+            }
+          }*/
+        }
+
+      });
+    }
     return total;
   };
 })
@@ -545,40 +834,60 @@ angular.module('starter.services', ['ngCordova'])
 .filter('promotion', function()
 {
   return function(total){
-    var promotions = JSON.parse(window.localStorage['promotions'] || 'null');
-    if(promotions == null || ((promotions != null) && (!promotions.length > 0)))
+    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+    var amountToReduce = 0;
+    for(var i = 0 ; i < promotions.length ; i++)
     {
-      return total;
+      var promotion = promotions[i];
+      if(promotion.consumed && promotion.type == "PC" && promotion.remise != null && typeof(promotion.remise) != "undefined")
+      {
+        amountToReduce+=(total*promtion.remise/100);
+      }
+    }
+    return total - amountToReduce;
+  };
+
+})
+
+.filter('stock', function(){
+  return function(item, items)
+  {
+    console.log(item)
+    console.log(items)
+    var totalStock = (item.packetStock * item.unitConversion) + item.unitStock;
+    var totalItem = (item.packet * item.unitConversion) + item.unit;
+    if(!Boolean(item.isGift))
+    {
+      console.log("ELLIGIBLE !");
+      totalStock-=totalItem;
+      var cart = JSON.parse(window.localStorage['cart'] || '{}');
+      var cartItems = cart.items;
+      for(var i = 0 ; i < items.length ; i++)
+      {
+        var scoopItem = items[i];
+        if(scoopItem.id_db == item.id_db && Boolean(item.isGift))
+        {
+          scoopItem.packetStock -= item.packet;
+          scoopItem.unitStock -= item.unit;
+        }
+      }
+      for(var i = 0 ;  i < cartItems.length ; i++)
+      {
+        var cartItem = cartItems[i];
+        if(cartItem.id_db == item.id_db && Boolean(item.isGift))
+        {
+          cartItem.packetStock-=item.packet;
+          cartItem.unitStock-=item.unit;    
+        }
+      }
+      window.localStorage['cart'] = JSON.stringify(cart);
+      return totalStock;
     }
     else
     {
-      var remises = [];
-      angular.forEach(promotions, function(promotion){
-        if(promotion.consumed && promotion.remise != null && promotion.remise > 0)
-        {
-          remises.push(promotion.remise);
-        }
-      });
-
-      if(remises.length > 0)
-      {
-        var max = remises[0];
-        for(var i = 1; i < remises.length ; i++)
-        {
-          if(remises[i]>max)
-          {
-            max = remises[i];
-          }
-        }
-      }
-      else
-      {
-        return total;
-      }
-      return (total - (total * (max/100)));
+      return totalStock-totalItem;
     }
   };
-
 })
 
 .filter('remaining', function(){
@@ -611,6 +920,19 @@ angular.module('starter.services', ['ngCordova'])
     else
     {
       return value;
+    }
+  };
+})
+
+.filter('redFilter', function(){
+  return function(item){
+    if(item.stock < ( (item.packet * item.unitConversion) + item.unit) )
+    { 
+      return "#FFAEAE;"
+    }
+    else
+    {
+      return 'transparent;';
     }
   };
 })
@@ -689,7 +1011,7 @@ angular.module('starter.services', ['ngCordova'])
       if(window.sqlitePlugin)
       {
         console.log("SQLITE PLUGIN ADDED !!");
-        db = window.sqlitePlugin.openDatabase({name: "my.db", androidDatabaseImplementation: 2, androidLockWorkaround: 1}
+        db = window.sqlitePlugin.openDatabase({name: "my2.db", androidDatabaseImplementation: 2, androidLockWorkaround: 1}
           , function(success){
             console.log(JSON.stringify(success));
           }, function(error){
@@ -747,6 +1069,123 @@ angular.module('starter.services', ['ngCordova'])
     };
 })
 
+.factory("StockLivreur", function(DB, $q, $http){
+  return {
+    sync : sync
+  };
+
+  function sync(id){
+    var deferred = $q.defer();
+    var requests = [];
+    $http.get("http://192.168.100.181:8082/newsales/rest/livreurs/"+id+"/stocks", { timeout : 5000}).then(
+      function(success){
+        console.log(success);
+        var stockLines = success.data.content.stockArticleDto;
+        var addons = []
+        for(var i = 0, len = stockLines.length; i < len ; i++)
+        {
+          var stockLine = stockLines[i];
+          addons.push(convertStockLineObjectIntoParam(stockLine));
+        }
+        requests.push("DELETE FROM stock_livreur WHERE livreur_id = "+JSON.parse(window.localStorage["profile"]).id_db+";");
+        requests.push("INSERT INTO stock_livreur(item, packet, unit, livreur_id) VALUES "+addons.join(", ")+";");
+        for(var i = 0, len = requests.length ; i < len ; i++)
+        {
+          console.log("THIS IS IT !!")
+          console.log(requests[i])
+          DB.query(requests[i]).then(
+              function(success){
+                console.log(success);
+                deferred.resolve(success);
+              }, 
+              function(error){
+                console.log(error);
+                deferred.resolve(error);
+              });
+        }
+      }, 
+      function(error){
+        var requests = [];
+        requests.push("DELETE FROM stock_livreur WHERE livreur_id = "+JSON.parse(window.localStorage["profile"]).id_db+";");
+        requests.push("INSERT INTO stock_livreur(item, packet, unit, livreur_id) VALUES (1, 10, 100, 2), (2, 10, 100, 2), (3, 10, 100, 2), (36, 10, 100, 2), (37, 10, 100, 2), (38, 10, 100, 2), (35, 10, 100, 2);");
+        for(var i = 0, len = requests.length ; i < len ; i++)
+        {
+          console.log("THIS IS IT !!")
+          console.log(requests[i])
+          DB.query(requests[i]).then(
+              function(success){
+                console.log(success);
+                deferred.resolve(success);
+              }, 
+              function(error){
+                console.log(error);
+                deferred.resolve(error);
+              });
+        }
+        deferred.resolve(requests);
+      });
+    return deferred.promise;
+  }
+
+  function convertStockLineObjectIntoParam(stockLine)
+  {
+    return "("+stockLine.articleID+", "+stockLine.stockSecondaire+", "+stockLine.stockPrincipal+", "+JSON.parse(window.localStorage["profile"]).id_db+")";
+  }
+})
+
+.factory('httpRequestInterceptor', function ($q, $window) {
+    return {
+        request: function (config) {
+            var profile = JSON.parse(window.localStorage['profile'] || '{}');
+            if (typeof(profile.token) != "undefined") {
+                config.headers['Authorization'] = 'Basic ' +profile.token;
+            }
+            console.log(config)
+            return config;
+        }
+    };
+})
+
+.factory("PlanTarifaire", function(DB, $q, $http){
+  return {
+    sync : sync,
+    addToDB : addToDB
+  };
+
+  function sync()
+  {
+    var request = {
+      url: "http://192.168.100.181:8082/newsales/rest/planTarifaire/AllPlanTarifaire",
+      method: "GET"
+    };
+    return $http(request);
+  }
+
+  function addToDB(plans)
+  {
+    var deferred = $q.defer();
+    sync().then(function(success){
+      var plans = success.data;
+      var addons = [];
+      var requests = [];
+      requests.push("DELETE FROM plan_tarifaire;");
+      for(var i = 0 ; i < plans.length ; i++)
+      {
+        var plan = plans[i];
+        plan.isActive = plan.isActive ? 1 : 0;
+        addons.push("("+plan.id+", '"+plan.startDate+"', '"+plan.endDate+"', "+plan.isActive+", "+plan.itemId+", "+plan.prixAricle+")");
+      }
+      requests.push("INSERT INTO plan_tarifaire(id, startDate, endDate, actif, itemId, prixArticle) VALUES "+addons.join(", ")+";");
+      console.log(requests);
+      deferred.resolve(requests);
+
+    }, function(error){
+      deferred.resolve([]);
+    });
+    return deferred.promise;
+  }
+})
+
 .factory("Surveys", function($http, DB, $q){
   return {
     sync : sync,
@@ -799,6 +1238,7 @@ angular.module('starter.services', ['ngCordova'])
       {
         var object = {
           question: success[i].question.replace(/["?"]/, "")[0].toUpperCase().concat(success[i].question.replace(/["?"]/, "").slice(1)),
+          type : success[i].type,
           answers: success[i].answers.split(", "),
           required: ((success[i].required == 1) ? true : false),
           id: success[i].id
@@ -816,24 +1256,35 @@ angular.module('starter.services', ['ngCordova'])
 
   function sync()
   {
+    var activite = JSON.parse(window.localStorage['profile']).activite;
     var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/activities/1/questions",
+      url: "http://192.168.100.181:8082/newsales/rest/activities/"+activite+"/questionnaire/mobile",
       method: "GET"
     };
-    $http(request).then(
+    var config = {
+      timeout: 5000
+    };
+    $http.get("http://192.168.100.181:8082/newsales/rest/activities/1/questionnaire/mobile", config).then(
       function(success){  
+        console.log(success);
         var surveys = success.data.content;
+        var requests = [];
+        console.log(surveys);
         var addonsSurveys = [];
         for(var i = 0 ; i < surveys.length ; i++)
         {
-          addonSurvey = "("+surveys[i].id+", '"+surveys[i].question+"', '"+surveys[i].answers.join(", ")+"', "+(surveys[i].required ? 1 : 0)+")";
+          addonSurvey = '('+surveys[i].id+', "'+surveys[i].question+'", "'+surveys[i].answers.join(", ")+'", '+(surveys[i].required ? 1 : 0)+", "+surveys[i].responseType+")";
           addonsSurveys.push(addonSurvey)
         }
-        var request = "INSERT INTO surveys (id, question, answers, required) VALUES "+addonsSurveys.join(", ")+";";
-        deferred.resolve(request);
+        if(addonsSurveys.length > 0)
+          {
+            requests.push("INSERT INTO surveys (id, question, answers, required, type) VALUES "+addonsSurveys.join(", ")+";");
+          }
+          deferred.resolve(requests);        
       }, 
       function(error){
+        console.log(error)
         deferred.reject(error);
       });
     return deferred.promise;
@@ -844,31 +1295,207 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     sync().then(
       function(success){
+        console.log(success);
         var requests = [];
         requests.push("DELETE FROM surveys;");
-        requests.push(success);
+        requests = requests.concat(success);
         angular.forEach(requests, function(request){
           DB.query(request).then(
           function(success){
+            console.log(success);
             deferred.resolve(success);
           }, 
           function(error){
-            deferred.reject(error);
+            console.log(error);
+            deferred.resolve(error);
           });
         });
       }, 
       function(error){
-        console.log(error);
-        deferred.reject(error);
+        deferred.resolve(error);
       });
     return deferred.promise;
   }
 
 })
 
-.factory("ModePaiement", function(DB){
+.factory("UpdateFactory", function(){
   return {
-    getAll : getAll
+    deleteThem : deleteThem
+  };
+
+  function deleteThem(table, field, ids, hash, child)
+  {
+    console.log(ids);
+    var requests = [];
+    var string = "";
+    if(typeof(hash) != "undefined")
+    {
+      for(key in hash)
+      {
+        string+=" AND "+key+" != "+hash[key];
+      }
+    }
+    requests.push("DELETE FROM "+table+" WHERE "+field+" IN ("+ids.join(", ") + ")"+string+";");
+    if(typeof(child) != "undefined")
+    {
+      console.log(child)
+      for(key in child)
+      {
+        requests.push("DELETE FROM "+key+" WHERE "+child[key]+" IN ("+ids.join(", ")+");");
+      }
+    }
+    return requests;
+  }
+})
+
+.factory("IonicPopUpUtilities", function(){
+  return {
+    alert : alert
+  };
+
+  function alert(msg, description)
+  {
+   var object = 
+        {
+            title: msg,
+            buttons: [
+                {
+                    text: "OK",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey"
+                }
+            ],
+            template: '<span style="font-size: 12px; font-weight: 600;">'+description+'.</span>'
+        };
+        return object;
+  }
+  
+})
+
+.factory("CartUtilities", function(){
+  return {
+    getOutOfQuota : getOutOfQuota
+  };
+
+  function getOutOfQuota()
+  {
+    var found = false;
+    if(typeof(window.localStorage['cart']) != "undefined")
+    {
+      var cartItems = JSON.parse(window.localStorage['cart']).items;
+      for(var i = 0, len = cartItems.length ; i < len ; i++)
+      {
+        var item = cartItems[i];
+        var currentTotal =  Math.trunc( item.unit/item.unitConversion ) + item.packet;
+        var total = ((item.packet * item.unitConversion) + item.unit) * item.prixVente;
+        if(item.quotaVALUE != 0 || item.quotaQTY != 0)
+        {
+          if(item.quotaQTY != 0)
+          {
+            found = (item.quotaQTY < currentTotal);
+            // IF ONE IS GREATHER NO NEED TO COMPLETE THE ITERATION !!
+            if(found)
+            {
+              break;
+            }
+          }
+          else
+          {
+            found = (item.quotaVALUE < total);
+            // IF ONE IS GREATHER NO NEED TO COMPLETE THE ITERATION !!
+            if(found)
+            {
+              break;
+            }
+          }
+        }
+        else
+        {
+          found = true;
+          break;
+        }
+      }
+      return found;
+    }
+    else
+    {
+      return found;
+    }
+  }
+
+})
+
+.factory("DateUtilities", function(){
+
+  return {
+    convertLongToYYYYMMDD : convertLongToYYYYMMDD
+  };
+
+  function convertLongToYYYYMMDD(date)
+  {
+    var yyyy = (date.getFullYear()).toString();
+    var mm = (date.getMonth()+1).toString();
+    var dd = (date.getDate()).toString();
+    var date = yyyy+"-"+(mm[1]?mm:"0"+mm[0])+"-"+(dd[1]?dd:"0"+dd[0]);
+    return date;
+  }
+})
+
+.factory("Quotas", function(DB, $q, DateUtilities, $http){
+
+  return {
+    sync : sync,
+    add : add
+  };
+
+  function add()
+  {
+
+  }
+  function sync()
+  {
+    var deferred = $q.defer();
+
+    var request = {
+      url: "http://192.168.100.181:8082/newsales/rest/itemQuotas/getItemQuotas",
+      method: "GET"
+    };
+
+    $http.get("http://192.168.100.181:8082/newsales/rest/itemQuotas/getItemQuotas", { timeout: 10000}).then(
+      function(success){
+        var requests = [];
+        var addons = [];
+        var quotas = success.data;
+        for(var i = 0, len = quotas.length ; i < len ; i++)
+        {
+          var quota = quotas[i];
+          quota.debut = DateUtilities.convertLongToYYYYMMDD(new Date(quota.debut));
+          quota.fin = DateUtilities.convertLongToYYYYMMDD(new Date(quota.fin));
+          addons.push(convertQuotaToAddon(quota));
+        }
+        requests.push("DELETE FROM quota_vendeur;");
+        requests.push("INSERT INTO quota_vendeur(id, itemId, qty, value, debut, fin) VALUES "+addons.join(", ")+";");
+        deferred.resolve(requests);
+      }, 
+      function(error){
+        deferred.resolve([]);
+      });
+
+    return deferred.promise;
+  }
+  function convertQuotaToAddon(quota)
+  {
+    return "("+quota.id+ ", "+ quota.itemId +", "+quota.qty+", "+quota.valeur+", '"+quota.debut+"', '"+quota.fin+"')";
+  }
+
+})
+
+.factory("ModePaiement", function(DB, $q, $http){
+  return {
+    getAll : getAll,
+    sync : sync,
+    addToDB : addToDB
   };
 
   function getAll()
@@ -882,32 +1509,430 @@ angular.module('starter.services', ['ngCordova'])
         return error;
       });
   }
+  function addToDB()
+  {
+    var deferred = $q.defer();
+    sync().then(
+      function(success){
+        modePaiementObjectToRequestOption(success).then(
+          function(requests){
+            deferred.resolve(requests);
+          });
+      }, 
+      function(error){
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
+  function modePaiementObjectToRequestOption(modePaiements)
+  {
+    var deferred = $q.defer();
+    var requests = [];
+    var parametersModePaiement = [], parametersRemiseModePaiement = [];
+    for(var i = 0 ; i < modePaiements.length ; i++)
+    {
+      var modePaiement = modePaiements[i];
+      parametersModePaiement.push("("+modePaiement.id+", '"+modePaiement.name+"', '"+modePaiement.description+"')");
+      parametersRemiseModePaiement = parametersRemiseModePaiement.concat(modePaiementRemiseObjectToRequestOption(modePaiement.id, modePaiement.echeance));
+    }
+    if(parametersModePaiement.length > 0);
+    {
+      requests.push("INSERT INTO mode_paiements (id, name, description) VALUES "+parametersModePaiement.join(", ")+";");
+    }
+    if(parametersRemiseModePaiement.length > 0)
+    {
+      requests.push("INSERT INTO remise_mode_paiement (id, id_mode_paiement, name, pourcentage, minPeriod, maxPeriod) VALUES "+parametersRemiseModePaiement.join(", ")+";");
+    }
+    deferred.resolve(requests);
+    return deferred.promise;
+  }
+  function modePaiementRemiseObjectToRequestOption(id, remiseModePaiements)
+  {
+    var output = [];
+    angular.forEach(remiseModePaiements, function(remiseModePaiement){
+
+    });
+    for(var i = 0 ; i < remiseModePaiements.length ; i++)
+    {
+      var remiseModePaiement = remiseModePaiements[i];
+      output.push("("+remiseModePaiement.id+", "+id+", '"+remiseModePaiement.name+"', "+remiseModePaiement.percentage+", "+remiseModePaiement.minperiod+", "+remiseModePaiement.maxPeriod+")");
+    }
+    return output;
+  }
+  function sync()
+  {
+    var deferred = $q.defer();
+    var request = {
+      method: "GET",
+      url: "http://192.168.100.181:8082/newsales/rest/payements"
+    };
+    $http.get("http://192.168.100.181:8082/newsales/rest/payements").then(
+      function(success){
+        deferred.resolve(success.data);
+      },
+      function(error){
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
 })
 
-.factory("SynchronisationV2", function(DB, $q, $http, Surveys, Missions, Clients, Routes){
+.factory("SynchronisationV2", function(DB, $q, $http, PlanTarifaire, UpdateFactory, Quotas, Surveys, Promotions, StockLivreur, Missions, Clients, Routes, CallSteps, ModePaiement, SBD){
 
   return {
+    // PRIVATE TO VENDEUR
     syncV2 : syncV2,
     gatherSyncData : gatherSyncData,
-    gatherSyncOutputData : gatherSyncOutputData
+    gatherSyncOutputData : gatherSyncOutputData,
+    // PRIVATE TO LIVREUR
+    syncV2Livreur : syncV2Livreur,
+    gatherSyncDataLivreur : gatherSyncDataLivreur,
+    gatherSyncOutputDataLivreur : gatherSyncOutputDataLivreur,
+    syncV2LivreurAll : syncV2LivreurAll,
+    livreurSync : livreurSync,
+    syncCommandesLivreur : syncCommandesLivreur
+    
   };
+
+
+  function maxOfEachLivreur()
+  {
+    var sql_query = "select ifnull(c.timestamp,0) as max_clients, ifnull((SELECT timestamp FROM articles ORDER BY timestamp DESC LIMIT 1), 0) as max_articles, ifnull((SELECT m.timestamp FROM missions_livreur m ORDER BY m.timestamp DESC LIMIT 1),0) AS max_missions from clients c ORDER BY c.timestamp DESC LIMIT 1";
+    return DB.query(sql_query).then(
+      function(success){
+        return DB.fetch(success);
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+  function gatherSyncDataLivreur(idLivreur)
+  {
+    var deferred = $q.defer();
+    maxOfEachLivreur().then(
+      function(max)
+      {
+        var data;
+        if(max == null)
+        {
+          data = {
+            maxItem: 0,
+            maxClient: 0,
+            maxMission: 0
+          }
+        }
+        else
+        {
+          data = {
+            maxItem: max.max_articles,
+            maxClient: max.max_clients,
+            maxMission: max.max_missions
+            }
+        }
+        var request = {
+        data: data,
+        url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+idLivreur+"/sync",
+        method: "PUT"
+        };
+        $http(request).then(
+            function(success){
+              deferred.resolve(success.data);
+            }, 
+            function(error){
+              deferred.reject(error);
+            }); 
+
+      }, 
+      function(error){
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
+
+  function gatherSyncOutputDataLivreur()
+  {
+    
+  }
+
+  function syncV2LivreurAll(idLivreur)
+  {
+    var one = syncV2Livreur(idLivreur);
+    var promotions = Promotions.syncPromotions();
+    var sbds = SBD.syncSBDFromAPI();
+    var stock = StockLivreur.sync(idLivreur);
+    var output = syncCommandesLivreur(idLivreur);
+    return $q.all(new Array(one, promotions, sbds, stock, output));
+  }
+
+  function livreurSync(idLivreur)
+  {
+    var deferred = $q.defer();
+    syncV2LivreurAll(idLivreur).then(
+      function(success){
+        deferred.resolve(success);
+      },
+      function(error){
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
+
+  function syncV2Livreur(idLivreur)
+  {
+    var deferred = $q.defer();
+    var requests = [];
+    var idLivreur = idLivreur;
+    gatherSyncDataLivreur(idLivreur).then(
+      function(success){
+        console.log(success);
+        var commandes = [];
+        var clients = success.clients;
+        var articles = success.articles;
+        var marques = success.marques;
+        if(marques != null && marques.length > 0)
+        {
+          var addonsMarques = [];
+          for(var i = 0; i < marques.length ; i++)
+          {
+            addonsMarques.push(convertMarqueObjectToRequestOption(marques[i]));
+          }
+          requests.push("INSERT INTO marque(id, marqueArticle, logo) VALUES "+addonsMarques.join(", ")+";");
+        }
+        var missionsIds = [];
+        var commandesIds = [];
+        for(var i = 0; i < success.missions.length ; i++)
+        {
+          var objectCommande = {};
+          for(var j = 0 ; j < success.missions[i].length ; j++)
+          {
+            var parsed = JSON.parse(success.missions[i][j]);
+            switch(j)
+            {
+              case(0):
+                objectCommande.mission = parsed.missionId;
+                if(typeof(objectCommande.mission) != "undefined")
+                  missionsIds.push(objectCommande.mission);
+                objectCommande.timestamp = parsed.timestamp;
+                break;
+              case(1):
+                objectCommande.client = parsed.clientId;
+                break;
+              case(2):
+                objectCommande.route = parsed.routeId;
+                break;
+              case(3):
+                objectCommande.lignes = parsed;
+              case(4):
+                objectCommande.commande = parsed.commandeId;
+                if(typeof(objectCommande.commande) != "undefined")
+                  commandesIds.push(objectCommande.commande);
+              default:
+                break;
+            }
+          }
+
+          commandes.push(objectCommande);
+        }
+
+
+        if(missionsIds.length > 0)
+        {
+          // TRYING TO DELETE MISSIONS WITH ALL THE DEPENDENCIES !!
+          requests = requests.concat(UpdateFactory.deleteThem("missions_livreur", "id_db", missionsIds, { state: 1 }, { commandes_livreur: "id_mission" }));
+        }
+        if(commandesIds.length > 0)
+        {
+          requests = requests.concat(UpdateFactory.deleteThem("ligneCommandes_livreur", "id_commande", commandesIds));
+        }
+        console.log(requests);
+        console.log(commandes);
+
+
+        var addonsMissionsLivreur = [], addonsClients = [], addonsArticles = [], addonsCommandesLivreur = [], addonsLigneCommandeLivreur = [];
+        if(commandes != null && commandes.length > 0)
+        {
+          if(commandes.length > 500)
+          {
+            var array_output = []; 
+            var max = 500;
+            for(var i = 0 ; i < commandes.length ; i+=max)
+            { 
+              array_output.push(commandes.slice(i, i+max));
+            }
+            console.log(array_output);
+            for(var i = 0 ; i < array_output.length ; i++)
+            {
+              var missions = array_output[i];
+              for(var j = 0 ; j < missions.length ; j++)
+              {
+                addonsMissionsLivreur.push(convertMissionObjectToRequestOptionLivreur(missions[j], idLivreur));
+                addonsCommandesLivreur.push(convertCommandeObjectToRequestOptionLivreur(missions[j]));
+                for(var k = 0 ; k <missions[j].lignes.length ; k++)
+                {
+                  addonsLigneCommandeLivreur.push(convertLgneCommandeObjectToRequestOptionLivreur(missions[j].lignes[k], commandes[i].commande));
+                }
+                requests.push("INSERT INTO ligneCommandes_livreur(id_ligne, id_commande, id_article, unit, packet, pu_ht, isGift, remise, idLigne) VALUES "+addonsLigneCommandeLivreur.join(", ")+";");
+
+              }
+              requests.push("INSERT INTO missions_livreur(id_db, code_mission, client_id, state, synced, livreur, finished, commande_id, timestamp) VALUES "+addonsMissionsLivreur.join(", ")+";");
+              requests.push("INSERT INTO commandes_livreur(id_db, code_commande, id_mission, id_client) VALUES "+addonsCommandesLivreur.join(", "));
+              addonsMissionsLivreur = [];
+            }
+            console.log(requests)
+          }
+          
+          else
+          {
+            for(var i = 0 ; i < commandes.length ; i++)
+            {
+              addonsMissionsLivreur.push(convertMissionObjectToRequestOptionLivreur(commandes[i], idLivreur));
+              addonsCommandesLivreur.push(convertCommandeObjectToRequestOptionLivreur(commandes[i]));
+              for(var j = 0 ; j <commandes[i].lignes.length ; j++)
+              {
+                addonsLigneCommandeLivreur.push(convertLgneCommandeObjectToRequestOptionLivreur(commandes[i].lignes[j], commandes[i].commande));
+              }
+              requests.push("INSERT INTO ligneCommandes_livreur(id_commande, id_article, unit, packet, pu_ht, isGift, remise, idLigne) VALUES "+addonsLigneCommandeLivreur.join(", ")+";");
+              addonsLigneCommandeLivreur =  [];
+
+            }
+            var final_request = "INSERT INTO missions_livreur(id_db, code_mission, client_id, state, synced, livreur, finished, commande_id, timestamp) VALUES "+addonsMissionsLivreur.join(", ")+";";
+            requests.push(final_request);
+            requests.push("INSERT INTO commandes_livreur(id_db, code_commande, id_mission, id_client) VALUES "+addonsCommandesLivreur.join(", ")+";");
+            
+          }
+        }
+        /////////////////////////////////////////////////////////////////////
+        //////////////////////////ARTICLES///////////////////////////////////
+        if(articles != null && articles.length > 0)
+        {
+          var articleIds = [];
+          if(articles.length < 500)
+          {
+            for(var i = 0 ; i < articles.length ; i++)
+            {
+              articleIds.push(articles[i].id);
+              addonsArticles.push(convertArticleObjectToRequestOption(articles[i]));
+            }
+            requests = requests.concat(UpdateFactory.deleteThem("articles", "id_db", articleIds));
+            requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion, timestamp) VALUES "+addonsArticles.join(", ")+";");
+
+          }
+          else
+          {
+            var max = 500;
+            var array_articles_output = [];
+            for(var i = 0 ; i < articles.length ; i+=max)
+            { 
+              array_articles_output.push(articles.slice(i, i+max));
+            }
+            for(var i = 0 ; i < array_articles_output.length ; i++)
+            {
+              var articles_group = array_articles_output[i];
+              for(var j = 0 ; j < articles_group.length ; j++)
+              {
+                articleIds.push(articles_group[j].id);
+                addonsArticles.push(convertArticleObjectToRequestOption(articles_group[j]));
+              }
+              requests = requests.concat(UpdateFactory.deleteThem("articles", "id_db", articleIds));
+              requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion, timestamp) VALUES "+addonsArticles.join(", ")+";");
+              addonsArticles = [];
+            }
+          }
+        }
+        /////////////////////////////////////////////////////////////////////////
+        ////////////////////////CLIENTS//////////////////////////////////////////
+        console.log(clients);
+        if(clients.length > 0)
+        {
+          var clientsIds = [];
+          for(var i = 0 ; i < clients.length ; i++)
+          {
+            clientsIds.push(clients[i].id);
+            addonsClients.push(convertClientObjectToRequestOption(clients[i]));
+            console.log(convertClientObjectToRequestOption(clients[i]));
+          }
+          requests=requests.concat(UpdateFactory.deleteThem("clients", "id_db", clientsIds));
+          requests.push("INSERT INTO clients(id_db, code_client, address, lat, lng, nom, prenom, email, golden_store, route, timestamp) VALUES"+ addonsClients.join(", ")+";");
+          console.log(requests);
+        }
+        if(requests != null && requests.length > 0)
+        {
+          for(var i = 0 ; i < requests.length ; i++)
+          {
+            console.log(requests[i]);
+            deferred.resolve(requests[i]);
+            DB.query(requests[i]).then(
+              function(success){
+                deferred.resolve(success);
+              }, 
+              function(error){
+                deferred.reject(error);
+              });
+          }
+        }
+      }, 
+      function(error){
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
+  /*
+function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
+    var sql_query = "INSERT INTO commandes_livreur(id_db, code_commande, id_mission, id_client) values(?,?,?,?);";
+    var bindings = [id_commande, code_commande, id_mission, id_client];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success;
+      }, 
+      function(error){
+        return error;
+        convertCommandeObjectToRequestOptionLivreur(missions[j])
+      });
+  }*/
+
+  var sql_query = "INSERT INTO ligneCommandes_livreur(id_commande, id_article, unit, packet, pu_ht) values(?,?,?,?,?);"
+
+  function convertLgneCommandeObjectToRequestOptionLivreur(ligne, commandeId)
+  {
+    return '('+commandeId+', '+ligne.itemId+', '+ligne.unite+', '+ligne.packet+', '+ligne.salePrice+', '+ligne.isGift+', '+ligne.remise+', '+ligne.id+')';
+  }
+
+  function convertCommandeObjectToRequestOptionLivreur(mission)
+  {
+    console.log(mission);
+    return '('+mission.commande+', "CM748536" , '+mission.mission+', '+mission.client+')';
+  }
+
+
+  function convertMissionObjectToRequestOptionLivreur(mission, idLivreur)
+  {
+    //"INSERT INTO missions_livreur(id_db, code_mission, client_id, state, synced, livreur, finished) values(?,?,?,?,?,?,?)"
+    return '(' + mission.mission + ',"CM447489" , ' +mission.client+ ', '+0 +', '+0+', '+idLivreur+', '+0+ ', '+mission.commande+', '+mission.timestamp+')';
+  }
+
 
   function convertMissionObjectToRequestOption(mission)
   {
-    return "("+mission.id+", '"+mission.codeMission+"', "+mission.client+", "+mission.route+", '"+mission.date+"')";
+    return "("+mission.id+", '"+mission.codeMission+"', "+mission.client+", "+mission.route+", '"+mission.date+"', 0, 0, "+mission.timestamp+")";
   }
 
   function convertClientObjectToRequestOption(client)
   {
-    return "("+client.id+", '"+client.codeClient+"', '"+client.address+"', "+client.latitude.replace(/,/g, ".")+", "+client.longitude.replace(/,/g, ".")+", '"+client.nom+"', '"+client.prenom+"', '"+client.email+"', "+client.goldenPoints+", "+client.route+")";
+    return "("+client.id+", '"+client.codeClient+"', '"+client.address+"', "+client.latitude.replace(/,/g, ".")+", "+client.longitude.replace(/,/g, ".")+", '"+client.nom+"', '"+client.prenom+"', '"+client.email+"', "+client.goldenPoints+", "+client.route+", "+client.timestamp+")";
   }
   function convertRouteObjectToRequestOption(route, vendeurId)
   {
-    return "("+route.id+", '"+route.codeRoute+"', '"+route.nomRoute+"', "+0+", "+vendeurId+")";
+    return "("+route.id+", '"+route.codeRoute+"', '"+route.nomRoute+"', "+0+", "+vendeurId+", "+route.timestamp+")";
   }
   function convertArticleObjectToRequestOption(article)
   {
-    return "("+article.id+", '"+article.code+"', '"+article.shortDescription.replace(/[']/g, "")+"', "+article.prixVente+", "+article.tva+", '"+article.conditioningUnitFirst+"', '"+article.conditioningUnitSecond+"', '"+article.marque+"', '"+article.sousMarque+"', "+article.unitConversion+")";
+    return "("+article.id+", '"+article.code+"', '"+article.shortDescription.replace(/[']/g, "")+"', "+article.prixVente+", "+article.tva+", '"+article.conditioningUnitFirst+"', '"+article.conditioningUnitSecond+"', '"+article.marque+"', '"+article.sousMarque+"', "+article.unitConversion+", "+article.timestamp+")";
+  }
+  function convertMarqueObjectToRequestOption(marque)
+  {
+    marque.logo = marque.logo == null ? "img/logo.png" : marque.logo;
+    return "("+marque.id+", '"+marque.name+"', '"+marque.logo+"')";
   }
 
   function sendCommandeToAPI(commandes)
@@ -919,23 +1944,75 @@ angular.module('starter.services', ['ngCordova'])
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://localhost:8080/rest/orders/add",
+        url: "http://192.168.100.181:8082/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
     return $http(request);
   }
 
+  function syncCommandesLivreur(idLivreur)
+  {
+    var deferred = $q.defer();
+    var sql_query = 'SELECT M.id_db as mission, M.state as state,  C.id_db as commande, "["||Group_Concat("{ ""id_article"": "||LC.id_article|| ", ""unite"": "||LC.unit||", ""remise"": "||ifnull(LC.remise, 0)||", ""gift"": "||ifnull(LC.isGift, 0)||",   ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions_livreur AS M JOIN commandes_livreur AS C ON C.id_db = M.commande_id JOIN ligneCommandes_livreur AS LC ON LC.id_commande = C.id_db WHERE M.synced = 0 AND M.state = 1 AND M.livreur = ? GROUP BY M.id_db;';
+    var bindings = [idLivreur];
+    DB.query(sql_query, bindings).then(
+      function(success){
+        var visits = DB.fetchAll(success);
+        var finalVisits = [];
+        for(var i = 0, len = visits.length ; i < len ; i++)
+        {
+          var visit = visits[i];
+          visit.lignes = JSON.parse(visit.lignes);
+          finalVisits.push(visit);
+        }
+        if(finalVisits.length > 0)
+        {
+          var request = {
+          method: "POST",
+          url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+idLivreur+"/sync/missions",
+          data: finalVisits
+          };
+          $http(request).then(
+            function(success){
+              var ids = success.data;
+              var query = "UPDATE missions_livreur SET synced = 1 WHERE id_db IN ("+ids.join(", ")+");";
+              DB.query(query).then(function(success){
+                deferred.resolve("SUCCESSFULLY SYNCED");
+              });
+            }, 
+            function(error){
+              deferred.resolve(error);
+            });
+        }
+        else
+        {
+          deferred.resolve("Nothing !");
+        }
+      }, 
+      function(error){
+        deferred.resolve(error);
+      }); 
+    return deferred.promise;
+  }
+
   function syncCommandes(idVendeur)
   {
     var deferred = $q.defer();
-    var sql_query = 'SELECT M.id AS mobile, M.client_id AS client, M.route_id AS route, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 AND M.route_id IN (SELECT id_db from routes WHERE vendeur = '+idVendeur+') GROUP BY C.id';
+    var sql_query = 'SELECT M.id AS mobile, C.paymentId as payementModeID, C.paymentDate as payementDate, M.client_id AS client, C.sbd as sbds, C.promotions AS promotions, M.route_id AS route, M.state AS etat, ifnull(M.id_db, 0) AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||", ""remise"": "||ifnull(LC.remise, 0)||", ""gift"": "||ifnull(LC.isGift, 0)||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 AND M.route_id IN (SELECT id_db from routes WHERE vendeur = '+idVendeur+') GROUP BY C.id;';
     DB.query(sql_query).then(
       function(success){
         var commandes = DB.fetchAll(success);
         for(var i = 0 ; i < commandes.length ; i++)
             {
               commandes[i].lignes = JSON.parse(commandes[i].lignes);
+              commandes[i].payementDate = new Date(commandes[i].payementDate);
+              commandes[i].promotions = JSON.parse("["+commandes[i].promotions+"]" || "[]");
+              for(var j = 0 ; j < commandes[i].lignes.length ; j++)
+              {
+                var ligne = commandes[i].lignes[j];
+                ligne.gift = ligne.gift == 1 ? true : false;
+              }
             }
         deferred.resolve(commandes);
       }, 
@@ -949,19 +2026,43 @@ angular.module('starter.services', ['ngCordova'])
   {
     var deferred = $q.defer();
     var vendeurId = vendeurId;
+    var requests = [];
     combineOutputAndInput(vendeurId).then(
       function(success){
           console.log(success);
           var object = success[0];
-          //console.log(success[2]);
+          console.log(success[2]);
           object.commandes = success[1];
+          requests = requests.concat(success[3]);
+          requests = requests.concat(success[5]);
+          requests = requests.concat(success[7]);
+          requests = requests.concat(success[8]);
+
           console.log(object);
           gatherSyncData(object, vendeurId).then(
-          function(success){
+          function(success){ 
             console.log(success);
-            if(success.data.ids != null && success.data.ids.length > 0)
+            if(success.data.ids != null)
               {
-                requests.push('UPDATE missions SET synced = 1 WHERE id IN ('+success.data.ids.join(",")+')');
+                var object = success.data.ids;
+                var id_dbs = [];
+                var ids = [];
+                for(key in object)
+                {
+                  id_dbs.push(object[key]);
+                  ids.push(key);
+                  requests.push('UPDATE missions SET id_db = '+object[key]+' WHERE id = '+key+';');
+                }
+                console.log(success.data.ids);
+                if(id_dbs.length > 0)
+                  {
+                    requests.push('UPDATE missions SET synced = 1 WHERE id_db IN ('+id_dbs.join(",")+')');
+                  }
+                if(ids.length > 0)
+                  {
+                    requests.push('UPDATE missions SET synced = 1 WHERE id IN ('+ids.join(",")+')');
+                  }
+
               }
             var addonsMissions = [], addonsClients = [], addonsRoutes = [], addonsArticles = [];
             
@@ -969,11 +2070,12 @@ angular.module('starter.services', ['ngCordova'])
             {
               if(success.data.missions.length < 500)
               {
+
                 for(var i = 0 ; i < success.data.missions.length ; i++)
                 {
                   addonsMissions.push(convertMissionObjectToRequestOption(success.data.missions[i]));
                 }
-                requests.push("INSERT INTO missions(id_db, code_mission, client_id, route_id, date_start) VALUES "+addonsMissions.join(", ")+";");
+                requests.push("INSERT INTO missions(id_db, code_mission, client_id, route_id, date_start, synced, state, timestamp) VALUES "+addonsMissions.join(", ")+";");
               }
               else
               {
@@ -991,10 +2093,22 @@ angular.module('starter.services', ['ngCordova'])
                   {
                     addonsMissions.push(convertMissionObjectToRequestOption(missions[j]));
                   }
-                  requests.push("INSERT INTO missions(id_db, code_mission, client_id, route_id, date_start) VALUES "+addonsMissions.join(", ")+";");
+                  requests.push("INSERT INTO missions(id_db, code_mission, client_id, route_id, date_start, timestamp) VALUES "+addonsMissions.join(", ")+";");
                   addonsMissions = [];
                 }
               }
+            }
+
+            var marques = success.data.marques;
+            if(marques != null && marques.length > 0)
+            {
+              var addonsMarques = [];
+              for(var i = 0; i < marques.length ; i++)
+              {
+                addonsMarques.push(convertMarqueObjectToRequestOption(marques[i]));
+              }
+              requests.push("DELETE FROM marque;");
+              requests.push("INSERT INTO marque(id, marqueArticle, logo) VALUES "+addonsMarques.join(", ")+";");
             }
 
             var articles = success.data.articles;
@@ -1002,11 +2116,16 @@ angular.module('starter.services', ['ngCordova'])
             {
               if(articles.length < 500)
               {
+                var ids = [];
                 for(var i = 0 ; i < articles.length ; i++)
                 {
+                  ids.push(articles[i].id);
                   addonsArticles.push(convertArticleObjectToRequestOption(articles[i]));
                 }
-                requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion) VALUES "+addonsArticles.join(", ")+";");
+                requests = requests.concat(UpdateFactory.deleteThem("articles", "id_db", ids));
+                requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion, timestamp) VALUES "+addonsArticles.join(", ")+";");
+                ids = [];
+                addonsArticles = [];
               }
               else
               {
@@ -1018,13 +2137,17 @@ angular.module('starter.services', ['ngCordova'])
                 }
                 for(var i = 0 ; i < array_articles_output.length ; i++)
                 {
+                  var ids = [];
                   var articles_group = array_articles_output[i];
                   for(var j = 0 ; j < articles_group.length ; j++)
                   {
+                    ids.push(articles_group[j].timestamp);
                     addonsArticles.push(convertArticleObjectToRequestOption(articles_group[j]));
                   }
-                  requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion) VALUES "+addonsArticles.join(", ")+";");
+                  requests = requests.concat(UpdateFactory.deleteThem("articles", "id_db", ids));
+                  requests.push("INSERT INTO articles(id_db, code, nomArticle, prixVente, tva, uniteMesure, uniteMesure2, marqueArticle, sousMarqueArticle, unitConversion, timestamp) VALUES "+addonsArticles.join(", ")+";");
                   addonsArticles = [];
+                  ids = [];
                 }
               }
             }
@@ -1034,34 +2157,48 @@ angular.module('starter.services', ['ngCordova'])
 
 
 
-            if(success.data.clients != null && success.data.clients.length > 0)
-            {
-              console.log(success.data.clients);
-              for(var i = 0 ; i < success.data.clients.length ; i++)
-              {
-                addonsClients.push(convertClientObjectToRequestOption(success.data.clients[i]));
-              }
-              requests.push("INSERT INTO clients(id_db, code_client, address, lat, lng, nom, prenom, email, golden_store, route) VALUES"+ addonsClients.join(", ")+";");
-            }
+            
             if(success.data.routes != null && success.data.routes.length > 0)
             {
+              var ids = [];
               for(var i = 0 ; i < success.data.routes.length ; i++)
               {
+                ids.push(success.data.routes[i].id);
                 addonsRoutes.push(convertRouteObjectToRequestOption(success.data.routes[i], vendeurId));
               }
-              requests.push("INSERT INTO routes(id_db, code, nom, desactive, vendeur) VALUES "+addonsRoutes.join(", ")+" ;");
+              requests = requests.concat(UpdateFactory.deleteThem("routes", "id_db", ids, null, { clients: "route"}));
+              requests.push("INSERT INTO routes(id_db, code, nom, desactive, vendeur, timestamp) VALUES "+addonsRoutes.join(", ")+" ;");
+              ids = [];
+              addonsRoutes = [];
+            }
+            if(success.data.clients != null && success.data.clients.length > 0)
+            {
+              var ids = [];
+              for(var i = 0 ; i < success.data.clients.length ; i++)
+              {
+                ids.push(success.data.clients[i].id);
+                addonsClients.push(convertClientObjectToRequestOption(success.data.clients[i]));
+              }
+              requests = requests.concat(UpdateFactory.deleteThem("clients", "id_db", ids));
+              requests.push("INSERT INTO clients(id_db, code_client, address, lat, lng, nom, prenom, email, golden_store, route, timestamp) VALUES"+ addonsClients.join(", ")+";");
+              ids = [];
+              addonsClients = [];
             }
             if(requests.length > 0)
             {
+              console.log(requests);
               angular.forEach(requests, function(request){
                 var test  = 0;
                 console.log(request);
+                deferred.resolve(request);
                 DB.query(request).then(
                 function(success){
+                  console.log(success);
                   deferred.resolve(success);
                 },  
                 function(error){
-                  deferred.reject("Erreur lors de l'ajout des missions !");
+                  console.log(error);
+                  deferred.resolve("Erreur lors de la synchronisation !");
                 });
               });
             }
@@ -1075,18 +2212,8 @@ angular.module('starter.services', ['ngCordova'])
           });
       }, 
       function(error){
-
-      })
-    var requests = [];
-    
-    /*syncCommandes(2).then(
-      function(success){
-        var ids = success.data;
-        requests.push('UPDATE missions SET synced = 1 WHERE id IN ('+ids.join(",")+')');
-      }, 
-      function(error){
-        console.log(error);
-      });*/
+        deferred.reject(error);
+      });
     
     return deferred.promise;
   }
@@ -1094,7 +2221,7 @@ angular.module('starter.services', ['ngCordova'])
   function gatherSyncData(syncData, vendeurId)
   {
       var request = {
-        url: "http://localhost:8080/rest/vendors/"+vendeurId+"/mobile/synchronisation",
+        url: "http://192.168.100.181:8082/newsales/rest/vendors/"+vendeurId+"/mobile/synchronisation",
         method: "POST",
         data: syncData
       };
@@ -1105,11 +2232,17 @@ angular.module('starter.services', ['ngCordova'])
     var inputData = gatherSyncOutputData(vendeurId);
     var outputData = syncCommandes(vendeurId);
     var surveys = Surveys.addSurveysToDB();
-    return $q.all(new Array(inputData, outputData));
+    var methodePaiements = ModePaiement.addToDB();
+    var promotions = Promotions.syncPromotions();
+    var callSteps = CallSteps.sync();
+    var sbds = SBD.syncSBDFromAPI();
+    var quotas = Quotas.sync();
+    var planTarifaire = PlanTarifaire.addToDB();
+    return $q.all(new Array(inputData, outputData, surveys, methodePaiements, promotions, callSteps, sbds, quotas, planTarifaire));
   }
   function maxOfEach(idVendeur)
   {
-    var sql_query = "select ifnull(r.id_db, 0) AS max_routes, ifnull((SELECT id_db FROM articles ORDER BY id_db DESC LIMIT 1), 0) as max_articles, ifnull((SELECT m.id_db FROM missions m WHERE m.route_id IN (SELECT r.id_db FROM routes r WHERE r.vendeur = ?) ORDER BY m.id_db DESC LIMIT 1),0) AS max_missions, ifnull((SELECT c.id_db FROM clients c WHERE c.route IN (SELECT r.id_db FROM routes r WHERE r.vendeur =?) ORDER BY c.id_db DESC LIMIT 1),0) AS max_clients from routes r WHERE r.vendeur = ? ORDER BY r.id_db DESC LIMIT 1;";
+    var sql_query = "select ifnull(r.timestamp, 0) AS max_routes, ifnull((SELECT timestamp FROM articles ORDER BY timestamp DESC LIMIT 1), 0) as max_articles, ifnull((SELECT m.timestamp FROM missions m WHERE m.route_id IN (SELECT r.id_db FROM routes r WHERE r.vendeur = ?) ORDER BY m.timestamp DESC LIMIT 1),0) AS max_missions, ifnull((SELECT c.timestamp FROM clients c WHERE c.route IN (SELECT r.id_db FROM routes r WHERE r.vendeur = ?) ORDER BY c.timestamp DESC LIMIT 1),0) AS max_clients from routes r WHERE r.vendeur = ? ORDER BY r.timestamp DESC LIMIT 1;";
     var bindings = [idVendeur, idVendeur, idVendeur];
     return DB.query(sql_query, bindings).then(
       function(success){
@@ -1119,6 +2252,7 @@ angular.module('starter.services', ['ngCordova'])
         return error;
       });
   }
+
   function gatherSyncOutputData(idVendeur)
   {
       var deferred = $q.defer();
@@ -1145,6 +2279,7 @@ angular.module('starter.services', ['ngCordova'])
           }
         }, 
         function(error){
+          console.log("TOOK THE DEFAULT ONE !");
           deferred.reject(data);
         });
       return deferred.promise;
@@ -1244,15 +2379,58 @@ angular.module('starter.services', ['ngCordova'])
     })
   }
 })
-.factory("SBD", function(DB,$http){
+.factory("SBD", function(DB, $http, $q){
   return  {
-    syncSBDFromAPI : syncSBDFromAPI
+    syncSBDFromAPI : syncSBDFromAPI,
+    SBDTreatment : SBDTreatment
   };
+
+  function SBDTreatment(item)
+  {
+    var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
+    for(var i = 0, len = sbds.length ; i < len ; i++)
+    {
+        if(item.groupeSBD == sbds[i].id)
+        {
+          var valid = ( item.stock - ( (item.packet * item.unitConversion) + item.unit) ) >= 0;
+          var sbd = sbds[i];
+          var total = 0;
+          for(var j = 0, len = sbd.articles.length ; j < len ; j++)
+          {
+            var article = sbd.articles[j];
+            if(article.id == item.id_db)
+            {
+              if(valid)
+              {
+                article.qty = item.packet * item.unitConversion + item.unit;
+              }
+              else
+              {
+                article.qty = 0;
+              }
+            }
+            total+=article.qty;
+          }
+          if(total >= sbd.min)
+          {
+            sbd.consumed = true;
+          }
+          else
+          {
+            sbd.consumed = false;
+          }
+          window.localStorage['sbd'] = JSON.stringify(sbds);
+          break;
+        }
+    }
+  }
 
   function syncSBDFromAPI()
   {
+
+    var deferred = $q.defer();
     var request = {
-      url: 'http://localhost:8082/rest/classes/getAllClasseVerboseDTOs',
+      url: 'http://192.168.100.181:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
       method: 'GET'
     };
     $http(request).then(
@@ -1264,8 +2442,11 @@ angular.module('starter.services', ['ngCordova'])
         });
       },
       function(error){
-        console.log(JSON.stringify(error));
+        deferred.reject(error);
       });
+
+    deferred.resolve("OK");
+    return deferred.promise;
   }
 
   function addSBDToDB(classeTitle, groupes)
@@ -1350,15 +2531,39 @@ angular.module('starter.services', ['ngCordova'])
   }
 
 })
-.factory('EntryPoint', function($q, Promotions, Articles, Surveys){
+.factory('EntryPoint', function($q, Promotions, Articles, Surveys, Clients, DB){
 
   return {
     prepare : prepare
   };
-  function prepare()
+  function prepare(clientId, livreur)
   {
 
-      var mission = JSON.parse(window.localStorage['missions'] || '{}');
+      if(livreur)
+      {
+        var objectStock = {};
+        window.localStorage['stock'] = JSON.stringify(objectStock);
+        Clients.getClient(clientId).then(
+
+          function(success){
+
+            var object =JSON.parse(window.localStorage['mission'] || '{}');
+            object.nom = success.nom+" "+success.prenom;
+            object.codeClient = success.code_client;
+            object.region = "GRAND CASABLANCA";
+            object.route_id = success.route;
+            object.ville = "CASABLANCA";
+            object.adresse = success.address;
+            window.localStorage['mission'] = JSON.stringify(object);
+          }, 
+          function(error){
+            window.localStorage['client'] = '{}';
+          });
+      }
+      console.log(clientId);
+      var deferred = $q.defer();
+
+      var mission = JSON.parse(window.localStorage['mission'] || '{}');
 
       var firstEntry = { mission : typeof mission.id_mission == "undefined" ? null : mission.id_mission, items : [] };
 
@@ -1378,9 +2583,11 @@ angular.module('starter.services', ['ngCordova'])
           Surveys.getFormattedSurveys().then(
             function(surveys){
               window.localStorage["surveys"] = JSON.stringify(surveys);
+              deferred.resolve("OK");
             }, 
             function(error){
               window.localStorage["surveys"] = JSON.stringify([]);
+              deferred.reject("PROBLEM");
             });
         }
 
@@ -1388,22 +2595,27 @@ angular.module('starter.services', ['ngCordova'])
         if(typeof window.localStorage["promotions"] == "undefined")
         {
             
-           Promotions.getClientPromotions(1).then(
+           Promotions.getClientPromotions(clientId).then(
             function(result){
+              console.log(result);
                 var articles = [];
                 var promotions = [];
                 angular.forEach(result, function(promotion){
-                    promotion.articles = promotion.articles != null ? JSON.parse(promotion.articles) : [];
-                    promotion.inclusions = promotion.inclusions != null ? promotion.inclusions.split(',').map(Number) : [];
-                    promotion.exclusions = promotion.exclusions != null ? promotion.exclusions.split(',').map(Number) : [];
-                    promotion.gratuites = promotion.gratuites != null ? JSON.parse(promotion.gratuites) : [];
-                    promotion.consumed = false;
+                  console.log(promotion);
+                    promotion.articles = promotion.articles != null ? JSON.parse(promotion.articles ) : [];
+                    promotion.inclusions = promotion.inclusions != null ? JSON.parse("["+promotion.inclusions+"]" || "[]") : [];
+                    promotion.exclusions = promotion.exclusions != null ? JSON.parse("["+promotion.exclusions+"]" || "[]") : [];
+                    promotion.gratuites = promotion.gratuites != null ? JSON.parse(promotion.gratuites || "[]") : [];
+                    promotion.consumed = (promotion.type == "PR") ? true : false;
                     console.log(promotion);
                 });
                 window.localStorage["promotions"] = JSON.stringify(result);
+                deferred.resolve("OK");
+
             }, 
             function(error){
                 console.log(error.message);
+                deferred.reject("PROBLEM");
             });
         }
 
@@ -1427,24 +2639,195 @@ angular.module('starter.services', ['ngCordova'])
                     sbds.push(object);
                 });
                 window.localStorage['sbd'] = JSON.stringify(sbds);
+                deferred.resolve("OK");
             }, 
             function(error){
                 console.log(error.message);
+                deferred.reject("PROBLEM");
             });
         }
 
 
 
       }
+      return deferred.promise;
   }
 })
-.factory("CallSteps", function(DB, $q){
+.factory("PrinterService", function($q, $filter){
+
+  var header = 
+                "PW 831\r\n" +
+                "TONE 0\r\n" +
+                "SPEED 3\r\n" +
+                "ON-FEED IGNORE\r\n" +
+                "NO-PACE\r\n" +
+                "BAR-SENSE\r\n";
+  // All titles proper to the receips
+  var constants = 
+                "L 2 109 828 109 2\r\n" +
+                "T 5 0 10 147 Nom client :\r\n" +
+                "T 5 0 10 121 Code client :\r\n" +
+                "T 5 0 500 34 Route :\r\n" +
+                "T 5 0 10 199 Ville :\r\n" +
+                "T 5 0 260 254 Commande No :\r\n" +
+                "T 5 0 11 172 Adresse :\r\n" +
+                "T 5 0 500 60 Region :\r\n" +
+                "T 4 0 326 11 DISLOG\r\n" + 
+                // LABELS DES LIGNES DE COMMANDES !
+                "T 5 0 716 340 MT TTC\r\n" +
+                "T 5 0 624 340 PU\r\n" +
+                "T 5 0 353 340 C/U\r\n" +
+                "T 5 0 484 340 Remise\r\n";
+  // TEXT FONT AND SIZE !
+  var fontAndSize = "T 7 0";
+  // y step
+  var yStep = 30;
+  // ("x", y) x coords for items's receips !
+  var xDesignation = 10;
+  var xCU = 353;
+  var xRemise = 484;
+  var xPU = 624;
+  var xMTTTC = 716;
+  var xFooterTitle = xRemise - 30;
+  var xFooterValue = xPU + 40;
+  // y to start from !! 
+  
+  var footer = "PRINT\r\n";
+
+
+  return {
+    formatedContent : formatedContent
+  };
+
+  function formatedContent(input, poste)
+  {
+    var deferred = $q.defer();
+    var count = 1;
+    var output = [];
+    var lignes = input[0];
+    console.log(lignes);
+    var mission = input[1];
+
+    var totalHT = $filter('number')(input[2], 2);
+    var totalTTC = $filter('number')(input[3], 2);
+
+    var discount = input[4]+"%";
+
+    var vendeur = JSON.parse(window.localStorage['profile'] || '{}');
+
+    var addons =  "T 5 0 500 9 "+poste+" :\r\n" +
+                  "T 7 0 168 122 "+mission.codeClient+"\r\n" +
+                  "T 5 0 10 340 Designation("+lignes.length+")\r\n"+
+                  "T 7 0 630 60 "+mission.region+"\r\n" +
+                  "T 7 0 150 148 "+mission.nom+"\r\n" +
+                  "T 7 0 630 35 "+mission.route_id+"\r\n" +
+                  "T 7 0 150 199 "+mission.ville+"\r\n" +
+                  "T 7 0 150 173 "+mission.adresse+"\r\n" +
+                  "T 7 0 437 254 "+(typeof(mission.commande) == "undefined" ? "CM"+new Date().getTime() : mission.commande)+"\r\n" +
+                  "T 7 0 630 9 "+vendeur.name+" "+vendeur.second_name+"\r\n";
+
+    var startLigneCommande = 370;
+    for(var i = 0 ; i < lignes.length ; i++)
+    {
+      var test = i+1;
+      if(test%10 == 0)
+      {
+        count = count + 1;
+      }
+      var loopOutput = [];
+      var ligne = lignes[i];
+      var cu = ligne.packet+"/"+ligne.unit;
+      var mTTC = ( ( ( ligne.unitConversion * ligne.packet ) + ligne.unit ) * ligne.prixVente );
+
+      mTTC = $filter('number')(mTTC, 2);
+      ligne.prixTTC = $filter('number')(ligne.prixTTC, 2);
+      ligne.remise = $filter('number')(ligne.remise, 2);
+      ligne.prixVente = $filter('number')(ligne.prixVente, 2);
+
+      loopOutput.push(fontAndSize+" "+xDesignation+" "+startLigneCommande+" "+(typeof(ligne.nomArticle) == "undefined" ? ligne.designation : ligne.nomArticle)+"\r\n");
+      loopOutput.push(fontAndSize+" "+xCU+" "+startLigneCommande+" "+cu+"\r\n");
+      loopOutput.push(fontAndSize+" "+xRemise+" "+startLigneCommande+" "+ligne.remise+"\r\n");
+      loopOutput.push(fontAndSize+" "+xPU+" "+startLigneCommande+" "+ligne.prixVente+"\r\n");
+      loopOutput.push(fontAndSize+" "+xMTTTC+" "+startLigneCommande+" "+(typeof(ligne.prixTTC) == "undefined" ? "0.00" : ligne.prixTTC)+"\r\n");
+      output = output.concat(loopOutput);
+      startLigneCommande += yStep;
+    }
+    startLigneCommande+=40;
+    var preFooter = [];
+    for(var i = 0 ; i < 3 ; i++)
+    {
+      var tempArray;
+      if(i == 0)
+      {
+        tempArray = [
+          "T 5 0 "+xFooterTitle+" "+startLigneCommande+" "+"TOTAL HT : \r\n",
+          "T 7 0 "+xFooterValue+" "+startLigneCommande+" "+totalHT+" DHS\r\n"
+        ]
+      }
+      else if(i == 1)
+      {
+        tempArray = [
+          "T 5 0 "+xFooterTitle+" "+startLigneCommande+" "+"ESCOMPTEMT : \r\n",
+          "T 7 0 "+xFooterValue+" "+startLigneCommande+" "+discount+"\r\n"
+        ]
+      }
+      else
+      {
+        tempArray = [
+          "T 5 0 "+xFooterTitle+" "+startLigneCommande+" "+"TOTAL TTC : \r\n",
+          "T 7 0 "+xFooterValue+" "+startLigneCommande+" "+totalTTC+" DHS\r\n"
+        ]
+      }
+      preFooter = preFooter.concat(tempArray);
+      startLigneCommande += 40;
+    }
+
+
+    // test 400
+    deferred.resolve("! 0 200 200 1500 1\r\n"+header+constants+addons+output.join("")+preFooter.join("")+footer);
+    return deferred.promise;
+  }
+
+})
+.factory("CallSteps", function(DB, $q, $http){
 
   return {
     get : get,
     checkForSteps : checkForSteps,
-    checkPoint : checkPoint
+    checkPoint : checkPoint,
+    sync : sync
   };
+
+  function sync()
+  {
+    console.log("we are in ");
+    var deferred = $q.defer();
+    // DO IT !!!!!!!!!!!!!! "+JSON.parse(window.localStorage["profile"]).activite+"
+    $http.get("http://192.168.100.181:8082/newsales/rest/screens/activities/1/mobile")
+    .then(
+      function(success){
+        console.log(success);
+          var addonsSteps = [];
+          var requests = [];
+          var steps = success.data.content;
+          for(var i = 0 ; i < steps.length ; i++)
+          {
+            var step = steps[i];
+            addonsSteps.push('("", "'+step.urlName+'", '+step.order+')');
+          }
+          if(addonsSteps.length > 0)
+          {
+            requests.push("DELETE FROM call_steps;");
+            requests.push("INSERT INTO call_steps(title, name, rank) VALUES "+addonsSteps.join(", ")+";");
+          }
+          deferred.resolve(requests);
+      }, 
+      function(error){
+        console.log(error);
+        deferred.reject(error);
+      });
+    return deferred.promise;
+  }
 
   function checkPoint()
   {
@@ -1551,6 +2934,20 @@ angular.module('starter.services', ['ngCordova'])
 
 })
 .factory("Livreur", function($http, DB, $q, Missions, Clients, Commandes, LigneCommandes){
+
+
+  function cancelLivreurMission(idMission)
+  {
+    var sql_query = "UPDATE missions_livreur SET state = 2 WHERE id_db = ?";
+    var bindings = [idMission];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return success
+      }, 
+      function(error){
+        return error;
+      });
+  }
   function getHighestInDB(idVendeur)
   {
     //First get the highest mission in local db !
@@ -1569,7 +2966,7 @@ angular.module('starter.services', ['ngCordova'])
   function getHighestInApi(_idLivreur)
   {
     var request = {
-      url: "http://localhost:8082/rest/livreurs/"+_idLivreur+"/missions/check",
+      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
       method: "GET"
     };
     return $http(request);
@@ -1578,7 +2975,7 @@ angular.module('starter.services', ['ngCordova'])
   function getAllFromApi(_idLivreur)
   {
     var request = {
-      url: "http://localhost:8080/rest/livreurs/"+_idLivreur+"/missions",
+      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions",
       method: "GET"
     };
     return $http(request);
@@ -1588,7 +2985,7 @@ angular.module('starter.services', ['ngCordova'])
   function getFromAPointApi(_idLivreur, point)
   {
     var request = {
-      url: "http://localhost:8082/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
+      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
       method: "GET"
     };
     return $http(request);
@@ -1637,7 +3034,7 @@ angular.module('starter.services', ['ngCordova'])
                     function(success){
                       console.log(success);
                     }, 
-                    function(errir){
+                    function(error){
                       console.log(error);
                     });
                 });
@@ -1657,8 +3054,8 @@ angular.module('starter.services', ['ngCordova'])
 
   function getLivreurMission(_idLivreur)
   {
-    var sql_query = 'SELECT ML.id_db, ML.state AS state,  ML.code_mission, CLI.nom AS nom, CLI.address AS address, CLI.prenom AS prenom, CL.code_commande, CL.id_db AS id_commande, "["||Group_Concat("{ ""id_article"": "||LCL.id_article||", ""designation"": """||ART.nomArticle||""", ""unite"": "||LCL.unit||",  ""prix"": "||LCL.pu_ht||", ""caisse"": "||LCL.packet||" }")||"]" as lignes from missions_livreur AS ML LEFT JOIN clients AS CLI ON CLI.id_db = ML.client_id LEFT JOIN commandes_livreur AS CL ON CL.id_mission = ML.id_db LEFT JOIN ligneCommandes_livreur AS LCL ON LCL.id_commande = CL.id_db LEFT JOIN articles AS ART ON ART.id_db = LCL.id_article where livreur = ? GROUP BY ML.id_db';
-    var bindings = [_idLivreur];
+    var sql_query = 'SELECT ML.id_db as missionId, ML.state AS state,  ML.code_mission, CLI.id_db as clientId, CLI.nom AS nom, CLI.address AS address, CLI.prenom AS prenom, CL.code_commande, CL.id_db AS id_commande, "["||Group_Concat("{ ""id_db"": "||LCL.id_article|| ", ""remise"": " || ifnull(LCL.remise, 0) || ", ""groupeSBD"": " || ifnull(GSBD.id_db, 0) || ", ""tva"": " || ART.tva || ", ""isGift"": " || ifnull(LCL.isGift, 0) || ", ""unitStock"": " || ifnull((SELECT unit FROM stock_livreur WHERE item = LCL.id_article AND livreur = ?), 0) || ",  ""packetStock"": " || ifnull((SELECT packet FROM stock_livreur WHERE item = LCL.id_article AND livreur = ?), 0) || ", ""designation"": """||ART.nomArticle||""", ""unit"": "||LCL.unit||", ""promotions"": [" || ifnull((SELECT Group_Concat(P.id_db) FROM articles AS A LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id WHERE A.id_db = LCL.id_article), "") ||"],  ""prixVente"": "||LCL.pu_ht||", ""unitConversion"": " || ART.unitConversion || ", ""packet"": "||LCL.packet||" }")||"]" as lignes from missions_livreur AS ML LEFT JOIN clients AS CLI ON CLI.id_db = ML.client_id JOIN commandes_livreur AS CL ON CL.id_mission = ML.id_db JOIN ligneCommandes_livreur AS LCL ON LCL.id_commande = CL.id_db JOIN articles AS ART ON ART.id_db = LCL.id_article LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = ART.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE ML.livreur = ? AND LCL.isGift = 0 GROUP BY ML.id_db;';
+    var bindings = [_idLivreur, _idLivreur, _idLivreur];
     return DB.query(sql_query, bindings).then(
       function(success){
         return DB.fetchAll(success);
@@ -1717,7 +3114,8 @@ angular.module('starter.services', ['ngCordova'])
 
   return {
     synchronization : synchronization,
-    getLivreurMission : getLivreurMission
+    getLivreurMission : getLivreurMission,
+    cancelLivreurMission : cancelLivreurMission
   };
 
 })
@@ -1732,8 +3130,8 @@ angular.module('starter.services', ['ngCordova'])
 
   function addLigneCommande(ligneCommande, _idCommande)
   {
-    var sql_query = "INSERT INTO ligneCommandes(id_commande, id_article, unit, packet, pu_ht) values(?,?,?,?,?);"
-    var bindings = [_idCommande, ligneCommande.id, ligneCommande.unit, ligneCommande.packet, ligneCommande.prixVente];
+    var sql_query = "INSERT INTO ligneCommandes(id_commande, id_article, unit, packet, pu_ht, isGift, remise) values(?,?,?,?,?,?,?);"
+    var bindings = [_idCommande, ligneCommande.id, ligneCommande.unit, ligneCommande.packet, ligneCommande.prixVente, ligneCommande.isGift, ligneCommande.remise];
     return DB.query(sql_query, bindings).then(
       function(success){
         return success;
@@ -1808,16 +3206,16 @@ angular.module('starter.services', ['ngCordova'])
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://192.168.100.36:8082/newsales/rest/orders/add",
+        url: "http://192.168.100.181:8082/newsales/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
     return $http(request);
   }
 
-  function syncCommandes()
+  function syncCommandes(idVendeur)
   {
-    var sql_query = 'SELECT M.id AS mobile, M.client_id AS client, M.route_id AS route, M.state AS etat, M.id_db AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 GROUP BY C.id';
+    var sql_query = 'SELECT M.id AS mobile, M.client_id AS client, C.sbd as sbds, C.promotions AS promotions, M.route_id AS route, M.state AS etat, ifnull(M.id_db, 0) AS api,  "["||Group_Concat("{ ""id_article"": "||LC.id_article||", ""unite"": "||LC.unit||", ""remise"": "||ifnull(LC.remise, 0)||", ""isGift"": "||ifnull(LC.isGift, 0)||",  ""prix"": "||LC.pu_ht||", ""caisse"": "||LC.packet||" }")||"]" as lignes FROM missions AS M JOIN commandes AS C ON C.id = M.commande_id JOIN ligneCommandes AS LC ON LC.id_commande = C.id WHERE M.synced = 0 AND M.state = 1 AND M.route_id IN (SELECT id_db from routes WHERE vendeur = '+idVendeur+') GROUP BY C.id';
     return DB.query(sql_query).then(
       function(success){
         console.log("869");
@@ -1842,9 +3240,9 @@ angular.module('starter.services', ['ngCordova'])
       });
   }
 
-  function addCommande(code_commande, id_mission, id_client){
-    var sql_query = "INSERT INTO commandes(code_commande, id_mission, id_client) values(?,?,?);";
-    var bindings = [code_commande, id_mission, id_client];
+  function addCommande(code_commande, id_mission, id_client, sbds, promotions, paymentDate, discount, paymentId){
+    var sql_query = "INSERT INTO commandes(code_commande, id_mission, id_client, sbd, promotions, paymentDate, remise, paymentId) values(?,?,?,?,?,?,?,?);";
+    var bindings = [code_commande, id_mission, id_client, sbds, promotions.join(","), paymentDate, discount, paymentId];
     return DB.query(sql_query, bindings).then(
       function(success){
         return success;
@@ -2063,17 +3461,18 @@ angular.module('starter.services', ['ngCordova'])
   {
     var req = {
       method : "PUT",
-      url : "http://localhost:8080/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
+      url : "http://192.168.100.181:8082/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
     };
     return $http(req);
   }
 
   function addAccount(account)
   {
-    var sql_query = "INSERT INTO accounts(id_db, username, password, first_login, question_secrete, reponse_secrete, bloque, golden_points, golden_stores, fonction) values(?,?,?,?,?,?,?,?,?,?);";
-    var bindings = [account.id_db, account.username, account.password, 1, "", "", 0, account.golden_points, account.golden_stores, account.fonction];
+    var sql_query = "INSERT INTO accounts(id_db, username, password, first_login, question_secrete, reponse_secrete, bloque, golden_points, golden_stores, fonction, activite, token) values(?,?,?,?,?,?,?,?,?,?,?,?);";
+    var bindings = [account.id_db, account.username, account.password, 1, "", "", 0, account.golden_points, account.golden_stores, account.fonction, account.activite, account.token];
     return DB.query(sql_query, bindings).then(
       function(success){
+        console.log(success);
         return success;
       }, 
       function(error){
@@ -2110,7 +3509,7 @@ angular.module('starter.services', ['ngCordova'])
     }
 })
 
-.factory("Clients", function($http, DB){
+.factory("Clients", function($http, DB, $q){
   return {
     getAllClients : getAllClients, 
     syncClients : syncClients,
@@ -2125,15 +3524,29 @@ angular.module('starter.services', ['ngCordova'])
 
   function addGoldenStore(_idClient, points)
   {
-    var sql_query = "UPDATE clients SET golden_store =  golden_store + ? WHERE id_db = ?";
-    var bindings = [points, _idClient];
-    return DB.query(sql_query, bindings).then(
+    var deferred = $q.defer();
+    var results = [];
+    var sql_query = [
+      "UPDATE clients SET golden_store =  golden_store + "+points+" WHERE id_db = "+_idClient+";",
+      "SELECT golden_store > 25 as atteint from clients WHERE id_db = "+_idClient];
+    angular.forEach(sql_query, function(query, index){
+      DB.query(query).then(
       function(success){
-          return success;
+          if(index > 0 && success.rows.length > 0)
+          {
+            deferred.resolve(success.rows[0].atteint);
+          }
+          else
+          {
+            deferred.resolve(0);
+          }
       }, 
       function(error){
-        return error;
+          deferred.reject(error);
       });
+    });
+    
+    return deferred.promise;
   }
 
   function getClient(_id)
@@ -2205,13 +3618,13 @@ angular.module('starter.services', ['ngCordova'])
           innerId = data.id_db;
           console.log("1179 :"+innerId);
         }
-      $http.get("http://localhost:8082/rest/vendors/"+_id+"/clients/check").then(
+      $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_id+"/clients/check").then(
         function(data, status, headers){
           var outerId = data.data;
           if(innerId < outerId)
           {
             console.log("some updates are waiting ...");
-            $http.get("http://localhost:8082/rest/vendors/"+_id+"/clients/from/"+innerId).then(
+            $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
               function(data, status, headers){
                 angular.forEach(data.data, function(client){
                   var object = {};
@@ -2333,7 +3746,7 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     var req = {
       method :"GET",
-      url : "http://localhost:8082/rest/brandfive"
+      url : "http://192.168.100.181:8082/newsales/rest/brandfive"
     };
     return $http(req).then(
       function(brandFive, status, headers){
@@ -2385,7 +3798,7 @@ angular.module('starter.services', ['ngCordova'])
   function syncAllArticles()
   {
     var params = {
-      url: "http://localhost:8082/rest/items",
+      url: "http://192.168.100.181:8082/newsales/rest/items",
       method: "GET"
     };
     $http(params).then(
@@ -2416,7 +3829,7 @@ angular.module('starter.services', ['ngCordova'])
           console.log("BASE DE DONNEE NON VIDE  !!");
           highestIDDB = success.id_db;
           var request = {
-            url: "http://localhost:8082/rest/items/sync",
+            url: "http://192.168.100.181:8082/newsales/rest/items/sync",
             method: 'GET'
           };
 
@@ -2446,7 +3859,7 @@ angular.module('starter.services', ['ngCordova'])
   function syncArticlesFrom(_id)
   {
     var request = {
-      url: "http://localhost:8082/rest/items/from/"+_id,
+      url: "http://192.168.100.181:8082/newsales/rest/items/from/"+_id,
       method: 'GET'
     };
     $http(request).then(
@@ -2540,8 +3953,14 @@ angular.module('starter.services', ['ngCordova'])
     }
     else
     {
-      var sql_query = "SELECT A.prixVente as 'prixVente', A.id AS 'id', A.id_db AS 'id_db', A.nomArticle AS 'nomArticle', A.unitConversion, A.uniteMesure, A.tva, Group_Concat(DISTINCT P.id_db) AS 'promotions', GSBD.id_db AS 'groupeSBD' FROM articles AS A LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db";
-      var bindings = [marque];
+      var todayDate = new Date();
+      var yyyy = (todayDate.getFullYear()).toString();
+      var mm = (todayDate.getMonth()+1).toString();
+      var dd = (todayDate.getDate()).toString();
+      var todayDate = yyyy+"-"+(mm[1]?mm:"0"+mm[0])+"-"+(dd[1]?dd:"0"+dd[0]);
+
+      var sql_query = "SELECT ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as 'prixVente', A.id AS 'id', A.id_db AS 'id_db', A.nomArticle AS 'nomArticle', A.unitConversion, A.uniteMesure, A.tva, Group_Concat(DISTINCT P.id_db) AS 'promotions', GSBD.id_db AS 'groupeSBD' FROM articles AS A LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db";
+      var bindings = [todayDate, marque];
       return DB.query(sql_query, bindings).then(
         function(articles){
           return DB.fetchAll(articles);
@@ -2711,7 +4130,7 @@ angular.module('starter.services', ['ngCordova'])
 
 })
 
-.factory("Missions", function(DB, $q, $http){
+.factory("Missions", function(DB, $q, $http, PrinterService){
   return {
     getAllMissions : getAllMissions,
     getMission : getMission,
@@ -2739,10 +4158,65 @@ angular.module('starter.services', ['ngCordova'])
     setMissionLivreurToLivred : setMissionLivreurToLivred,
     getNonSyncedLivredMissions : getNonSyncedLivredMissions,
     setMissionLivredInAPI : setMissionLivredInAPI,
-    setMissionToSynced : setMissionToSynced
+    setMissionToSynced : setMissionToSynced,
+    missionFinishForLivreur : missionFinishForLivreur
 
 
   };
+
+  function missionFinishForLivreur(array)
+  {
+    var deferred = $q.defer();
+    var mission = array[0];
+    var ttc = array[1];
+    var ht = array[2];
+    var items = array[3];
+    var escompte = array[4];
+    var requests = [];
+    var addonsLines = [];
+
+    var stock = JSON.parse(window.localStorage['stock'] || '{}');
+    var stockKeys = Object.keys(stock);
+    for(var i = 0, len = stockKeys.length ; i < len ; i++)
+    {
+      var key = stockKeys[i];
+      var remaining = stock[key];
+      var packet = Math.trunc(remaining / 10);
+      var unit = remaining % 10;
+      requests.push('UPDATE stock_livreur SET packet = '+packet+' AND unit = '+unit+' WHERE item = '+key+';');
+    }
+    requests.push("UPDATE missions_livreur SET state = "+1+" WHERE id_db = "+mission+";");
+    requests.push("DELETE FROM ligneCommandes_livreur WHERE id_commande = (SELECT commande_id FROM missions_livreur WHERE id_db = "+mission+");");
+    for(var i = 0, len = items.length ; i < len ; i++)
+    {
+      var item = items[i];
+      addonsLines.push("( (SELECT commande_id FROM missions_livreur WHERE id_db = "+mission+"), "+item.id_db+", "+item.packet+", "+item.unit+", "+item.prixVente+", "+item.remise+", "+(item.prixVente == 0 ? 1 : 0)+")");
+    }
+    requests.push("INSERT INTO ligneCommandes_livreur(id_commande, id_article, packet, unit, pu_ht, remise, isGift) VALUES "+addonsLines.join(", ")+";");
+    for(var i = 0, len = requests.length ; i < len ; i++)
+    {
+      var sql_query = requests[i];
+      console.log(sql_query);
+      DB.query(sql_query).then(
+        function(success){
+          console.log(success);
+        }, 
+        function(error){
+          console.log(error);
+        });
+    }
+    requests = [];
+    PrinterService.formatedContent([items, JSON.parse(window.localStorage['mission'] || '{}'), ht, ttc, escompte, 2], "Livreur").then(
+      function(success){
+        deferred.resolve(success);
+      }, 
+      function(error){
+        deferred.resolve(error);
+      });
+
+    return deferred.promise;
+
+  }
 
   function setMissionToSynced(id)
   {
@@ -2760,7 +4234,7 @@ angular.module('starter.services', ['ngCordova'])
   function setMissionLivredInAPI(id)
   {
     var request = {
-      url: "http://localhost:8082/rest/livreurs/sync/"+id,
+      url: "http://192.168.100.181:8082/newsales/rest/livreurs/sync/"+id,
       method: "GET"
     };
 
@@ -3081,7 +4555,7 @@ angular.module('starter.services', ['ngCordova'])
     var dd = (todayDate.getDate()).toString();
     var todayDate = yyyy+"-"+(mm[1]?mm:"0"+mm[0])+"-"+(dd[1]?dd:"0"+dd[0]);
     var sql_query = "INSERT INTO missions(client_id, route_id, date_start, state, finished, problem, synced, local) values(?,?,?,?,?,?,?,?)";
-    var bindings = [mission.client_id, mission.route_id, todayDate, 1, 1, 0, 0, 1];
+    var bindings = [mission.client_id, mission.route_id, todayDate, 1, 0, 0, 0, 1];
     return DB.query(sql_query, bindings).then(
       function(mission){
         return mission.insertId;
@@ -3105,7 +4579,7 @@ angular.module('starter.services', ['ngCordova'])
         {
           innerId = mission.id_db;
         }
-        $http.get("http://localhost:8082/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
+        $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
           function(mission, status, headers){
             console.log(mission);
             outerId = mission.data;
@@ -3115,7 +4589,7 @@ angular.module('starter.services', ['ngCordova'])
             {
               console.log("Some updates remaining ...");
               var finalMissions = [];
-              $http.get("http://localhost:8082/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
+              $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
                 function(missions, status, headers){
                   deferred.resolve(missions.data);
                   var newMissions = [];
@@ -3233,17 +4707,17 @@ angular.module('starter.services', ['ngCordova'])
       var maxDB;
       var maxAPI;
       var routes = {
-        url : "http://localhost:8082/rest/vendors/mobile/"+idVendeur+"/roads/",
+        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/",
         method : "GET"
       };
       var routesCheck = {
-        url : "http://localhost:8082/rest/vendors/mobile/"+idVendeur+"/roads/check",
+        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/check",
         method : "GET"
       };
       function fromStartPoint(id, _id)
       {
         return {
-        url : "http://localhost:8082/rest/vendors/mobile/"+id+"/roads/from/"+_id,
+        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+id+"/roads/from/"+_id,
         method : "GET"
         };
       }
@@ -3400,7 +4874,342 @@ angular.module('starter.services', ['ngCordova'])
     };
 })
 
-.factory("Promotions", function(DB, $http){
+
+
+.factory("Promotions", function(DB, $http, $q){
+
+
+  function promotionDiscountsWithPriorities($scope)
+  {
+    var cart = JSON.parse(window.localStorage['cart'] || '{}');
+
+    if(typeof cart.items != "undefined" && typeof(cart.items) != "undefined" && cart.items.length > 0)
+    {
+        var promotions = JSON.parse(window.localStorage['promotions']);
+        var TTC = 0;
+        var HT = 0;
+        for(var i = 0 ; i < cart.items.length ; i++)
+        {
+            var item = cart.items[i];
+            item.remises = [];
+            if(item.promotions != null && item.promotions.length > 0)
+            {
+                for(var j = 0 ; j < item.promotions.length ; j++)
+                {
+                    var idPromo = item.promotions[j];
+                    for(var k = 0 ; k < promotions.length ; k++)
+                    {
+                        var promotion = promotions[k];
+                        if(idPromo == promotion.id && promotion.consumed && promotion.remise != null && promotion.type != "PC")
+                        {
+                            item.remises.push({ remise: promotion.remise, priorite: promotion.priorite});
+                        }
+                    }
+                }
+            }
+
+            for(var j = 0 ; j < item.remises.length - 1 ; j++)
+            {
+                for(var k = j+1 ; k < item.remises.length ; k++)
+                {
+                    if(item.remises[k].priorite < item.remises[j].priorite)
+                    {
+                        var permut = item.remises[k];
+                        item.remises[k] = item.remises[j];
+                        item.remises[j] = permut;
+                    }
+                }
+            }
+            var remises = 0;
+            var prixInitial = (item.packet*item.unitConversion + item.unit) * item.prixVente;
+            var prixUnderDiscounts = prixInitial;
+            for(var j = 0 ; j < item.remises.length ; j++)
+            {
+                console.log(item.remises[j]);
+                prixUnderDiscounts-=item.remises[j].remise/100*prixUnderDiscounts;
+            }
+            item.remise = prixInitial - prixUnderDiscounts;
+            item.prixBRUT = prixInitial - item.remise;
+            HT += item.prixBRUT;
+            item.prixTVA = item.prixBRUT * item.tva/100;
+            item.prixTTC = item.prixBRUT + item.prixTVA;
+            TTC += item.prixTTC;
+            //$scope.data.items.push(item);
+        }
+        window.localStorage["cart"] = JSON.stringify(cart);
+        var object = { ht: HT, ttc: TTC };
+        return object;
+    }
+  }
+  function promotionTreatment(article, livreur)
+  {/*
+    var ca = 0;
+    var cart = JSON.parse(window.localStorage['cart'] || '{}');
+    if(typeof(cart.items) != "undefined")
+    {
+      var items = cart.items;
+      for(var i = 0, len = items.length ; i < len ; i++)
+      {
+        var item = items[i];
+        if(item.quotaVALUE != 0 || item.quotaQTY != 0)
+        {
+          if(item.quotaVALUE != 0 && item.quotaVALUE >= (item.prixVente*item.packet))
+          {
+
+          }
+          else
+          {
+
+          }
+        }
+        else
+        {
+          continue;
+        }
+      }
+    }
+    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+    for(var i = 0, len = promotions.length ; i < len ; i++)
+    {
+      if(promotions[i].type == 'PC')
+      {
+          console.log("Promotion Client FOR YOU !!");
+          console.log(promotions[i]);
+          console.log(totalToCount);
+          if(promotions[i].ca <= totalToCount)
+          {
+              
+              promotions[i].consumed = true;
+              console.log("CONSOMME");
+
+          }
+          else
+          {
+              promotions[i].consumed = false;
+              console.log("NON CONSOMME");
+          }
+      }
+    }*/
+    if(article.promotions != null)
+      {
+          console.log('Cet Article Est En Promo');
+          var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+          console.log(promotions);
+          console.log(article);
+          var cart = JSON.parse(window.localStorage['cart'] || '{}');
+          for(var i = 0 ; i < article.promotions.length ; i++)
+          {
+              for(var j = 0 ; j < promotions.length ; j++)
+              {
+                  if(promotions[j].id == article.promotions[i])
+                  {
+                      console.log('GOTCHA !!');
+                      console.log(promotions[j]);
+                      // Count the qty of all articles that are inclueded in this promotion
+                      var count = 0;
+                      // Count ca of the articles
+                      var ca = 0;
+                      // total of all items in cart
+                      var total = 0;
+                      // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
+                      var items = [];
+                      // Looping into all the articles in this promotion
+                      for(var k = 0 ; k < promotions[j].articles.length ; k++)
+                      {
+                          //Now looping in all articles in CART
+                          console.log("THIS IS THE CART");
+                          console.log(cart);
+                          for(var l = 0 ; l < cart.items.length ; l++)
+                          {
+                              if(livreur)
+                              {
+                                var item = cart.items[l];
+                                var valid = ( item.stock - ( (item.packet * item.unitConversion) + item.unit) ) >= 0;
+                                if(!valid && !item.valid)
+                                {
+                                  continue;
+                                }
+                              }
+                              var qty= ((cart.items[l].packet*cart.items[l].unitConversion) + cart.items[l].unit);
+                              var csQty = cart.items[l].packet + Math.trunc(cart.items[l].unit/cart.items[l].unitConversion);
+                              var amount= ((cart.items[l].packet*cart.items[l].unitConversion + cart.items[l].unit)*cart.items[l].prixVente);
+                              if(cart.items[l].id_db == promotions[j].articles[k].id)
+                              {
+                                  console.log("FOUND IN CART");
+                                  count+=qty;
+                                  ca+=amount;
+                                  items.push({ id: cart.items[l].id_db, qty: promotions[j].articles[k].conditionning_unit == "Un" ? qty : csQty });
+                                  console.log(items);
+                              }
+                              total+=amount;
+                          }
+                      }
+                      if(promotions[j].type == "PR")
+                      {
+                        console.log("Promotion REMISE");
+                        promotions[j].consumed = true;
+                      }
+                      if(promotions[j].type == "PMT")
+                      {
+                          console.log("Promotion MT");
+                          if(ca>=promotions[j].ca)
+                          {
+                              console.log(ca + " | " + promotions[j].ca);
+                              promotions[j].consumed = true;
+                              console.log(promotions[j].consumed);
+                              console.log(promotions[j].id);
+                              window.localStorage['promotions'] = JSON.stringify(promotions);
+                          }
+                          else
+                          {
+                              promotions[j].consumed = false;
+                              console.log("NO GIFT !");
+                              window.localStorage['promotions'] = JSON.stringify(promotions);
+                          }
+                      }
+                      if(promotions[j].type == "PP")
+                      {
+                          console.log("Promotion PP");
+                          console.log("WE ARE HERE !");
+                          console.log(items);
+                          if(Boolean(promotions[j].melange))
+                          {
+                              console.log("MELANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+                              console.log(items);
+                              
+                              if(Boolean(promotions[j].cummulable))
+                              {
+                                  console.log("MELANGE CUMMULABLE HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERE");
+                                  console.log("MIN :");
+                                  console.log(promotions[j].qte);
+                                  console.log("CURRENT :");
+                                  console.log(count);
+                                  if(promotions[j].qte <= count)
+                                  {
+                                      promotions[j].consumed = true;
+                                      console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
+                                      var repetitions = Math.trunc(count / promotions[j].qte);
+                                      console.log(repetitions);
+                                      if(promotions[j].max == null || promotions[j].max == 0 || typeof(promotions[j].max) ==  "undefined")
+                                      {
+                                          promotions[j].cumule = repetitions;
+                                      }
+                                      else
+                                      {
+                                          if(repetitions >= promotions[j].max)
+                                          {
+                                              promotions[j].cumule = promotions[j].max;
+                                          }
+                                          else
+                                          {
+                                              promotions[j].cumule = repetitions;
+                                          }
+                                      }
+                                  }
+                                  else
+                                  {
+                                      promotions[j].consumed = false;
+                                      console.log("FAR AWAY BUDDY !");
+                                      console.log("MIN :");
+                                      console.log(promotions[j].qte);
+                                      console.log("CURRENT :");
+                                      console.log(count);
+                                  }
+                              }
+                              else
+                              {
+                                  if(promotions[j].qte <= count)
+                                  {
+                                      promotions[j].consumed = true;
+                                      promotions[j].cumule = 1;
+                                  }
+                                  else
+                                  {
+                                      promotions[j].consumed = false;
+                                  }
+                              }
+                          }
+                          else
+                          {
+                              console.log(promotions[j]);
+                              console.log(" NO MELANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+                              var finalRepetitions = 0;
+                              var consumed = false;
+                              if(promotions[j].articles.length == items.length)
+                              {
+                                  var count = 0;
+                                  for(var m = 0; m < promotions[j].articles.length; m++)
+                                  {
+                                      for(var n = 0; n < items.length; n++)
+                                      {
+                                          if(promotions[j].articles[m].id == items[n].id)
+                                          {
+                                              if(promotions[j].articles[m].qty <= items[n].qty)
+                                              {
+                                                  console.log(promotions[j].articles[m].qty);
+                                                  items[n].qty = Math.trunc(items[n].qty/promotions[j].articles[m].qty)
+                                                  ++count;
+                                              }
+                                          }
+                                      }
+                                  }
+                                  if(count == promotions[j].articles.length)
+                                  {
+                                      var trunQty = 0;
+                                      var minForCumule = items[0].qty;
+                                      var consommable = false;
+                                      for(var n = 0; n < items.length; n++)
+                                      {
+
+                                          console.log(items[n].qty);
+                                          trunQty+=items[n].qty;
+                                          if(items[n].qty >= 2)
+                                          {
+                                              consommable = true;
+                                              if(minForCumule>items[n].qty)
+                                              {
+                                                  minForCumule = items[n].qty;
+                                              }
+                                          }
+                                      }
+                                      if(Boolean(promotions[j].cummulable))
+                                      {
+                                          if(promotions[j].max == null || promotions[j].max == 0 || typeof(promotions[j].max) == "undefined")
+                                          {
+                                            promotions[j].cumule = minForCumule;
+                                          }
+                                          else
+                                          {
+                                            promotions[j].cumule = promotions[j].max;
+                                          }
+                                      }
+                                      else
+                                      {
+                                        promotions[j].cumule = 1;
+                                      }
+                                      promotions[j].consumed = true;
+                                      
+                                  }
+                                  else
+                                  {
+                                      promotions[j].consumed = false;
+                                  }
+                              }
+                              else
+                              {
+                                  console.log("NOT LUCKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                                  promotions[j].consumed = false;
+                              }
+                          }
+                      }
+                  }
+              }
+              console.log(promotions);
+              window.localStorage['promotions'] = JSON.stringify(promotions);
+          }
+          console.log("ALL THE PROMOTIONS ARE UP TO DATE");
+      }
+  }
   
   function getAllPromotions(){
     var sql_query = "SELECT * FROM promotions;";
@@ -3413,7 +5222,7 @@ angular.module('starter.services', ['ngCordova'])
   function getClientPromotions(client_id){
     var id = "id";
     var qty = "qty";
-    var sql_query = 'SELECT P.id_db AS "id", P.type, P.qte, P.melange, Group_Concat(DISTINCT PC.client_id) as clients, P.conditionning_unit AS "cu", P.max_steps AS "max", P.cummulable, P.ca, P.starts_at AS "starts", P.ends_at AS "ends", P.activated as "activated", Group_Concat(DISTINCT PI.promotion_secondary) AS "inclusions", Group_Concat(DISTINCT PE.promotion_secondary) AS "exclusions", "[" || Group_Concat(DISTINCT "{""id"":" || PA.article_id ||", ""qty"":" || ifnull(PA.qty, 0) || "}") || "]" AS "articles" , "[" || Group_Concat(DISTINCT "{""id"":" || GA.article_id ||", ""qty"":" || ifnull(GA.qte, 0) || ", ""designation"":""" || A.nomArticle || """}") || "]" AS "gratuites", PG.remise AS "remise" FROM promotions AS P LEFT JOIN promotion_client AS PC ON PC.promotion_id = P.id_db LEFT JOIN clients AS C ON C.id_db = PC.client_id LEFT JOIN promotion_article AS PA ON PA.promotion_id = P.id_db LEFT JOIN promotion_inclusion AS PI ON PI.promotion_primary = P.id_db LEFT JOIN promotion_exclusion AS PE ON PE.promotion_primary = P.id_db  LEFT JOIN promotion_gratuite AS PG ON PG.promotion_id = P.id_db LEFT  JOIN gratuite_article AS GA ON GA.promotion_gratuite_id = PG.id LEFT JOIN articles AS A ON A.id_db = GA.article_id WHERE (P.type == "PC" AND PC.client_id = ?) OR (P.type != "PC") GROUP BY P.id_db;';
+    var sql_query = 'SELECT PG.priorite, P.id_db AS "id", P.type, P.qte, P.melange, Group_Concat(DISTINCT PC.client_id) as clients, P.conditionning_unit AS "cu", P.max_steps AS "max", P.cummulable, P.ca, P.starts_at AS "starts", P.ends_at AS "ends", P.activated as "activated", Group_Concat(DISTINCT PI.promotion_secondary) AS "inclusions", Group_Concat(DISTINCT PE.promotion_secondary) AS "exclusions", "[" || Group_Concat(DISTINCT "{""id"":" || PA.article_id ||", ""qty"":" || ifnull(PA.qty, 0) || ", ""conditionning_unit"": """ || PA.conditionning_unit ||  """}") || "]" AS "articles" , "[" || Group_Concat(DISTINCT "{""id"":" || GA.article_id ||", ""qty"":" || ifnull(GA.qte, 0) || ", ""designation"":""" || A.nomArticle || """}") || "]" AS "gratuites", PG.remise AS "remise" FROM promotions AS P LEFT JOIN promotion_client AS PC ON PC.promotion_id = P.id_db LEFT JOIN clients AS C ON C.id_db = PC.client_id LEFT JOIN promotion_article AS PA ON PA.promotion_id = P.id_db LEFT JOIN promotion_inclusion AS PI ON PI.promotion_primary = P.id_db LEFT JOIN promotion_exclusion AS PE ON PE.promotion_primary = P.id_db  LEFT JOIN promotion_gratuite AS PG ON PG.promotion_id = P.id_db LEFT  JOIN gratuite_article AS GA ON GA.promotion_gratuite_id = PG.id LEFT JOIN articles AS A ON A.id_db = GA.article_id WHERE (P.type == "PC" AND PC.client_id = ?) OR (P.type != "PC") GROUP BY P.id_db;';
     var bindings = [client_id];
     return DB.query(sql_query, bindings)
     .then(
@@ -3437,104 +5246,74 @@ angular.module('starter.services', ['ngCordova'])
           return "Une erreur est survenu : "+error.message;
         });
   };
-  /*
-      
-
-
-      
-      
-      {
-        name : "promotion_article",
-        columns : [
-          { name : "id" , value : "integer primary key autoincrement" },
-          { name : "promotion_id" , value : "integer not null" },
-          { name : "article_id" , value : "integer not null" },
-          { name : "qty" , value : "integer" },
-          { name : "conditionning_unit" , value : "text" },
-          { name : "FOREIGN KEY(promotion_id)", value : "REFERENCES promotions(id_db)"},
-          { name : "FOREIGN KEY(article_id)", value : "REFERENCES articles(id_db)"},
-                  ]
-      },
-
-
-
-      {
-        name : "promotions",
-        columns : [
-          { name : "id" , value : "integer primary key autoincrement" },
-          { name : "id_db" , value : "integer unique not null" },
-          { name : "qte" , value : "integer" },
-          { name : "ca" , value : "long" },
-          { name : "max_steps", value : "integer" },
-          { name : "cummulable" , value : "boolean" }, 
-          { name : "type", value : "text not null"},
-          { name : "starts_at", value : "long not null"},
-          { name : "ends_at", value : "long not null"},
-          { name : "activated", value : "boolean not null"},
-          { name : "conditionning_unit", value : "text"},
-          { name : "melange", value : "boolean"}
-                  ]
-      },
-
-      
-
-  */
+  
 
 
   function syncPromotions(){
+    var JSONCONTENT = [{"id":1,"priorite":null,"qte":null,"montant":null,"max_steps":null,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":3,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":1,"quantite":10,"uconditionement":"Un"},{"itemId":2,"quantite":12,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":2,"priorite":null,"qte":null,"montant":1000.0,"max_steps":3,"cummulable":true,"type":"PMT","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":true,"article_gratuits":[[{"itemId":35,"quantite":1,"uconditionement":"Un"}],[{"itemId":36,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":3,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":4,"priorite":null,"qte":null,"montant":20000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32786],"promoPaliers":[]},{"id":5,"priorite":null,"qte":null,"montant":1000.0,"max_steps":null,"cummulable":false,"type":"PMT","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":6,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32785,32786],"promoPaliers":[]},{"id":10,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32787],"promoPaliers":[]},{"id":15,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":18,"priorite":null,"qte":null,"montant":30000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":5.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32784,32783],"promoPaliers":[]},{"id":19,"priorite":null,"qte":null,"montant":15000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32783],"promoPaliers":[]},{"id":20,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":509,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":21,"priorite":null,"qte":null,"montant":null,"max_steps":3,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":511,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":509,"quantite":6,"uconditionement":"Un"},{"itemId":510,"quantite":4,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":25,"priorite":null,"qte":12,"montant":null,"max_steps":null,"cummulable":false,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":true,"coupons":true,"article_gratuits":[[{"itemId":2,"quantite":1,"uconditionement":"Un"}],[{"itemId":3,"quantite":2,"uconditionement":"Un"}],[{"itemId":35,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"},{"itemId":1,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]}];
+    var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.36:8082/newsales/rest/promotions/AllPromoParMois",
+      url: "http://192.168.100.181:8082/newsales/rest/promotions/AllPromoParMois",
       method: "GET"
     };
+    var count = 0;
     $http(request).then(
       function(success){
-        console.log("SUCCESSFULLY GOT ALL THE PROMOTIONS OF THE CURRENT MONTH");
-        if(typeof window.localStorage['promoAPI'] == "undefined")
-        {
-          window.localStorage['promoAPI'] = JSON.stringify(success.data);
-        }
+        console.log(success.data);
         angular.forEach(success.data, function(promotion){
+          console.log(promotion);
           addPromotion(promotion).then(
             function(success){
-              console.log("THE PROMOTION successfully ADDED NOW SUB TABLES !!");
-              if(typeof success.insertId != "undefined");
+              console.log(success);
+              if(typeof success.insertId != "undefined")
               {
-                if(promotion.type == 'PP' || promotion.type == 'PMT')
+                console.log("added");
+                console.log(promotion);
+              
+                if(promotion.type == 'PP' || promotion.type == 'PMT' || promotion.type == 'PR')
                 {
-                  angular.forEach(promotion.article_en_promo, function(article){
+                  for(var j = 0 ; j < promotion.article_en_promo.length; j++)
+                  {
+                    var article = promotion.article_en_promo[j];
+                    console.log(article);
                     promotionArticle(promotion.id, article)
                     .then(
                       function(success){
-                        console.log(JSON.stringify(success));
+                        console.log(success);
                       }, 
                       function(error){
                         console.log(JSON.stringify(error));
                       });
-                  });
+                  }
 
 
-                  promotionGratuite(promotion.id, promotion.pourcentage).then(
+                  promotionGratuite(promotion.id, promotion.pourcentage, promotion.priorite == null ? 0 : promotion.priorite).then(
                       function(success){
                         console.log(JSON.stringify(success));
 
-                        angular.forEach(promotion.article_gratuits, function(article){
-                          console.log(article);
-                          promotionGratuiteArticle(success.insertId, article[0].itemId, article[0].quantite).then(
+                        for(var j = 0 ; j < promotion.article_gratuits.length ; j++)
+                        {
+                          var articles = promotion.article_gratuits[j];
+                          console.log(articles);
+                          for(var k = 0 ; k < articles.length ; k++)
+                          {
+                            var article = articles[k];
+                            promotionGratuiteArticle(success.insertId, article.itemId, article.quantite).then(
                             function(success){
                               console.log(success);
                             },
                             function(error){
                               console.log(error);
                             });
-                        });
+                          }
+                        }
 
                       }, 
                       function(error)
                       {
                         console.log(JSON.stringify(error));
                       });
-
-                  
+                                 
                 }
 
                 else if(promotion.type == 'PC')
@@ -3550,39 +5329,30 @@ angular.module('starter.services', ['ngCordova'])
                       });
                   });
                 }
+                
               }
-
-            }, 
+              else
+              {
+                deferred.resolve("Vos promotions sont à jour !");
+                console.log("not added");
+              }
+             }, 
             function(error){
-              console.log(JSON.stringify(error));
-              return;
+              console.log(error);
+              deferred.resolve(error);
             });
+          
         });
 
       },
       function(error){
-        console.log(JSON.stringify(error));
+        deferred.resolve(error);
       });
-
-
+    console.log(count);
+    deferred.resolve(count);
+    return deferred.promise;
 
   }
-
-
-  /*
-
-  {
-        name : "promotion_client",
-        columns : [
-          { name : "id" , value : "integer primary key autoincrement" },
-          { name : "promotion_id" , value : "integer" },
-          { name : "client_id" , value : "integer" },
-          { name : "FOREIGN KEY(promotion_id)", value : "REFERENCES promotions(id_db)"},
-          { name : "FOREIGN KEY(client_id)", value : "REFERENCES clients(id_db)"},
-                  ]
-      },
-
-  */
 
   function promotionClient(promotion_id, client_id)
   {
@@ -3590,26 +5360,22 @@ angular.module('starter.services', ['ngCordova'])
     var bindings = [promotion_id, client_id];
     return DB.query(sql_query, bindings).then(
       function(success){
-        console.log(JSON.stringify(success));
         return success;
       }, 
       function(error){
-        console.log(JSON.stringify(error));
         return error;
       }); 
   }
 
-  function promotionGratuite(promotionId, remise)
+  function promotionGratuite(promotionId, remise, priorite)
   {
-    var sql_query = "INSERT INTO promotion_gratuite(promotion_id, remise) VALUES(?,?);";
-    var bindings = [promotionId, remise];
+    var sql_query = "INSERT INTO promotion_gratuite(promotion_id, remise, priorite) VALUES(?,?,?);";
+    var bindings = [promotionId, remise, priorite];
     return DB.query(sql_query, bindings).then(
       function(success){
-        console.log(JSON.stringify(success));
         return success;
       }, 
       function(error){
-        console.log(JSON.stringify(error));
         return error;
       }); 
   }
@@ -3624,7 +5390,6 @@ angular.module('starter.services', ['ngCordova'])
         return success;
       }, 
       function(error){
-        console.log(JSON.stringify(error));
         return error;
       }); 
   }
@@ -3649,11 +5414,9 @@ angular.module('starter.services', ['ngCordova'])
     var bindings = [promotion.id, promotion.qte, promotion.montant, promotion.max_steps, promotion.cummulable == true ? 1 : 0, promotion.type, promotion.starts_at, promotion.ends_at, promotion.activated == true ? 1 : 0, promotion.conditionning_unit, promotion.melange == true ? 1 : 0];
     return DB.query(sql_query, bindings).then(
       function(success){
-        console.log(JSON.stringify(success));
         return success;
       }, 
       function(error){
-        console.log(error);
         return error;
       });
   }
@@ -3664,7 +5427,9 @@ angular.module('starter.services', ['ngCordova'])
     syncPromotions : syncPromotions,
     getAllPromotions : getAllPromotions,
     getClientPromotions :getClientPromotions,
-    deletePromotion :deletePromotion
+    deletePromotion :deletePromotion,
+    promotionTreatment : promotionTreatment,
+    promotionDiscountsWithPriorities : promotionDiscountsWithPriorities
   };
 
 
@@ -3701,7 +5466,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function sync(){
     var deferred = $q.defer();
-    $http.get("http://localhost:8082/rest/clients/road/1/sync")
+    $http.get("http://192.168.100.181:8082/newsales/rest/clients/road/1/sync")
     .then(
       
       function(data, status, headers){
@@ -3719,7 +5484,7 @@ angular.module('starter.services', ['ngCordova'])
             console.log("YOUR CURRENT DATABASE IS NOT UP TO DATE !");
             console.log((idAPI-idDB)+" routes are waitiing to be pushed in your local DB");
             console.log("HERE IS THE ROUTES !!");
-            $http.get("http://localhost:8082/rest/clients/road/1/sync/"+idDB).then(
+            $http.get("http://192.168.100.181:8082/newsales/rest/clients/road/1/sync/"+idDB).then(
               function(data, status, headers){
                 var clients = data.data;
                 angular.forEach(clients, function(client){
@@ -3771,7 +5536,7 @@ angular.module('starter.services', ['ngCordova'])
 
   function highestIDInDB()
   {
-    $http.get("http://localhost:8082/rest/roads/check")
+    $http.get("http://192.168.100.181:8082/newsales/rest/roads/check")
     .success(function(data, status, headers){
       console.log("THE HIGHEST ID IN DB IS : "+data.id);
     })
@@ -3784,13 +5549,3 @@ angular.module('starter.services', ['ngCordova'])
   
 
 }]);
-
-SHORT DESCRIPTION 
-CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT("{ ""id""\\: ",lc.id), ", ""unite""\\: "), lc.unite), ", ""packet""\\: "), lc.paquet), ", ""shortDescription""\\: ")
-SALE PRICE 
-CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT("{ ""id""\\: ",lc.id), ", ""unite""\\: "), lc.unite), ", ""packet""\\: "), lc.paquet), ", ""shortDescription""\\: "), i.shortDescription),", ""salePrice""\\: "), i.salePrice)
-
-SELECT CONCAT(CONCAT('[', GROUP_CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT(CONCAT("{ ""id"": ",lc.id), ", ""unite"": "), lc.unite), ", ""packet"": "), lc.paquet), ", ""shortDescription"": "), i.shortDescription),", ""salePrice"": "), i.salePrice), ", ""tva"": "), i.tva), ", ""item_id"": "), lc.item_id), "}"))), "]") FROM mission AS m LEFT JOIN client as cl ON cl.id = m.client_id LEFT JOIN commande AS c ON c.id = m.commande_id LEFT JOIN ligneCommande AS lc ON lc.commande_id = c.id lEFT JOIN item AS i ON i.id = lc.item_id LEFT JOIN route AS r ON r.id = m.route_id WHERE r.id IN(SELECT id FROM route AS r WHERE r.vendeur_id IN (SELECT id FROM employee as v WHERE v.type = 'VEN' AND v.livreur_id = 3)) ORDER BY m.id DESC
-
-
-SELECT m.id AS id_mission, r.id AS id_route, CONCAT(CONCAT("[", CONCAT(CONCAT("{",Group_Concat(lc.id), "}"), "]") as lignes FROM mission AS m LEFT JOIN client AS cl ON cl.id = m.client_id LEFT JOIN route AS r ON r.id = m.route_id LEFT JOIN commande AS c ON c.id = m.commande_id LEFT JOIN ligneCommande AS lc ON lc.commande_id = c.id lEFT JOIN item AS i ON i.id = lc.item_id WHERE m.succeed = true AND r.id IN (SELECT r.id FROM route AS r LEFT JOIN employee as v ON v.id = r.id WHERE v.type = 'VEN' AND v.livreur_id = 3 ) AND m.id > 130 GROUP BY m.id ORDER BY m.id DESC

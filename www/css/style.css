@@ -120,7 +120,7 @@ i.icon.ion-flag {
 }
 
 .key_map {
-    width: 60%;
+    width: 100%;
     margin: 0 auto;
     position: absolute;
     top: 0;
@@ -468,6 +468,9 @@ h3 .title-promotion {
 }
 .assertive-survey {
     background-color: black;
+}
+.bar .title{
+    font-size: 13px;
 }
 /*input[type='radio'] {
    -webkit-appearance: none;

@@ -1,4 +1,4 @@
-<ion-view view-title="{{ profile.name}} {{ profile.second_name}}">
+<ion-view view-title="{{ profile.name + ' ' + profile.second_name | uppercase}}">
     <ion-content ng-class="{expanded:$scope.isExpanded}">
         <div class="hero slide-up" style="
   background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
@@ -10,7 +10,7 @@
         ">
             <div class="content">
                 <div class="avatar" style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
-                <h3><a class="light">{{ profile.name}} {{ profile.second_name}} - Livreur</a></h3>
+                <h3><a class="light">{{ profile.name + ' ' + profile.second_name | uppercase}} - Livreur</a></h3>
                 <br><br>
             </div>
         </div>
@@ -28,7 +28,7 @@
             <ion-item
             collection-repeat="mission in missions | orderBy:'state'"
             item="mission"
-            ng-click="openModal(mission)" 
+            ng-click="goto(mission)" 
             style="font-size: 25px; border-bottom: 1px solid grey; padding: 0;" 
             class="item-no-padding">
                 <div>Etat : <i style="color: {{ mission.state | flag }}; font-size: 25
@@ -36,15 +36,13 @@
                   <p style=" font-weight: 600; margin: 0; margin-top: 5px;">Adresse : {{ mission.address }}</p>
                 <p style=" font-weight: 600; margin: 0;">Nom client : {{ mission.prenom | uppercase}} {{ mission.nom | uppercase}} </p>
                 <p style=" font-weight: 600; margin: 0;">Code visite : {{ mission.code_mission }}</p>
-                <ion-option-button class="button-calm icon ion-android-walk" style="color: #FFF;"></ion-option-button>
-                <ion-option-button class="button-balanced icon ion-map" style="color: #FFF;"></ion-option-button>
             </ion-item>
         </ion-list>
 
 
 
 
-        <script id="delivery.html" type="text/ng-template">
+        <!--<script id="delivery.html" type="text/ng-template">
           <ion-modal-view>
             <ion-header-bar style="background: #B71C1C;">
               <h1 class="title" font-weight: 600;>Livraison : {{ mission.prenom | uppercase}} {{ mission.nom | uppercase}}</h1>
@@ -86,7 +84,7 @@
               </div> 
             </ion-content>
           </ion-modal-view>
-        </script>
+        </script>-->
 
     </ion-content>
 </ion-view>

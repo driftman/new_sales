@@ -66,7 +66,7 @@
         if (scope.inputObj.weekDaysList && scope.inputObj.weekDaysList.length === 7) {
           scope.weekNames = scope.inputObj.weekDaysList;
         } else {
-          scope.weekNames = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+          scope.weekNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         }
         scope.yearsList = IonicDatepickerService.yearsList;
 

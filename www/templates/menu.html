@@ -1,6 +1,6 @@
 <ion-side-menus enable-menu-with-back-views="true">
     <ion-side-menu-content>
-        <ion-nav-bar class="bar-assertive-900" ng-class="{expanded: isExpanded, 'has-header-fab-left': hasHeaderFabLeft, 'has-header-fab-left': hasHeaderFabLeft}" align-title="left">
+        <ion-nav-bar class="bar-assertive-900" style="font-size: 13px;" ng-class="{expanded: isExpanded, 'has-header-fab-left': hasHeaderFabLeft, 'has-header-fab-left': hasHeaderFabLeft}" align-title="left">
             <ion-nav-back-button class="no-text">
             </ion-nav-back-button>
             <ion-nav-buttons side="left">
@@ -22,21 +22,25 @@
                         Mon Espace
                         <i style="color: rgb(0, 150, 136);" class="icon ion-ios-pulse-strong red-ionicon "></i>
                     </ion-item>
-                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.routes">
+                <ion-item ng-show=" profile.fonction == 'prevendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.routes">
                         Mes Routes
                     <i style="color: rgb(244, 67, 54);" class="icon ion-map red-ionicon "></i>
                 </ion-item>
-                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.promotions">
+                <ion-item ng-show=" profile.fonction == 'prevendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.promotions">
                         Promotions
                     <i style="color: rgb(239, 108, 0);" class="icon ion-android-bulb red-ionicon "></i>
                 </ion-item>
-                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="test()">
+                <ion-item ng-show=" profile.fonction == 'prevendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="test()">
                         SBD
                     <i style="color: #2196F3;" class="icon ion-pricetag red-ionicon "></i>
                 </ion-item>
-                <ion-item ng-show=" profile.fonction == 'vendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.clients">
+                <ion-item ng-show=" profile.fonction == 'prevendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ui-sref="app.clients">
                         Mes Clients
                     <i style="color: rgba(255, 87, 34, 0.9);" class="icon ion-ios-people red-ionicon "></i>
+                </ion-item>
+                <ion-item ui-sref="app.add" ng-show=" profile.fonction == 'prevendeur' " style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close>
+                        Ajouter un client
+                    <i style="color: rgba(255, 87, 34, 0.9);" class="icon ion-android-person-add red-ionicon "></i>
                 </ion-item>
                 <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="synchronization()">
                         Synchronization

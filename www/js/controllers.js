@@ -46,7 +46,7 @@ angular.module('starter.controllers', ['starter.services'])
         {
             $state.go("app.profile2");
         }
-        else if(profile.fonction == 'vendeur')
+        else if(profile.fonction == 'prevendeur')
         {
             $state.go("app.profile");
         }
@@ -64,10 +64,10 @@ angular.module('starter.controllers', ['starter.services'])
         });
         $timeout(
             function(){
-                window.localStorage.removeItem('profile');
-                $state.go("menu.login");
+                window.localStorage.clear();
+                $state.transitionTo("menu.login");
                 $ionicLoading.hide();
-            }, 3000);
+            }, 2000);
         
     }
 
@@ -135,7 +135,10 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.clearFabs();
     // Set Header
     $ionicSideMenuDelegate.canDragContent(true);
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
@@ -176,12 +179,7 @@ angular.module('starter.controllers', ['starter.services'])
     $stateParams, $ionicSideMenuDelegate, $state, $ionicModal, ionicMaterialInk, Accounts, Profile, Clients) {
     $rootScope.infos = {};
     $scope.$parent.clearFabs();
-    $timeout(function() {
-        $scope.$parent.hideHeader();
-    }, 0);
     $ionicSideMenuDelegate.canDragContent(false);
-    ionicMaterialInk.displayEffect();
-
     $scope.error_change_password = false;
     $scope.error_forgot_password = false;
 
@@ -253,7 +251,7 @@ angular.module('starter.controllers', ['starter.services'])
                 updateIonicLoading('Connexion réussi !');
                 current_user = user;
                 $timeout(function(){
-                    if(user.fonction == "vendeur")
+                    if(user.fonction == "prevendeur")
                     {
                         $state.go("menu.entry");
                     }
@@ -289,6 +287,7 @@ angular.module('starter.controllers', ['starter.services'])
                         var profileToProfile = {};
                         updateIonicLoading("Connexion réussi !");
                         var data = success.data.content.mobile.employee;
+                        var activite = success.data.content.mobile.activite;
                         console.log(JSON.stringify(data));
                         var _id_db = success.data.content.mobile.employee.id;
                         var goldenPointsVendeur = data.goldenPoints != null ? data.goldenPoints : 0;
@@ -299,13 +298,15 @@ angular.module('starter.controllers', ['starter.services'])
                             password : object.password,
                             golden_points : success.data.content.mobile.fonction == 'vendeur' ? goldenPointsVendeur : 0,
                             golden_stores : success.data.content.mobile.fonction == 'vendeur' ? goldenPointsVendeur : 0 ,
-                            fonction : success.data.content.mobile.fonction
+                            fonction : success.data.content.mobile.fonction,
+                            activite : data.activiteID,
+                            token: success.data.content.token
                         };
                         console.log(account);
                         Accounts.addAccount(account).then(
                                 function(success1){
                                     console.log("addAccount !");
-                                    console.log(JSON.stringify(success1));
+                                    console.log(success1);
                                     if(typeof success1.insertId !== "undefined")
                                     {
                                         var profile = {
@@ -315,7 +316,9 @@ angular.module('starter.controllers', ['starter.services'])
                                             address : data.adresse,
                                             email_address : data.email,
                                             phone_number : data.telMobile != null ? data.telMobile : "0663310772",
-                                            id_account : success1.insertId
+                                            id_account : success1.insertId,
+                                            activite: data.activiteID,
+                                            token: account.token
                                         };
                                         
                                         Profile.addProfile(profile).then(
@@ -328,7 +331,7 @@ angular.module('starter.controllers', ['starter.services'])
                                                     profile.fonction = account.fonction;
                                                     window.localStorage['profile'] = JSON.stringify(profile);
                                                     updateIonicLoading("Votre espace personnel a été créé avec succes !");
-                                                    if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "vendeur")
+                                                    if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "prevendeur")
                                                     {
                                                         $state.go("menu.entry");
                                                     }
@@ -365,7 +368,7 @@ angular.module('starter.controllers', ['starter.services'])
                                     }
                             },
                             function(error){
-                                console.log(error.message);
+                                console.log(error);
                             });
 
                     }, 
@@ -453,49 +456,24 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('EntryCtrlLivreur', function($scope, Livreur, $ionicPopup, $ionicLoading, $timeout, Articles, Marques, Missions){
-
+.controller('EntryCtrlLivreur', function($scope, Livreur, $ionicPopup, SynchronisationV2, $ionicLoading, $http, $timeout, Articles, Marques, Missions){
+    
+    $scope.profile = JSON.parse(window.localStorage['profile'] || "{}");
+    console.log($http.defaults);
     var infos = JSON.parse(window.localStorage['profile']);
     $scope.synchronization = function(){
         $ionicLoading.show({
             template : "Synchronisation en cours ..."
         });
-        $timeout(function(){
-            $ionicLoading.hide();
-            $ionicPopup.alert({
-             title: 'Terminé',
-             template: 'Synchronisation terminée !'
-           });
-        }, 3000);
-        Missions.getNonSyncedLivredMissions().then(
+        SynchronisationV2.syncV2LivreurAll(infos.id_db).then(
             function(success){
-                angular.forEach(success, function(row){
-                    Missions.setMissionLivredInAPI(row.id_db).then(
-                        function(success){
-                            Missions.setMissionToSynced(row.id_db).then(
-                            function(success){
-                                console.log(success);
-                            }, 
-                            function(error){
-                                console.log(error);
-                            });
-                        }, 
-                        function(error){
-                            console.log(error);
-                        });
-                })
+                console.log(success);
             }, 
             function(error){
                 console.log(error);
-            });
-        Livreur.synchronization(infos.id_db);
-        Articles.syncArticles();
-        Marques.getAll().then(
-            function(success){
-                console.log(JSON.stringify(success));
-            },
-            function(error){
-                console.log(JSON.stringify(error));
+            }).finally(function(){
+                console.log("END !");
+                 $ionicLoading.hide();
             });
 
 
@@ -503,7 +481,7 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, DumpDB, ca,  $timeout, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
+.controller('EntryCtrl', function($scope, $rootScope, DumpDB, Surveys, ModePaiement, ca,  $timeout, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
     
     $scope.ca = ca.ca;
     $scope.test = function(){
@@ -512,19 +490,48 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.infos = JSON.parse(window.localStorage['profile']);
     var infos = JSON.parse(window.localStorage['profile']);
     $scope.synchronization = function(){
+        //SBD.syncSBDFromAPI();
         $ionicLoading.show({
             template : "Synchronisation en cours ..."
         });
-        SynchronisationV2.syncV2(2).then(
+        //Promotions.syncPromotions();
+        //ModePaiement.sync();
+        SynchronisationV2.syncV2(infos.id_db).then(
             function(success){
                 console.log(success);
             }, 
             function(error){
                 console.log(error);
             }).finally(function(){
+                console.log("final !");
                 $timeout(function(){
                     $ionicLoading.hide();
                 }, 1000);
+            });
+
+
+
+
+
+            BrandFive.addBrandFive({
+                id_db: 1,
+                code_marque: "GILLETTE",
+                name: "GILLETTE"
+            });
+            BrandFive.addBrandFive({
+                id_db: 2,
+                code_marque: "DURACELL",
+                name: "DURACELL"
+            });
+            BrandFive.addBrandFive({
+                id_db: 3,
+                code_marque: "PANTENE",
+                name: "PANTENE"
+            });
+            BrandFive.addBrandFive({
+                id_db: 4,
+                code_marque: "ORALB",
+                name: "ORALB"
             });
         /*Commandes.syncCommandes().then(
             function(success){
@@ -571,8 +578,8 @@ angular.module('starter.controllers', ['starter.services'])
            });
         }, 8000);*/
 
-        /*SBD.syncSBDFromAPI();
-        Promotions.syncPromotions();
+        //SBD.syncSBDFromAPI();
+       /* Promotions.syncPromotions();
         Commandes.syncCommandes().then(
             function(success){
                Commandes.sendCommandeToAPI(success);
@@ -655,8 +662,13 @@ angular.module('starter.controllers', ['starter.services'])
     EntryPoint)
 {
     $scope.$parent.clearFabs();
-    $scope.$parent.showHeader();
-    $scope.isExpanded = true;
+    $scope.hasHeaderFabLeft = false;
+    $scope.hasHeaderFabRight = false;
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
+    $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
     $scope.vente = typeof window.localStorage['cart'] == "undefined";
@@ -669,21 +681,23 @@ angular.module('starter.controllers', ['starter.services'])
     ionicMaterialMotion.fadeSlideInRight();
 
     // Set Ink
-    $scope.clients = [];
     ionicMaterialInk.displayEffect();
-    $scope.infos = JSON.parse(window.localStorage['profile']);
-    $scope.client = {};
-    $scope.mission_id = $rootScope.mission;
     $ionicSlideBoxDelegate.update();
     $scope.$on('$ionicView.beforeEnter', function() {
         $ionicSlideBoxDelegate.update();
     });
-
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    $scope.clients = [];
+    $scope.infos = JSON.parse(window.localStorage['profile']);
+    $scope.client = {};
+    var clientObject;
+    $scope.mission_id = $rootScope.mission;
     $scope.center = {
             lat: 33.565721, 
             lng: -7.626388,
             zoom: 15
         };
+    $scope.defaults = { zoomControl: false, layerControl: false, tileLayer: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'};
     $scope.markers = { 
             m2: {
                 lat: 33.565721, 
@@ -702,8 +716,8 @@ angular.module('starter.controllers', ['starter.services'])
 
         };
 
-    var clientObject;
     $scope.goClient = function(){
+        console.log(clientObject);
         var steps = [];
         CallSteps.get().then(
             function(success){
@@ -725,7 +739,7 @@ angular.module('starter.controllers', ['starter.services'])
                     steps.push(object);
                 }
                 window.localStorage['callSteps'] = JSON.stringify(steps);
-                EntryPoint.prepare();
+                EntryPoint.prepare(clientObject.id_db);
             }, 
             function(error){
                 console.log(error);
@@ -735,6 +749,14 @@ angular.module('starter.controllers', ['starter.services'])
         });
         var startDay = new Date();
         var mission = {
+            ville: "Casablanca",
+            region: "GRAND CASABLANCA",
+            route: clientObject.route,
+            nom: clientObject.nom,
+            prenom: clientObject.prenom,
+            codeClient: clientObject.code_client,
+            lat: clientObject.lat,
+            lng: clientObject.lng,
             route_id: $scope.client.route,
             client_id: $scope.client.id_db,
             date_start: startDay.getTime(),
@@ -742,7 +764,7 @@ angular.module('starter.controllers', ['starter.services'])
             synced: false,
             entryDate : Date.now()
         };
-        /*if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
+        if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
         {
                 var posOptions = {timeout: 10000, enableHighAccuracy: false};
                 $cordovaGeolocation
@@ -768,7 +790,7 @@ angular.module('starter.controllers', ['starter.services'])
         else
         {
             console.log("no need !");
-        }*/
+        }
         if(typeof window.localStorage['mission'] == "undefined")
         {
             window.localStorage['mission'] = JSON.stringify(mission);
@@ -793,7 +815,7 @@ angular.module('starter.controllers', ['starter.services'])
                         console.log("Go to : "+callSteps[i].name)
                     }
                 }
-            }, 2500);
+            }, 5000);
         
         
     };
@@ -976,7 +998,10 @@ angular.module('starter.controllers', ['starter.services'])
     var length = 0;
     var scrollPosition = 0;
     $scope.$parent.clearFabs();
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.$parent.setHeaderFab('left');
     $scope.infos = JSON.parse(window.localStorage['profile']);
     var profile = JSON.parse(window.localStorage['profile']);
@@ -1185,7 +1210,10 @@ angular.module('starter.controllers', ['starter.services'])
 .controller('ClientsCtrl', function($scope, $stateParams, $state, $timeout, $cordovaGeolocation,Routes, Clients, ionicMaterialInk, ionicMaterialMotion) {
     // Set Header
     $scope.$parent.clearFabs();
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.$parent.setHeaderFab('left');
     // Set Motion
     ionicMaterialMotion.fadeSlideInRight();
@@ -1193,6 +1221,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.infos = infos;
     // Set Ink
     $scope.clients = [];
+    $scope.$parent.clearFabs();
     $scope.sync = function(){
         Clients.syncClients(1);
     };
@@ -1211,18 +1240,21 @@ angular.module('starter.controllers', ['starter.services'])
             console.log(JSON.stringify(error));
         });
     $scope.goClient = function(_id){
-        $state.go('app.client', { id : _id});
+        $state.transitionTo('app.client', { id : _id});
     };
     
 
     
 })
-.controller('Profile2Ctrl', function($scope, $ionicSideMenuDelegate, $timeout, $state, $ionicPopup, $ionicModal, ionicMaterialMotion, ionicMaterialInk, Livreur, Missions){
+.controller('Profile2Ctrl', function($scope, $ionicSideMenuDelegate, IonicPopUpUtilities, $ionicLoading, $timeout, EntryPoint, Promotions, $state, $ionicPopup, $ionicModal, ionicMaterialMotion, ionicMaterialInk, Livreur, Missions){
     $scope.profile = JSON.parse(window.localStorage['profile'] || '{}');
     var profile = JSON.parse(window.localStorage['profile'] || '{}');
     $scope.$parent.clearFabs();
     $ionicSideMenuDelegate.canDragContent(true);
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
@@ -1248,7 +1280,7 @@ angular.module('starter.controllers', ['starter.services'])
             angular.forEach(success, function(mission){
                 mission.lignes = JSON.parse(mission.lignes);
                 $scope.missions.push(mission);
-            })
+            });
         }, 
         function(error){
             console.log(error);
@@ -1284,8 +1316,48 @@ angular.module('starter.controllers', ['starter.services'])
       }).then(function(modal) {
         $scope.modal = modal;
       });
-      $scope.openModal = function(mission) {
-        $scope.mission =mission;
+      $scope.goto = function(mission) {
+        if(mission.state == 0)
+        {
+            console.log(mission)
+            var keys = Object.keys(window.localStorage);
+            for(var i = 0 ; i < keys.length ; i++)
+            {
+                if(keys[i] != "profile")
+                {
+                    window.localStorage.removeItem(keys[i]);
+                }
+            }
+            EntryPoint.prepare(mission.clientId, true);
+            var cart = JSON.parse(window.localStorage['cart']);
+            cart.mission = mission.missionId;
+            cart.items = [];
+            angular.forEach(mission.lignes, function(ligne){
+                cart.items.push(ligne);
+            })
+            window.localStorage['cart'] = JSON.stringify(cart)
+            $ionicLoading.show({
+                template: "Preparation de la visite en cours ..."
+            });
+            $timeout(function() { $ionicLoading.hide(); $state.go("app.cartLivreur"); }, 5000);
+        }
+        else
+        {
+            switch(mission.state)
+            {
+                case 1:
+                    $ionicPopup.alert(IonicPopUpUtilities.alert("Déjà livré !", "La livraison est déjà faite."));
+                    break;
+                case 2:
+                    $ionicPopup.alert(IonicPopUpUtilities.alert("Livraison annulée !", "La livraison à été annulée."));
+                    break;
+                default:
+                    break;
+
+            }
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Déjà livré !", "La livraison est déjà faite."))
+        }
+        /*$scope.mission =mission;
         $scope.modal.show();
         if(mission.state == 1 || mission.finished == 1)
         {
@@ -1295,29 +1367,413 @@ angular.module('starter.controllers', ['starter.services'])
         {
             $scope.mission =mission;
             $scope.modal.show();
-        }
+        }*/
       };
-      $scope.closeModal = function() {
-        $scope.modal.hide();
-      };
-      //Cleanup the modal when we're done with it!
-      $scope.$on('$destroy', function() {
-        $scope.modal.remove();
-      });
-      // Execute action on hide modal
-      $scope.$on('modal.hidden', function() {
-        // Execute action
-      });
-      // Execute action on remove modal
-      $scope.$on('modal.removed', function() {
-        // Execute action
-      });
+      
     
 })
+.controller('CartLivreurCtrl', function($scope, $timeout, $state, $ionicPopup, Livreur, IonicPopUpUtilities, $ionicLoading, Missions, SBD, Promotions, ModePaiement){
+    $ionicLoading.show({
+        template: "Chargement des articles ..."
+    });
 
-.controller('ProfileCtrl', function($scope,  $rootScope, $stateParams, $ionicSlideBoxDelegate,
+    $scope.data = {};
+    $scope.currentDiscount = 0;
+    $scope.data.ttc = 0;
+    $scope.data.ht = 0;
+    $scope.data.items = [];
+    var payments = [];
+
+
+    $scope.cancel = function(){
+        console.log("WANNA CANCEL !!")
+        Livreur.cancelLivreurMission(JSON.parse(window.localStorage['cart']).mission).then(
+            function(success){
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Annulée !", "La livraison a bien été annulée "));
+                var keys = Object.keys(window.localStorage);
+                for(var i = 0 ; i < keys.length ; i++)
+                {
+                    if(keys[i] != "profile")
+                    {
+                        window.localStorage.removeItem(keys[i]);
+                    }
+                }
+                $state.transitionTo("app.profile2");
+            }, 
+            function(error){
+                $state.transitionTo("app.profile2");
+            });
+    };
+
+    $scope.clicked = function(item){
+        console.log(item)
+        var cart = JSON.parse(window.localStorage['cart']);
+        var cartItems = cart.items;
+        if(typeof(cartItems) != "undefined" && cartItems.length > 0)
+        {   
+            for(var i = cartItems.length - 1 ; i >= 0 ; i--)
+            {
+                var cartItem = cartItems[i];
+                if(cartItem.id_db == item.id_db && cartItem.prixVente != 0)
+                {
+                    cartItems.splice(i, 1);
+                }
+            }
+            window.localStorage['cart'] = JSON.stringify(cart);
+        }
+        update();
+    }
+
+    $scope.finish = function()
+    {
+        if($scope.currentMethod != null || payments.length == 0)
+        {
+            var found = false;
+            var scopeItems = angular.copy($scope.data.items);
+            for(var i = 0, len = scopeItems.length ; i < len ; i++)
+            {
+                var item = scopeItems[i];
+                var outOfStock = item.stock - (item.packet * item.unitConversion + item.unit) < 0
+                if(outOfStock && item.prixVente != 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+            {
+                var cart = JSON.parse(window.localStorage['cart'] || '{}');
+                Missions.missionFinishForLivreur([cart.mission, $scope.data.ttc, $scope.data.ht, scopeItems, $scope.currentDiscount])
+                .then(
+                    function(success){
+
+
+                        var keys = Object.keys(window.localStorage);
+
+                        for(var i = 0 ; i < keys.length ; i++)
+                        {
+                            if(keys[i] != "profile")
+                            {
+                                window.localStorage.removeItem(keys[i]);
+                            }
+                        }
+
+                        cordova.plugins.zbtprinter.print(success,
+                            function(success) { 
+
+                                $ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "Facture imprimée avec succès")); 
+
+                            }, function(fail) { 
+
+                                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème d'impression", "Veuillez activer/désactiver le Bluetooth")); 
+
+                            }
+                        );
+
+                    }, 
+                    function(error){
+                        console.log(error);
+                    });
+                $ionicLoading.show({ template : "Finalisation de la livraison en cours ..."});
+                $timeout(
+                    function(){
+                        $ionicLoading.hide();
+                        $state.go("app.profile2");
+                    }, 2000);
+            }
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Stock insuffisant !", "Veuillez modifier les quantités."));
+            }
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Méthode de paiement !", "Veuillez choisir une méthode de paimement."));
+        }
+    };
+
+    function update()
+    {
+        $scope.data.items = [];
+        var cart = JSON.parse(window.localStorage['cart']);
+        var objectStock = JSON.parse(window.localStorage['stock'] || '{}');
+        for(var i = 0 ; i < cart.items.length ; i++)
+        {
+            var item = cart.items[i];
+            if(typeof(item.stock) == "undefined" || item.stock == null)
+            {
+                item.stock = item.packetStock*item.unitConversion + item.unitStock;
+            }
+            var itemCurrent = item.packet*item.unitConversion + item.unit;
+            var diff = item.stock - itemCurrent;
+
+            objectStock[item.id_db] = diff;
+            window.localStorage['stock'] = JSON.stringify(objectStock);
+
+            var cartSub = JSON.parse(window.localStorage['cart']);
+            var itemsCartSub = cartSub.items;
+            for(var j = i+1, len = itemsCartSub.length ; j < len ; j++)
+            {
+                var subItem = itemsCartSub[j];
+                if(subItem.id_db == item.id_db)
+                {
+                    subItem.stock = diff;
+                    var newCart = { mission: cart.mission, items : itemsCartSub};
+                    console.log(newCart);
+                    window.localStorage['cart'] = JSON.stringify(newCart);
+                    break;
+                }
+            }
+            window.localStorage['cart'] = JSON.stringify(cart);
+            check(item);
+            $scope.data.items.push(item);
+            
+            if(i == cart.items.length - 1)
+            {
+                console.log(JSON.parse(window.localStorage['promotions']));
+                
+                $ionicLoading.hide();
+            }
+        }
+        cart = JSON.parse(window.localStorage['cart']);
+        var object = Promotions.promotionDiscountsWithPriorities();
+        $scope.data.ht = object.ht;
+        $scope.data.ttc = object.ttc;
+
+    }
+
+
+    update();
+    var object = Promotions.promotionDiscountsWithPriorities();
+    $scope.data.ht = object.ht;
+    $scope.data.ttc = object.ttc;
+    addGiftsToCart();
+    update();
+
+
+    var cart = JSON.parse(window.localStorage['cart']);
+    for(var i = 0, len = cart.items.length ; i < len ; i++)
+    {
+        var item = cart.items[i];
+        // Promotions Treatments + SBDs Treatments  !!
+        // Should be outside for new elements !!
+        check(item);
+    }
+    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+    for(var i = 0 , len = promotions.length ; i < len ; i++)
+    {
+        var promotion = promotions[i];
+        if(promotion.consumed)
+        {
+            console.log("THIS PROMOTION IS CONSUMED !");
+        }
+        else
+        {
+            console.log("THIS PROMOTIONS IS NOT !!");
+        }
+    }
+
+
+    $scope.modalities = false;
+    $scope.paymentMethods = [];
+    ModePaiement.getAll().then(
+    function(success){
+        console.log(success);
+        payments = success;
+        angular.forEach(success, function(payment){
+            payment.remises = JSON.parse(payment.remises);
+            console.log(payment);
+            $scope.paymentMethods.push(payment);
+        });
+    }, 
+    function(error){    
+        console.log(error);
+    });
+    $scope.paymentDate = new Date();
+    $scope.currentDiscount = 0;
+    $scope.currentMethod = null;
+    $scope.openDatePicker = function()
+    {
+        $cordovaDatePicker.show({
+
+            date: new Date(),
+            mode: 'date', 
+            minDate: new Date(),
+            maxDate: new Date() + 3*30*24*60*60*1000,
+            allowOldDates: false,
+            allowFutureDates: true,
+            doneButtonLabel: 'OK',
+            doneButtonColor: '#F2F3F4',
+            cancelButtonLabel: 'ANNULER',
+            cancelButtonColor: '#000000'
+
+        }).then(function(date){
+            $scope.paymentDate = date;
+            countDiscount($scope.currentMethod.remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+        });
+    };
+    $scope.change = function(id)
+    {
+        for(var i = 0 ; i < payments.length ; i++)
+        {
+            console.log($scope.currentMethod);
+            if(payments[i].id == id)
+            {
+
+                $scope.currentMethod = payments[i];
+                console.log($scope.currentMethod);
+                if(typeof(payments[i].remises) != "undefined" && payments[i].remises != null && payments[i].remises.length > 0)
+                    {
+                        countDiscount(payments[i].remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+                    }
+                    else
+                    {
+                        $scope.currentDiscount = 0.7;
+                    }
+            }
+            
+        }
+        $scope.details = [];
+    }
+    function countDiscount(discounts, difference)
+    {
+        console.log(discounts);
+        difference = difference < 0 ? -1*difference : difference;
+        $scope.currentDiscount = 0;
+        for(var i = 0 ; i < discounts.length ; i++)
+        {
+            if(difference >= discounts[i].min && difference < discounts[i].max)
+            {
+                $scope.currentDiscount = discounts[i].remise;
+                break;
+            }
+        }
+    }
+
+
+    $scope.check = function(target){
+        check(target);
+        update();
+    };
+
+    function cleanCart()
+    {
+        var items = $scope.data.items;
+        for(var i = items.length - 1 ; i >= 0 ; i--)
+        {
+            var item = items[i];
+            if(item.prixVente == 0)
+            {
+                items.splice(i, 1);
+            }
+        }
+    }
+
+    function addGiftsToCart()
+    {
+        cleanCart();
+        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+        var promotionsIds = [];
+        for(var i = 0 ; i < promotions.length ; i++)
+        {
+            var promotion = promotions[i];
+            if(promotion.consumed)
+            {
+                promotionsIds.push(promotion.id);
+                if(promotion.gratuites != null && promotion.gratuites.length > 0)
+                {
+                    console.log(i)
+                    var cumule = (promotion.cumule != null && typeof(promotion.cumule) != "undefined") ? promotion.cumule : 1;
+                    console.log(cumule);
+                    for(var j = 0 ; j < promotion.gratuites.length ; j++)
+                    {
+                        var gratuite = promotion.gratuites[j];
+                        var trueItem = {
+                            id : gratuite.id,
+                            id_db : gratuite.id,
+                            designation : gratuite.designation,
+                            unit : gratuite.qty*cumule,
+                            packet : 0,
+                            prixVente : 0,
+                            promo : true,
+                            remise : 0
+                        };
+                        $scope.data.items.push(trueItem);
+                        window.localStorage['gratuites'] = JSON.stringify(promotions);
+                    }
+                }
+            }
+
+        }
+    }
+
+    function check(item)
+    {
+        var valid = ( item.stock - ( (item.packet * item.unitConversion) + item.unit) ) > 0;
+        // ADD OR REMOVE FROM CART !!
+        var cart = JSON.parse(window.localStorage['cart'] || '{}');
+
+        var found = false;
+        for(var i = cart.items.length - 1, min = 0 ; i >= 0 ; i--)
+        {
+            var cartItem = cart.items[i];
+            if(valid && cartItem.id_db == item.id_db)
+            {
+                cartItem.unit = item.unit;
+                cartItem.packet = item.packet;
+                cartItem.valid = true;
+                found = true;
+                continue;
+            }
+            else if(!valid && cartItem.id_db == item.id_db)
+            {
+                cartItem.unit = item.unit;
+                cartItem.packet = item.packet;
+                cartItem.valid = false;
+                found = true;
+                continue;
+            }
+            else
+            {
+                continue;
+            }  
+        }
+
+        if(!found && valid)
+        {
+            item.valid = true;
+            cart.items.push(item);
+        }
+        window.localStorage['cart'] = JSON.stringify(cart);
+
+        if(item.groupeSBD != null && item.groupeSBD != 0)
+        {
+            console.log("SBD");
+            SBD.SBDTreatment(item);
+            addGiftsToCart();
+        }
+
+        if(item.promotions != null)
+        {
+            var itemStock = (item.packetStock*item.unitConversion) + item.unitStock;
+            var itemCurrentQty = (item.packet*item.unitConversion) + item.unit;
+            if(item.promotions.length > 0)
+            {
+                Promotions.promotionTreatment(item, true);
+                addGiftsToCart();
+            }
+        }
+        
+        
+    }
+
+
+})
+
+.controller('ProfileCtrl', function($scope,  $http, $rootScope, $stateParams, $ionicSlideBoxDelegate,
     Routes, SynchronizationService,$ionicLoading, Profile, $cordovaToast, Commandes, BrandFive, Missions, LigneCommandes,
     $ionicSideMenuDelegate, Surveys, $state, $timeout, ionicMaterialMotion, ionicMaterialInk, ca) {
+    
     Surveys.getFormattedSurveys().then(
         function(success){
             console.log(success);
@@ -1337,7 +1793,10 @@ angular.module('starter.controllers', ['starter.services'])
     // Set Header
     $scope.$parent.clearFabs();
     $ionicSideMenuDelegate.canDragContent(true);
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
@@ -1411,8 +1870,10 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandsCtrl', function($scope, $state, Commandes, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
+.controller('BrandsCtrl', function($scope, $state, Commandes, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
     console.log(position);
+    $scope.data = {};
+    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
@@ -1428,6 +1889,34 @@ angular.module('starter.controllers', ['starter.services'])
             }
     };
     $scope.ca = 0;
+    $scope.goCart = function(){
+        if(JSON.parse(window.localStorage['done']))
+        {
+            $state.go("app.remainings");
+        }
+        else
+        {
+            if(JSON.parse(window.localStorage['cart']).items.length > 0)
+            {
+                $state.go("app.cart");
+            }
+            else
+            {
+                $ionicPopup.alert({
+                    title: "Panier vide !",
+                    buttons: [
+                        {
+                            text: "OK",
+                            type: "button-assertive",
+                            cssClass: "assertive-survey"
+                        }
+                    ],
+                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
+                });
+            }
+            
+        }
+    };
     $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
     $scope.totalBill = 0;
     var currentCart = JSON.parse(window.localStorage['cart'] || '{}');
@@ -1456,10 +1945,10 @@ angular.module('starter.controllers', ['starter.services'])
     Articles.getMarques().then(
         function(marques){
             var count = marques.length;
-            for(var i = 0 ; i < count - (count % 6) ; i+=6)
+            for(var i = 0 ; i < count - (count % 5) ; i+=5)
             {
                 var row = [];
-                for(var j = i ; j < i+6 ; j++)
+                for(var j = i ; j < i+5 ; j++)
                 {
                     console.log("j"+j);
                     row.push(marques[j]);
@@ -1467,7 +1956,7 @@ angular.module('starter.controllers', ['starter.services'])
                 $scope.rows.push(row);
             }
             var finalRow = [];
-            for(var i = count - (count % 6) ; i < count ; i++)
+            for(var i = count - (count % 5) ; i < count ; i++)
             {
                 finalRow.push(marques[i]);
             }
@@ -1481,7 +1970,12 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('AddCtrl', function($scope, $timeout, $ionicLoading, $cordovaGeolocation, Missions, Clients){
+.controller('AddCtrl', function($scope, $state, $timeout, $ionicLoading, $cordovaGeolocation, Missions, Clients){
+      
+
+      $scope.goHome= function(){
+        $state.transitionTo("app.profile");
+      };
       var posOptions = {timeout: 10000, enableHighAccuracy: false};
       $scope.ca = 0;
       $scope.client = {};
@@ -1529,15 +2023,118 @@ angular.module('starter.controllers', ['starter.services'])
       };
 })
 
-.controller('CartCtrl', function($state, $stateParams, $timeout, $scope, $ionicPopup, ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+.controller('CartCtrl', function($state, $stateParams, $filter, IonicPopUpUtilities, PrinterService, Promotions, $timeout, $cordovaDatePicker,$cordovaFile, $scope, $ionicPopup, $cordovaPrinter,  ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+    var promotionsSuccess = [];
+    var replace = true;
+    
+
+    $scope.print = function(){
+
+        PrinterService.formatedContent( [angular.copy($scope.data.items), JSON.parse(window.localStorage['mission'] || '{}'), $scope.data.ht, $scope.data.ttc, $scope.currentDiscount ],"Pre-vendeur" )
+        .then(
+            function(success){
+                console.log(success);
+                cordova.plugins.zbtprinter.print(success,
+                    function(success) { 
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "Facture imprimée avec succès")); 
+                        var mission = JSON.parse(window.localStorage['mission'] || "{}");
+                        mission.cancel = false;
+                        window.localStorage['cart'] = JSON.stringify(mission);
+                    }, function(fail) { 
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Problème d'impression", "Veuillez activer/désactiver le Bluetooth")); 
+                    }
+                );
+            }).finally(function(){
+                //$ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "-"));
+            });
+    };
+
+    $scope.cancel = function(){
+        var mission = JSON.parse(window.localStorage['mission'] || "{}");
+        if(typeof(mission.cancel) == "undefined" || mission.cancel)
+        {
+            var keys = Object.keys(window.localStorage);
+            for(var i = 0 ; i < keys.length ; i++)
+            {
+                if(keys[i] != "profile")
+                {
+                    window.localStorage.removeItem(keys[i]);
+                }
+            }
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Annulée !", "La commande a bien été annulée "))
+            $state.transitionTo("app.profile");
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur !", "Vous n'êtes pas autorisé à annuler une commande après l'impression. "));
+        }
+    }
+    $scope.footerBar = true;
+    window.addEventListener("native.keyboardshow", keyboardShowHandler);
+    window.addEventListener("native.keyboardhide", keyboardHideHandler);
+    function keyboardShowHandler(e)
+    {
+        $scope.footerBar = false;
+    }
+    function keyboardHideHandler(e)
+    {
+        $scope.footerBar = true;
+    }
     console.log(position);
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
-        if(position.hasNext)
+        
+       /* if(position.hasNext)
             {
                 $state.transitionTo(position.nextStep.name);
-            }
+            }*/
+            
+            if(!JSON.parse(window.localStorage['mission']).done)
+                {
+                    var cart = JSON.parse(window.localStorage['cart'] || '{}');
+
+                    var items = cart.items;
+
+                    PrinterService.formatedContent( [angular.copy($scope.data.items), JSON.parse(window.localStorage['mission'] || '{}'), $scope.data.ht, $scope.data.ttc, $scope.currentDiscount ],"Pre-vendeur" )
+                    .then(
+                        function(success){
+                            console.log(success);
+                            cordova.plugins.zbtprinter.print(success,
+                                function(success) { 
+                                    $ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "Facture imprimée avec succès")); 
+                                }, function(fail) { 
+                                    $ionicPopup.alert(IonicPopUpUtilities.alert("Problème d'impression", "Veuillez activer/désactiver le Bluetooth")); 
+                                }
+                            );
+                        }).finally(function(){
+                            //$ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "-"));
+                        });
+
+                   if($scope.currentMethod != null && typeof($scope.currentMethod) != "undefined")
+                        {
+                            $scope.pay();
+                            $state.transitionTo(position.nextStep.name);
+                        }
+                        else
+                        {
+                            $ionicPopup.alert({
+                                title: "Etape manquante !",
+                                buttons: [
+                                    {
+                                        text: "Terminer",
+                                        type: "button-assertive",
+                                        cssClass: "assertive-survey"
+                                    }
+                                ],
+                                template: '<span style="font-size: 12px; font-weight: 600;">Veuillez choisir une méthode de paiement !</span>'
+                            });
+                        }
+                }
+                else
+                {
+                    $state.transitionTo(position.nextStep.name);
+                }
     };
     $scope.previous = function(){
         if(position.hasPrevious)
@@ -1552,17 +2149,62 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.canFinish = canFinish;
     $scope.data = {};
     $scope.data.items = [];
-    if(cart != null)
+    $scope.data.ttc = 0;
+    $scope.data.ht = 0;
+    $scope.currentDiscount = 0;
+    if(typeof cart.items != "undefined" && typeof(cart.items) != "undefined" && cart.items.length > 0)
     {
-        if(typeof cart.items != "undefined" && cart.items.length > 0)
+        var promotions = JSON.parse(window.localStorage['promotions']);
+        for(var i = 0 ; i < cart.items.length ; i++)
         {
-            angular.forEach(cart.items, function(item){
-                $scope.data.items.push(item);
-                $scope.data.total+=(((item.packet*10)+item.unit)*item.prixVente);
-            });
-        }
-        addGiftsToCart();
+            var item = cart.items[i];
+            item.remises = [];
+            if(item.promotions != null && item.promotions.length > 0)
+            {
+                for(var j = 0 ; j < item.promotions.length ; j++)
+                {
+                    var idPromo = item.promotions[j];
+                    for(var k = 0 ; k < promotions.length ; k++)
+                    {
+                        var promotion = promotions[k];
+                        if(idPromo == promotion.id && promotion.consumed && promotion.remise != null && promotion.type != "PC")
+                        {
+                            item.remises.push({ remise: promotion.remise, priorite: promotion.priorite});
+                        }
+                    }
+                }
+            }
 
+            for(var j = 0 ; j < item.remises.length - 1 ; j++)
+            {
+                for(var k = j+1 ; k < item.remises.length ; k++)
+                {
+                    if(item.remises[k].priorite < item.remises[j].priorite)
+                    {
+                        var permut = item.remises[k];
+                        item.remises[k] = item.remises[j];
+                        item.remises[j] = permut;
+                    }
+                }
+            }
+            var remises = 0;
+            var prixInitial = (item.packet*item.unitConversion + item.unit) * item.prixVente;
+            var prixUnderDiscounts = prixInitial;
+            for(var j = 0 ; j < item.remises.length ; j++)
+            {
+                console.log(item.remises[j]);
+                prixUnderDiscounts-=item.remises[j].remise/100*prixUnderDiscounts;
+            }
+            item.remise = prixInitial - prixUnderDiscounts;
+            item.prixBRUT = prixInitial - item.remise;
+            $scope.data.ht += item.prixBRUT;
+            item.prixTVA = item.prixBRUT * item.tva/100;
+            item.prixTTC = item.prixBRUT + item.prixTVA;
+            $scope.data.ttc += item.prixTTC;
+            $scope.data.items.push(item);
+        }
+       promotionsSuccess = addGiftsToCart();
+       window.localStorage["cart"] = JSON.stringify(cart);
     }
     if(cart != null && typeof cart.mission != "undefined" && cart.mission != null)
     {
@@ -1576,52 +2218,12 @@ angular.module('starter.controllers', ['starter.services'])
         id: 0,
         details : []
     };
-    $scope.datepickerObject = {
-      titleLabel: 'Choisir une date',  //Optional
-      todayLabel: "Aujourd'hui",  //Optional
-      closeLabel: "Fermer",  //Optional
-      setLabel: 'confirmer',  //Optional
-      setButtonType : 'button-assertive',  //Optional
-      todayButtonType : 'button-assertive',  //Optional
-      closeButtonType : 'button-assertive',  //Optional
-      inputDate: new Date(),  //Optional
-      mondayFirst: true,  //Optional
-      disabledDates: [], //Optional
-      weekDaysList: ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"], //Optional
-      monthList: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre"], //Optional
-      templateType: 'popup', //Optional
-      showTodayButton: 'true', //Optional
-      modalHeaderColor: 'bar-positive', //Optional
-      modalFooterColor: 'bar-positive', //Optional
-      from: new Date(), //Optional
-      to: new Date(new Date().getTime() + 31 * 24 * 60 *60 * 1000),  //Optional
-      callback: function (val) {  //Mandatory
-        datePickerCallback(val);
-      },
-      dateFormat: 'dd-MM-yyyy', //Optional
-      closeOnSelect: false, //Optional
-    };
-
-    function datePickerCallback(val)
-    {
-        if(typeof(val) !== "undefined")
-        {
-            $scope.datepickerObject.inputDate = val;
-            countDiscount($scope.currentMethod.remises, (val.getTime() - new Date().getTime())/(24*60*60*1000));
-        }
-        else
-        {
-            $ionicPopup.alert({
-                title : "Veuillez choisir une date"
-            });
-        }
-    }
 
     function getMaxDelayRemise(array)
     {
         var max = array[0].max;
         console.log(array);
-        for(var j = array.length ; j >= 0 ; j--)
+        for(var j = array.length - 1 ; j >= 0 ; j--)
         {
             for(var k = 1 ;  k < j ; k++)
             {
@@ -1636,31 +2238,59 @@ angular.module('starter.controllers', ['starter.services'])
         return max;
     }
     $scope.modalities = false;
-    $scope.currentMethod = {};
+    
+    ModePaiement.getAll().then(
+    function(success){
+        console.log(success);
+        payments = success;
+        angular.forEach(success, function(payment){
+            payment.remises = JSON.parse(payment.remises);
+            console.log(payment);
+            $scope.paymentMethods.push(payment);
+        });
+    }, 
+    function(error){    
+        console.log(error);
+    });
+    $scope.paymentDate = new Date();
+    $scope.currentMethod;
     $scope.currentDiscount = 0;
+    $scope.openDatePicker = function()
+    {
+        $cordovaDatePicker.show({
+
+            date: new Date(),
+            mode: 'date', 
+            minDate: new Date(),
+            maxDate: new Date() + 3*30*24*60*60*1000,
+            allowOldDates: false,
+            allowFutureDates: true,
+            doneButtonLabel: 'OK',
+            doneButtonColor: '#F2F3F4',
+            cancelButtonLabel: 'ANNULER',
+            cancelButtonColor: '#000000'
+
+        }).then(function(date){
+            $scope.paymentDate = date;
+            countDiscount($scope.currentMethod.remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+        });
+    };
     $scope.change = function(id)
     {
-        var max = 0;
         for(var i = 0 ; i < payments.length ; i++)
         {
             if(payments[i].id == id)
             {
+
                 $scope.currentMethod = payments[i];
-                countDiscount(payments[i].remises, (new Date($scope.datepickerObject.inputDate.setHours(0,0,0,0)).getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
-                if(payments[i].remises.length > 0)
-                {
-                    $scope.modalities = true;
-                }
-                $scope.choice.details = [];
-                if(payments[i].remises.length > 1)
-                {
-                    max = getMaxDelayRemise(payments[i].remises);
-                    $scope.datepickerObject.to =  new Date(new Date().getTime() + max * 24 * 60 *60 * 1000);
-                }
-                else
-                {
-                    $scope.currentDiscount = payments[i].remises[0].remise;
-                }
+                if(typeof(payments[i].remises) != "undefined" && payments[i].remises != null && payments[i].remises.length > 0)
+                    {
+                        countDiscount(payments[i].remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+                    }
+                    else
+                    {
+                        $scope.currentDiscount = 0.7;
+                    }
             }
             
         }
@@ -1668,6 +2298,7 @@ angular.module('starter.controllers', ['starter.services'])
     }
     function countDiscount(discounts, difference)
     {
+        console.log(discounts);
         difference = difference < 0 ? -1*difference : difference;
         $scope.currentDiscount = 0;
         for(var i = 0 ; i < discounts.length ; i++)
@@ -1675,38 +2306,33 @@ angular.module('starter.controllers', ['starter.services'])
             if(difference >= discounts[i].min && difference < discounts[i].max)
             {
                 $scope.currentDiscount = discounts[i].remise;
-                return;
+                break;
             }
         }
-        $scope.currentDiscount = 0;
     }
     var payments = [];
     $scope.paymentMethods = [];
-    ModePaiement.getAll().then(
-        function(success){
-            payments = success;
-            angular.forEach(success, function(payment){
-                payment.remises = JSON.parse(payment.remises);
-                console.log(payment);
-                $scope.paymentMethods.push(payment);
-            });
-        }, 
-        function(error){    
-            console.log(error);
-        });
+    
     function addGiftsToCart()
     {
-        if(canFinish)
+        cleanCart();
+        var cart = JSON.parse(window.localStorage['cart']);
+        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
+        var promotionsIds = [];
+        for(var i = 0 ; i < promotions.length ; i++)
         {
-            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-            angular.forEach(promotions, function(promotion){
-                var promotions = [];
-                if(promotion.consumed && promotion.gratuites != null && promotion.gratuites.length > 0)
+            var promotion = promotions[i];
+            if(promotion.consumed)
+            {
+                promotionsIds.push(promotion.id);
+                if(promotion.gratuites != null && promotion.gratuites.length > 0)
                 {
-                    var cumule = promotion.cumule != null ? promotion.cumule : 1;
+                    console.log(i)
+                    var cumule = (promotion.cumule != null && typeof(promotion.cumule) != "undefined") ? promotion.cumule : 1;
                     console.log(cumule);
-                    angular.forEach(promotion.gratuites, function(gratuite){
-
+                    for(var j = 0 ; j < promotion.gratuites.length ; j++)
+                    {
+                        var gratuite = promotion.gratuites[j];
                         var trueItem = {
                             id : gratuite.id,
                             id_db : gratuite.id,
@@ -1714,16 +2340,30 @@ angular.module('starter.controllers', ['starter.services'])
                             unit : gratuite.qty*cumule,
                             packet : 0,
                             prixVente : 0,
-                            promo : true
+                            promo : true,
+                            remise : 0
                         };
                         $scope.data.items.push(trueItem);
                         window.localStorage['gratuites'] = JSON.stringify(promotions);
-                    });
+                    }
                 }
+            }
 
-            });
         }
-
+        console.log(promotionsIds);
+        return promotionsIds;
+    }
+    function cleanCart()
+    {
+        var cartItems = angular.copy($scope.data.items);
+        for(var i = cartItems.length - 1 ; i >= 0; i--)
+        {
+            var cartItem = cartItems[i];
+            if(cartItem.prixVente == 0)
+            {
+                $scope.data.items.splice(i, 1);
+            }
+        }
     }
     function refreshTotalBill()
     {
@@ -1731,7 +2371,7 @@ angular.module('starter.controllers', ['starter.services'])
         $scope.totalBill = 0;
         for(var i = 0 ; i < cart.items.length ; i++)
         {
-            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
+            var noTva = (((cart.items[i].packet*cart.items[i].unitConversion)+(cart.items[i].unit))*(cart.items[i].prixVente));
             if(cart.items[i].tva != null && cart.items[i].tva > 0)
             {
                 $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
@@ -1748,17 +2388,14 @@ angular.module('starter.controllers', ['starter.services'])
     refreshTotalBill();
     var missionDB = true;
     $scope.pay = function(){
-        $scope.recovery = false;
-        $scope.data.recovery = [];
+        var count = countAndCheckGPGS();
         $scope.sbdShow = false;
-        $scope.confirm();
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
         var mission = JSON.parse(window.localStorage['mission'] || '{}');
         mission.exitDate = Date.now();
         mission.state = true;
         if(cart.mission == null || typeof mission.id_mission == "undefined")
         {
-            console.log("need mission");
             missionDB = false;
             Missions.addLocalMission(mission).then(
                 function(success){
@@ -1768,8 +2405,7 @@ angular.module('starter.controllers', ['starter.services'])
                     mission.id_mission = success;
                     window.localStorage['cart'] = JSON.stringify(cart);
                     window.localStorage['mission'] = JSON.stringify(mission);
-                    countAndCheckGPGS()
-                    addCommande(cart.mission, mission.client_id);
+                    addCommande(cart.mission, mission.client_id, count, promotionsSuccess, $scope.paymentDate.getTime(), $scope.currentDiscount, $scope.currentMethod.id);
                 }, 
                 function(error){
                     console.log(error);
@@ -1777,24 +2413,7 @@ angular.module('starter.controllers', ['starter.services'])
         }
         else
         {
-            console.log("no need");
-            var sbds = JSON.parse(window.localStorage['sbd']);
-            var count = 0;
-            for(var i=0;i<sbds.length;i++)
-            {
-                var min = sbds[i].min;
-                var current = 0;
-                for(var j=0;j<sbds[i].articles.length;j++)
-                {
-                    current+=sbds[i].articles[j].qty;
-                }
-                if(current>=min)
-                {
-                    count+=1;
-                }
-            }
-            countAndCheckGPGS();
-            addCommande(cart.mission, mission.client_id);
+            addCommande(cart.mission, mission.client_id,  count, promotionsSuccess, $scope.paymentDate.getTime(), $scope.currentDiscount, $scope.currentMethod.id);
         }      
         
     };
@@ -1831,99 +2450,156 @@ angular.module('starter.controllers', ['starter.services'])
                 });
             Clients.addGoldenStore(mission.client_id, count).then(
                 function(success){
-                    console.log(success);
+                    if(Boolean(success))
+                    {
+                        $ionicPopup.alert({
+                            title: "Bravo Mr. "+mission.nom+" "+mission.prenom+" !",
+                            buttons: [
+                                {
+                                    text: "OK",
+                                    type: "button-assertive",
+                                    cssClass: "assertive-survey"
+                                }
+                            ],
+                            template: '<span style="font-size: 12px; font-weight: 600;">Vous avez atteint votre objectif GOLDEN STORE !</span>'
+                        });
+                    }
+                    else
+                    {
+                        console.log("PAS ENCORE");
+                    }
                 }, 
                 function(error){
                     console.log(error);
                 });
         }
+        return count;
     }
 
-    function addCommande(mission_id, client_id)
+    function addCommande(mission_id, client_id, sbds, promotions, paymentDate, currentDiscount, currentMethod)
     {
+        console.log(promotions);
+        console.log(sbds);
         var finalCart = JSON.parse(window.localStorage['cart'] || '[]');
+        var scopeItems = $scope.data.items;
+        for(var i = 0 ; i < scopeItems.length ; i++)
+        {
+            var scopeItem = scopeItems[i];
+            if(scopeItem.prixVente == 0)
+            {
+                finalCart.items.push(scopeItem);
+            }
+        }
         var code_commande = "CM"+Date.now();
-        Commandes.addCommande(code_commande, mission_id, client_id).then(
+        Commandes.addCommande(code_commande, mission_id, client_id, sbds, promotions, paymentDate, currentDiscount, currentMethod).then(
             function(success){
                 console.log(success);
                 
-                var commande_id = success.insertId;
-                var items = finalCart.items;
-                if(typeof commande_id === "number")
+                if(success.insertId != null && typeof(success.insertId) != "undefined")
                 {
+                    var commande_id = success.insertId;
+                    var items = finalCart.items;
+                    if(typeof commande_id === "number")
+                    {
 
-                    angular.forEach(items, function(item){
+                        angular.forEach(items, function(item){
 
-                        var ligneCommande = {
-                            nomArticle : item.nomArticle,
-                            prixVente : item.prixVente,
-                            packet : item.packet,
-                            unit : item.unit,
-                            id : item.id_db
-                        };
 
-                        LigneCommandes.addLigneCommande(ligneCommande, commande_id).then(
+
+                            var ligneCommande = {
+                                nomArticle : item.nomArticle,
+                                prixVente : item.prixVente,
+                                packet : item.packet,
+                                unit : item.unit,
+                                id : item.id_db,
+                                isGift: item.prixVente == 0 ? 1 : 0,
+                                remise : item.remise > 0 ? item.remise : 0
+                            };
+                            console.log(ligneCommande)
+
+                            LigneCommandes.addLigneCommande(ligneCommande, commande_id).then(
+                                function(success){
+                                    console.log(success);
+                                },
+                                function(error){
+                                    console.log(error.message);
+                                });
+                        });
+
+                        console.log("ABOUT TO UPDATE MISSION WITH ID : "+mission_id+", AND INJECT COMMANDE : "+commande_id+" TO IT !");
+                        var m = JSON.parse(window.localStorage['mission']);
+                        if(missionDB)
+                        {
+                            console.log("THIS IS A MISSION FROM API");
+                            Missions.setMissionToSucceed(mission_id, commande_id, m.entryDate, Date.now()).then(
                             function(success){
                                 console.log(success);
-                            },
+                            }, 
                             function(error){
-                                console.log(error.message);
+                                console.log(error);
                             });
-                    });
-
-                    console.log("ABOUT TO UPDATE MISSION WITH ID : "+mission_id+", AND INJECT COMMANDE : "+commande_id+" TO IT !");
-                    var m = JSON.parse(window.localStorage['mission']);
-                    if(missionDB)
-                    {
-                        console.log("THIS IS A MISSION FROM API");
-                        Missions.setMissionToSucceed(mission_id, commande_id, m.entryDate, Date.now()).then(
-                        function(success){
-                            console.log(success);
-                        }, 
-                        function(error){
-                            console.log(error);
-                        });
+                        }
+                        else
+                        {
+                            console.log("THIS IS A MISSION FROM PHONE");
+                            Missions.setMissionToSucceedLocal(mission_id, commande_id).then(
+                            function(success){
+                                console.log(success);
+                            }, 
+                            function(error){
+                                console.log(error);
+                            });
+                        }
                     }
-                    else
+                    $scope.canFinish = false
+                    var mission = JSON.parse(window.localStorage['mission']);
+                    mission.done = true;
+                    window.localStorage['mission'] = JSON.stringify(mission);
+                    if(!position.hasNext)
                     {
-                        console.log("THIS IS A MISSION FROM PHONE");
-                        Missions.setMissionToSucceedLocal(mission_id, commande_id).then(
-                        function(success){
-                            console.log(success);
-                        }, 
-                        function(error){
-                            console.log(error);
-                        });
+                        window.localStorage.removeItem('cart');
+                        window.localStorage.removeItem('sbd');
+                        window.localStorage.removeItem('promotions');
+                        window.localStorage.removeItem('marques');
+                        window.localStorage.removeItem('mission');
+                        window.localStorage.removeItem('done');
+                        window.localStorage.removeItem('callSteps');
+                        window.localStorage.removeItem('surveys');
+                        window.localStorage.removeItem('gratuites');
                     }
                 }
-                $scope.canFinish = false
-                window.localStorage.removeItem('cart');
-                window.localStorage.removeItem('sbd');
-                window.localStorage.removeItem('promotions');
-                window.localStorage.removeItem('marques');
-                window.localStorage.removeItem('mission');
-                window.localStorage.removeItem('done');
-                window.localStorage.removeItem('callSteps');
-                window.localStorage.removeItem('surveys');
             }, 
             function(error){
                 console.log(error);
             });
         $timeout(
             function(){
-                $state.go("app.profile");
+                if(position.hasNext)
+                {
+                   // $state.transitionTo(position.nextStep.name);
+                }
+                else
+                {
+                   // $state.transitionTo("app.profile");
+                }
             }, 1000);
     }
 
-    function check(){
+    $scope.check = function(){
+        check(angular.copy($scope.data.items));
+        addGiftsToCart();
+    };
+
+    function check(articles){
                 refreshTotalBill();
                 var start = Date.now();
                 //Getting the current items in cart to work with !
                 var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
                 // Same thing for the Shopper Based Design
                 var sbds = JSON.parse(window.localStorage['sbd']);
-                angular.forEach($scope.articles, function(article)
+                angular.forEach(articles, function(article)
                 {
+                    console.log(article)
                         /******************** TAKING ON CONSIDERATION ONLY THE ONES WITH QTY gt 0 *******************/
                     if((article.packet > 0 || article.unit > 0) && typeof article.promo == "undefined")
                     {
@@ -1936,7 +2612,7 @@ angular.module('starter.controllers', ['starter.services'])
                                         angular.forEach(sbd.articles, function(innerArticle){
                                             if(article.id_db == innerArticle.id)
                                             {
-                                                innerArticle.qty = article.unit+(article.packet*10);        
+                                                innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
                                             }
                                         });
                                     }
@@ -1960,20 +2636,22 @@ angular.module('starter.controllers', ['starter.services'])
                             angular.forEach(currentBasket.items, function(item){
                                 if(item.id_db == article.id_db)
                                 {
+                                    console.log("INCART");
                                     // ARTICLE FOUND FOR THE CURRENT ITERATION
                                     found = true;
                                     if(article.packet > 0)
                                     {
                                         // THE DIFFERENCE BETWEEN THE CURRENT AND CART VERSION IS ADDED
                                         console.log("Article Packet : "+article.packet);
-                                        item.packet+=(article.packet - item.packet);
+                                        item.packet=article.packet;
                                     }
                                     if(article.unit > 0)
                                     {
                                         console.log("Article Units : "+article.unit);
-                                        item.unit+=(article.unit - item.unit);
+                                        item.unit=article.unit;
                                     }
-                                    return;
+                                    console.log(item.unit);
+                                    console.log(article.unit);
                                 }
                             });
                             window.localStorage['cart'] = JSON.stringify(currentBasket);
@@ -1994,14 +2672,14 @@ angular.module('starter.controllers', ['starter.services'])
                         {
                             if(promotions[i].type == 'PC')
                             {
-                                console.log("Promotion Client FOR YOU !!");
+                                //console.log("Promotion Client FOR YOU !!");
                                 console.log(promotions[i]);
                                 console.log($scope.totalBill);
                                 if(promotions[i].ca <= $scope.totalBill)
                                 {
                                     
                                     promotions[i].consumed = true;
-                                    console.log("CONSOMME");
+                                   // console.log("CONSOMME");
 
                                 }
                                 else
@@ -2015,280 +2693,41 @@ angular.module('starter.controllers', ['starter.services'])
 
                         if(article.promotions != null)
                         {
-                            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                            var cart = currentBasket;
-                            // WE WILL CHECK ALL THE PROMOTIONS THAT ARE IN RELATION WITH THE CURRENT ARTICLE
-                            for(var i = 0 ; i < article.promotions.length ; i++)
-                            {
-                                // IN THE INNER LOOP WE WILL ITERATE WITH ALL PROMOTIONS TO TEST WITH THEM IF THEY SAME ID WITH
-                                // OF THE CURRENT ARTICLE'S PROMOTIONS
-                                for(var j = 0 ; j < promotions.length ; j++)
-                                {
-                                    // CHECK IF eq !
-                                    if(promotions[j].id == article.promotions[i])
-                                    {
-                                        // Count the qty of all articles that are included in this promotion
-                                        var count = 0;
-                                        // Count ca of the articles
-                                        var ca = 0;
-                                        // total of all items in cart
-                                        var total = 0;
-                                        // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
-                                        var items = [];
-                                        // Looping into all the articles in this promotion
-                                        for(var k = 0 ; k < promotions[j].articles.length ; k++)
-                                        {
-                                            //Now looping in all articles in CART
-                                            console.log("THIS IS THE CART");
-                                            console.log(cart);
-                                            for(var l = 0 ; l < cart.items.length ; l++)
-                                            {
-                                                var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
-                                                var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
-                                                {
-                                                    console.log("FOUND IN CART");
-                                                    count+=qty;
-                                                    ca+=amount;
-                                                    items.push({ id: cart.items[l].id_db, qty: qty });
-                                                }
-                                                else
-                                                {
-                                                    console.log("NOT FOUND IN CART");
-                                                }
-                                                total+=amount;
-                                            }
-                                        }
-                                        // PROMOTION MONTANT -- AMOUNT PROMOTION
-                                        if(promotions[j].type == "PMT")
-                                        {
-                                            // CA OF ALL ARTICLES IN THE PMT PROMOTION SUP THAN MIN QTY OF THE PROMOTION
-                                            if(ca>=promotions[j].ca)
-                                            {
-                                                // THE MINIMAL CONDITION IS RESPECTED
-                                                // CURRENT CA OF ALL ARTUCLES IN PROMOTION >= -gt || -eq THE MINIMAL QTY OF THE PROMOTION
-                                                promotions[j].consumed = true;
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                            else
-                                            {
-                                                promotions[j].consumed = false;
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                        }
-                                        // PROMOTION PALIER
-                                        if(promotions[j].type == "PP")
-                                        {
-                                            console.log("PP");
-                                            // IF MIXED PROMOTION WE CALCULATE THE AMOUNT OF ALL ITEMS WE DO NO HAVE THE OBLIGATION TO CALCULATE
-                                            // EACH ARTICLE WITH ITS MINIMAL VALUE AND TO TEST FOR EACH ONE,
-                                            // WE JUST HAVE ADD ONE TO THE OTHER UNTIL THE FINISH OF THE LOOP !
-                                            if(Boolean(promotions[j].melange))
-                                            {
-                                                // CUMMULABLE IF THE PRE REQUISITES ARE RESPECTED MORE THAN ONCE WE DOUBLE THE PROMOTION PRIZES
-                                                // DEPENDING ON TIME OF REPETITIONs TILL THE MAX IF SETTED !
-                                                if(Boolean(promotions[j].cummulable))
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        // PROMOTION CONSUMED ! MINIMAL PREREQUISITE RESPECTED !!
-                                                        promotions[j].consumed = true;
-                                                        // 20/20 == 1 && 25/20 == 1 TRUNCATE WE TAKE THE PART BEFORE COMMA 1,9 ==> 1
-                                                        var repetitions = Math.trunc(count / promotions[j].qte);
-                                                        // IF MAX_STEPS IS SETTED
-                                                        if(promotions[j].max != null)
-                                                        {
-                                                            if(repetitions >= promotions[j].max)
-                                                            {
-                                                                // IF TRUNCATED VALUE gt MAX WE TAKE MAX !
-                                                                promotions[j].cumule = promotions[j].max;
-                                                            }
-                                                            else
-                                                            {
-                                                                // WE TAKE TRUNCATED VALUE
-                                                                promotions[j].cumule = repetitions;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            // NO MAX_STEPS SO REPETITIONS !
-                                                            promotions[j].cumule = repetitions;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                // NO CUMMULABLE !!
-                                                else
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        // NO CUMMULABLE SO ONLY 1 !
-                                                        promotions[j].consumed = true;
-                                                        promotions[j].cumule = 1;
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                            }
-                                            // PAS DE MELANGE !
-                                            else
-                                            {
-                                                var finalRepetitions = 0;
-                                                var consumed = false;
-                                                if(promotions[j].articles.length == items.length)
-                                                {
-                                                    var count = 0;
-                                                    for(var m = 0; m < promotions[j].articles.length; m++)
-                                                    {
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            if(promotions[j].articles[m].id == items[n].id)
-                                                            {
-                                                                if(promotions[j].articles[m].qty <= items[n].qty)
-                                                                {
-                                                                    console.log(items[n].qty);
-                                                                    items[n].qty = Math.trunc(items[n].qty/promotions[j].articles[m].qty)
-                                                                    console.log("RESPECTANT LES CRITERES");
-                                                                    ++count;
-                                                                    console.log(count);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if(count == promotions[j].articles.length)
-                                                    {
-                                                        console.log(items);
-                                                        var trunQty = 0;
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            console.log(items[n].qty);
-                                                            trunQty+=items[n].qty;
-                                                        }
-                                                        console.log(Math.trunc(trunQty/promotions[j].articles.length));
-                                                        promotions[j].cumule = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        var trunc = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        if(trunc >= 1)
-                                                        {
-                                                            console.log("CONSUMED");
-                                                            promotions[j].consumed = true;
-                                                            if(Boolean(promotions[j].cummulable))
-                                                            {
-                                                                if(promotions[j].max != null || promotions[j].max > 0 || typeof promotions[j].max == "undefined")
-                                                                {
-                                                                    if(trunc >= promotions[j].max)
-                                                                    {
-                                                                        promotions[j].cumule = promotions[j].max;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        promotions[j].cumule = trunc;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    promotions[j].cumule = trunc;
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = 1;
-                                                            }
-
-                                                        }
-                                                        else
-                                                        {
-                                                            console.log("NO CHANCE !");
-                                                            promotions[j].consumed = false;
-                                                        }
-                                                        
-                                                    }
-                                                    else
-                                                    {
-                                                        console.log("NO CHANCE !");
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    console.log("NO CHANCE !");
-                                                    promotions[j].consumed = false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                console.log(promotions);
-                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                            }
-                            console.log("ALL THE PROMOTIONS ARE UP TO DATE");
+                            Promotions.promotionTreatment(article);
                         }
                     }
                 });
                 window.localStorage['cart'] = JSON.stringify(currentBasket);
                 refreshTotalBill();
     }
-    $scope.confirm = function(){
-        refreshTotalBill();
-        check();
-        var mission_id = cart.mission;
-        var items = $scope.data.items;
-        console.log(items);
-        console.log(items.length);
-        var cleanOnes = [];
-        var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        /*angular.forEach(items, function(article){
-            if(article.groupeSBD != null)
-            {
-                console.log(article);
-                for(var i = 0 ; i < sbds.length ; i++)
-                {
-                    if(article.groupeSBD == sbds[i].id)
-                    {
-                        for(var j = 0 ; j < sbds[i].articles.length ; j++)
-                        {
-                            if(sbds[i].articles[j].id == article.id)
-                            {
-                                sbds[i].articles[j].qty = 0;
-                            }
-                        }
-                    }
-                }
-            }
-            window.localStorage['sbd'] = JSON.stringify(sbds);
-        });*/
-        for(var i = 0 ; i < items.length ; i++)
-        {
-            if(!((items[i].packet === 0) && (items[i].unit === 0)) && typeof items[i].promo == "undefined")
-            {
-                cleanOnes.push(items[i]);
-            }
-        }
-        $scope.data.items = [];
-        angular.forEach(cleanOnes, function(clean){
-            $scope.data.items.push(clean);
-        });
-        addGiftsToCart();
-        var finalObject = { mission : mission_id, items : cleanOnes };
-        window.localStorage['cart'] = JSON.stringify(finalObject);
-    };
 
 })
 
-.controller('SurveyCtrl', function($scope, position, Surveys, $state, $ionicPopup){
+.controller('SurveyCtrl', function($scope, $timeout,position, Surveys, $state, $ionicPopup){
+    $scope.$parent.clearFabs();
+    $scope.hasHeaderFabLeft = false;
+    $scope.hasHeaderFabRight = false;
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
+    $scope.isExpanded = true;
+    /*$scope.$parent.setExpanded(false);
+    $scope.$parent.setHeaderFab(false);
+*/
+    $scope.data = {};
+    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
+    
     /*******************************PROPER TO CALL STEPS*********************************/
     $scope.hasNext = position.hasNext;
-    $scope.hasPrevious = position.hasPrevious;
+    $scope.hasPrevious = position.hasPrevious;  
     $scope.next = function(){
+        console.log($scope.surveys);
          var surveys = angular.copy($scope.surveys);
          var remainings = false;
          for(var i = 0 ; i < surveys.length ; i++)
          {
-            if(surveys[i].required && surveys[i].choosen == "none")
+            if( (surveys[i].required) && (surveys[i].choosen == "" || surveys[i].choosen == 0) )
             {
                 remainings = true;
             }
@@ -2309,11 +2748,48 @@ angular.module('starter.controllers', ['starter.services'])
          }
          else if (JSON.parse(window.localStorage['surveys']).done)
          {
-            $state.transitionTo(position.nextStep.name);
+            if($scope.hasNext)
+                {
+                    $state.transitionTo(position.nextStep.name);
+                }
+            else
+            {
+                window.localStorage.removeItem('cart');
+                window.localStorage.removeItem('sbd');
+                window.localStorage.removeItem('promotions');
+                window.localStorage.removeItem('marques');
+                window.localStorage.removeItem('mission');
+                window.localStorage.removeItem('done');
+                window.localStorage.removeItem('callSteps');
+                window.localStorage.removeItem('surveys');
+                window.localStorage.removeItem('gratuites');
+                $state.transitionTo("app.profile");
+            }
          }
          else
          {
             console.log("About to add them to local DB !");
+            if(surveys.length == 0)
+            {
+                if($scope.hasNext)
+                {
+                    console.log("hasNext!");
+                    $state.transitionTo(position.nextStep.name);
+                }
+                else
+                {
+                    console.log("!hasNext");
+                    var keys = Object.keys(window.localStorage);
+                    for(var i = 0 ; i < keys.length ; i++)
+                    {
+                        if(keys[i] != "profile")
+                        {
+                            window.localStorage.removeItem(keys[i]);
+                        }
+                    }
+                    $state.transitionTo("app.profile");
+                }
+            }
             Surveys.addSurveyClientAnswers(surveys, JSON.parse(window.localStorage['mission']).client_id).then(
             function(success){
                 var popUp = $ionicPopup.alert({
@@ -2337,6 +2813,23 @@ angular.module('starter.controllers', ['starter.services'])
                     template: '<span style="font-size: 12px; font-weight: 600;">Le questionnaire à bien été enregistré !</span>'
                 });
                 window.localStorage['surveys'] =  JSON.stringify({ done: true, surveys: surveys});
+                if($scope.hasNext)
+                {
+                    $state.transitionTo(position.nextStep.name);
+                }
+                else
+                {
+                    window.localStorage.removeItem('cart');
+                    window.localStorage.removeItem('sbd');
+                    window.localStorage.removeItem('promotions');
+                    window.localStorage.removeItem('marques');
+                    window.localStorage.removeItem('mission');
+                    window.localStorage.removeItem('done');
+                    window.localStorage.removeItem('callSteps');
+                    window.localStorage.removeItem('surveys');
+                    window.localStorage.removeItem('gratuites');
+                    $state.transitionTo("app.profile");
+                }
             }, 
             function(error){
                 console.log(error);
@@ -2350,10 +2843,22 @@ angular.module('starter.controllers', ['starter.services'])
     /*******************************--------------------*********************************/
     $scope.surveys = [];
     var surveys = JSON.parse(window.localStorage['surveys'] || '[]');
+    /*if(surveys.surveys.length == 0)
+    {
+        $state.go("app.profile")
+    }*/
     angular.forEach(surveys.surveys, function(survey, index){
-        survey.choosen = "none";
-        if(index % 2 == 0)
-            survey.required = true;
+        switch(survey.type)
+        {
+
+            case(3):
+                survey.choosen = 0;
+                break;
+            default:
+                survey.choosen = "";
+                break;
+        }
+        survey.required = Boolean(survey.required);
         $scope.surveys.push(survey);
     });
     $scope.clicked = function(){
@@ -2364,7 +2869,20 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandCtrl', function($scope, $state, Promotions, Commandes, Missions, $stateParams, Articles, LigneCommandes){
+.controller('BrandCtrl', function($scope, $state, $ionicPopup,  $filter, CartUtilities, IonicPopUpUtilities, Promotions, Commandes, Missions, $stateParams, Articles, LigneCommandes){
+    $scope.data = {};
+    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
+    $scope.footerBar = true;
+    window.addEventListener("native.keyboardshow", keyboardShowHandler);
+    window.addEventListener("native.keyboardhide", keyboardHideHandler);
+    function keyboardShowHandler(e)
+    {
+        $scope.footerBar = false;
+    }
+    function keyboardHideHandler(e)
+    {
+        $scope.footerBar = true;
+    }
     $scope.ca = 0;
     $scope.infos = JSON.parse(window.localStorage['profile']);    
     $scope.marque = $stateParams.name;
@@ -2372,29 +2890,44 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.totalBill = 0;
     $scope.cnt = 0;
     var currentCart =JSON.parse(window.localStorage['cart'] || '{}');
-    console.log("current Cart "+JSON.stringify(currentCart));
-     function refreshTotalBill()
-    {
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        $scope.totalBill = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
+    $scope.goCart = function(){
+        if(JSON.parse(window.localStorage['done']))
         {
-            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
-            if(cart.items[i].tva != null && cart.items[i].tva > 0)
+            $state.go("app.remainings");
+        }
+        else
+        {
+            if(JSON.parse(window.localStorage['cart']).items.length > 0)
             {
-                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
+                $state.go("app.cart");
             }
             else
             {
-                $scope.totalBill+=noTva;
+                $ionicPopup.alert({
+                    title: "Panier vide !",
+                    buttons: [
+                        {
+                            text: "OK",
+                            type: "button-assertive",
+                            cssClass: "assertive-survey"
+                        }
+                    ],
+                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
+                });
             }
             
         }
-        cart = null;
-
+    };
+    $scope.goBack = function(){
+        if(!CartUtilities.getOutOfQuota())
+        {
+            $state.transitionTo("app.brands");
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+        }
     }
-    refreshTotalBill();
-    console.log('TEST');
     Articles.getArticlesByMarque($scope.marque).then(
             function(articles){
                 console.log(articles);
@@ -2436,7 +2969,7 @@ angular.module('starter.controllers', ['starter.services'])
                     article.unit = 0;
                     article.inCart = false;
                     article.done = article.groupeSBD == null ? true : false;
-                    article.promotions = article.promotions != null ? article.promotions.split(', ').map(Number) : null;
+                    article.promotions = article.promotions != null ? JSON.parse("["+article.promotions+"]"): null;
                     
                     var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
                     angular.forEach(sbds, function(sbd){
@@ -2492,7 +3025,6 @@ angular.module('starter.controllers', ['starter.services'])
                 });
                 var to = Date.now();
                 console.log('Elapsed time : '+(to-from));
-                refreshTotalBill();
 
             }, 
             function(error){
@@ -2511,7 +3043,6 @@ angular.module('starter.controllers', ['starter.services'])
     function refreshBrandRealTime(){
                     
                     check(false);
-                    refreshTotalBill();
                     var testItems = [];
                     angular.forEach($scope.articles, function(article){
                         var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
@@ -2539,7 +3070,6 @@ angular.module('starter.controllers', ['starter.services'])
     }
 
     function check(realtime){
-                refreshTotalBill();
                 var start = Date.now();
                 var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
                 var sbds = JSON.parse(window.localStorage['sbd']);
@@ -2555,7 +3085,7 @@ angular.module('starter.controllers', ['starter.services'])
                                     angular.forEach(sbd.articles, function(innerArticle){
                                         if(article.id_db == innerArticle.id)
                                         {
-                                            innerArticle.qty = article.unit+(article.packet*10);        
+                                            innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
                                         }
                                     });
                                 }
@@ -2594,17 +3124,49 @@ angular.module('starter.controllers', ['starter.services'])
                             }
                                 
                         }
-
+                        $scope.data.items = currentBasket.items;
+                        var totalToCount = 0;
+                        for(var i = 0 ; i < currentBasket.items.length ; i++)
+                        {
+                            var item = currentBasket.items[i];
+                            if(item.quotaVALUE != 0 || item.quotaQTY != 0)
+                            {
+                              if( ( (item.packet*item.unitConversion) + item.unit <= $filter('quota')(item) ) )
+                              {
+                                totalToCount+=((item.unit+(item.packet * item.unitConversion))*item.prixVente);
+                              }
+                              else
+                              {
+                                continue;
+                              }
+                            }
+                            else
+                            {
+                              continue;
+                            }
+                            
+                        }
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        console.log(totalToCount)
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        console.log("----------------------------------------------------------------------------");
+                        $scope.totalBill = totalToCount;
+                        window.localStorage["cart"] = JSON.stringify(currentBasket);
                         var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        refreshTotalBill();
+                        
                          for(var i = 0 ; i < promotions.length ; i++)
                         {
                             if(promotions[i].type == 'PC')
                             {
                                 console.log("Promotion Client FOR YOU !!");
                                 console.log(promotions[i]);
-                                console.log($scope.totalBill);
-                                if(promotions[i].ca <= $scope.totalBill)
+                                console.log(totalToCount);
+                                if(promotions[i].ca <= totalToCount)
                                 {
                                     
                                     promotions[i].consumed = true;
@@ -2622,215 +3184,7 @@ angular.module('starter.controllers', ['starter.services'])
 
                         if(article.promotions != null)
                         {
-                            console.log('Cet Article Est En Promo');
-                            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                            console.log(promotions);
-                            console.log(article);
-                            var cart = currentBasket;
-                            for(var i = 0 ; i < article.promotions.length ; i++)
-                            {
-                                for(var j = 0 ; j < promotions.length ; j++)
-                                {
-                                    if(promotions[j].id == article.promotions[i])
-                                    {
-                                        console.log('GOTCHA !!');
-                                        console.log(promotions[j]);
-                                        // Count the qty of all articles that are inclueded in this promotion
-                                        var count = 0;
-                                        // Count ca of the articles
-                                        var ca = 0;
-                                        // total of all items in cart
-                                        var total = 0;
-                                        // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
-                                        var items = [];
-                                        // Looping into all the articles in this promotion
-                                        for(var k = 0 ; k < promotions[j].articles.length ; k++)
-                                        {
-                                            //Now looping in all articles in CART
-                                            console.log("THIS IS THE CART");
-                                            console.log(cart);
-                                            for(var l = 0 ; l < cart.items.length ; l++)
-                                            {
-                                                var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
-                                                var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
-                                                {
-                                                    console.log("FOUND IN CART");
-                                                    count+=qty;
-                                                    ca+=amount;
-                                                    items.push({ id: cart.items[l].id_db, qty: qty });
-                                                }
-                                                else
-                                                {
-                                                    console.log("NOT FOUND IN CART");
-                                                }
-                                                total+=amount;
-                                            }
-                                        }
-                                        if(promotions[j].type == "PMT")
-                                        {
-                                            if(ca>=promotions[j].ca)
-                                            {
-                                                promotions[j].consumed = true;
-                                                console.log(promotions[j].consumed);
-                                                console.log(promotions[j].id);
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                            else
-                                            {
-                                                promotions[j].consumed = false;
-                                                console.log("NO GIFT !");
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                        }
-                                        if(promotions[j].type == "PP")
-                                        {
-                                            if(Boolean(promotions[j].melange))
-                                            {
-                                                console.log(items);
-                                                console.log("MELANGE");
-                                                if(Boolean(promotions[j].cummulable))
-                                                {
-                                                    console.log("MELANGE CUMMULABLE");
-                                                    console.log("MIN :");
-                                                    console.log(promotions[j].qte);
-                                                    console.log("CURRENT :");
-                                                    console.log(count);
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        promotions[j].consumed = true;
-                                                        console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
-                                                        var repetitions = Math.trunc(count / promotions[j].qte);
-                                                        console.log(repetitions);
-                                                        if(promotions[j].max == null)
-                                                        {
-                                                            promotions[j].cumule = repetitions;
-                                                        }
-                                                        else
-                                                        {
-                                                            if(repetitions >= promotions[j].max)
-                                                            {
-                                                                promotions[j].cumule = promotions[j].max;
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = repetitions;
-                                                            }
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                        console.log("FAR AWAY BUDDY !");
-                                                        console.log("MIN :");
-                                                        console.log(promotions[j].qte);
-                                                        console.log("CURRENT :");
-                                                        console.log(count);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        promotions[j].consumed = true;
-                                                        promotions[j].cumule = 1;
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                var finalRepetitions = 0;
-                                                var consumed = false;
-                                                if(promotions[j].articles.length == items.length)
-                                                {
-                                                    var count = 0;
-                                                    for(var m = 0; m < promotions[j].articles.length; m++)
-                                                    {
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            if(promotions[j].articles[m].id == items[n].id)
-                                                            {
-                                                                if(promotions[j].articles[m].qty <= items[n].qty)
-                                                                {
-                                                                    console.log(items[n].qty);
-                                                                    items[n].qty = Math.trunc(items[n].qty/promotions[j].articles[m].qty)
-                                                                    console.log("RESPECTANT LES CRITERES");
-                                                                    ++count;
-                                                                    console.log(count);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if(count == promotions[j].articles.length)
-                                                    {
-                                                        console.log(items);
-                                                        var trunQty = 0;
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            console.log(items[n].qty);
-                                                            trunQty+=items[n].qty;
-                                                        }
-                                                        console.log(Math.trunc(trunQty/promotions[j].articles.length));
-                                                        promotions[j].cumule = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        var trunc = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        if(trunc >= 1)
-                                                        {
-                                                            console.log("CONSUMED");
-                                                            promotions[j].consumed = true;
-                                                            if(Boolean(promotions[j].cummulable))
-                                                            {
-                                                                if(promotions[j].max != null || promotions[j].max > 0 || typeof promotions[j].max == "undefined")
-                                                                {
-                                                                    if(trunc >= promotions[j].max)
-                                                                    {
-                                                                        promotions[j].cumule = promotions[j].max;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        promotions[j].cumule = trunc;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    promotions[j].cumule = trunc;
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = 1;
-                                                            }
-
-                                                        }
-                                                        else
-                                                        {
-                                                            console.log("NO CHANCE !");
-                                                            promotions[j].consumed = false;
-                                                        }
-                                                        
-                                                    }
-                                                    else
-                                                    {
-                                                        console.log("NO CHANCE !");
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    console.log("NO CHANCE !");
-                                                    promotions[j].consumed = false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                console.log(promotions);
-                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                            }
-                            console.log("ALL THE PROMOTIONS ARE UP TO DATE");
+                            Promotions.promotionTreatment(article);
                         }
                         else
                         {
@@ -2853,8 +3207,6 @@ angular.module('starter.controllers', ['starter.services'])
 
     $scope.confirm = function(){
         refreshBrandRealTime();
-        $scope.totalBill = 0;
-        refreshTotalBill();
     };
     $scope.clicked = function(article){
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
@@ -2934,12 +3286,15 @@ angular.module('starter.controllers', ['starter.services'])
 })
 
 .controller('RemainingCtrl', function($scope, $state, Articles, position){
+    console.log(position);
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
         if(position.hasNext)
             {
-                $state.go(position.nextStep.name);
+                console.log(position.nextStep.name);
+                $state.transitionTo(position.nextStep.name);
+                //$state.go(position.nextStep.name);
             }
     };
     $scope.previous = function(){
@@ -3459,22 +3814,43 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandFiveCtrl', function($http, $scope, $ionicLoading, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
-    
+.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+    $scope.data = {};
+    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
+
+    $scope.footerBar = true;
+    window.addEventListener("native.keyboardshow", keyboardShowHandler);
+    window.addEventListener("native.keyboardhide", keyboardHideHandler);
+    function keyboardShowHandler(e)
+    {
+        $scope.footerBar = false;
+    }
+    function keyboardHideHandler(e)
+    {
+        $scope.footerBar = true;
+    }
     window.localStorage['done'] = typeof window.localStorage['done'] == "undefined" ? JSON.stringify(false) : JSON.parse(window.localStorage['done']);
     console.log(position);
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
-        if(position.hasNext)
+        if(position.hasNext && !CartUtilities.getOutOfQuota())
             {
                 $state.go(position.nextStep.name);
             }
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+            }
     };
     $scope.previous = function(){
-        if(position.hasPrevious)
+        if(position.hasPrevious && !CartUtilities.getOutOfQuota())
             {
                 $state.go(position.previousStep.name);
+            }
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
             }
     };
     $scope.infos = JSON.parse(window.localStorage['profile']);
@@ -3490,7 +3866,7 @@ angular.module('starter.controllers', ['starter.services'])
     angular.forEach(currentCart.items, function(value){
         if(typeof value === "object")
         {
-            $scope.totalBill+=(((value.packet*10)*(value.prixVente))+(value.unit*value.prixVente));
+            $scope.totalBill+=(((value.packet*value.unitConversion)*(value.prixVente))+(value.unit*value.prixVente));
         }
     });
 
@@ -3498,24 +3874,34 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.clicked = function(article){
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
         var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        var articles = $scope.articles;
+        var articles = angular.copy($scope.articles);
         for(var i = 0 ; i < articles.length ; i++)
         {
-            if(articles[i].id == article.id)
+            console.log(i)
+            if(articles[i].id_db == article.id_db)
             {
                 articles[i].unit = 0;
                 articles[i].packet = 0;
                 articles[i].inCart = false;
             }
         }
-        for(var i = 0 ; i < cart.items.length || 0 ; i++)
+        $scope.articles = articles;
+        console.log(cart.items.length)
+        for(var i = cart.items.length - 1 ; i >= 0 ; i--)
         {
-            if(cart.items[i].id === article.id)
+            console.log(i)
+            var item = cart.items[i];
+            if(item.id_db == article.id_db)
             {
+                console.log("yes")
                 cart.items.splice(i, 1);
+                $scope.data.items = cart.items;
                 window.localStorage['cart'] = JSON.stringify(cart);
+                break;
             }
         }
+
+
         console.log(cart);
         cart = null;
         if(article.groupeSBD != null)
@@ -3537,7 +3923,6 @@ angular.module('starter.controllers', ['starter.services'])
         }
         window.localStorage['sbd'] = JSON.stringify(sbds);
         console.log(sbds);
-        sbds = null;
         refreshBrandRealTime();
     };
 
@@ -3552,7 +3937,7 @@ angular.module('starter.controllers', ['starter.services'])
         $scope.totalBill = 0;
         for(var i = 0 ; i < cart.items.length ; i++)
         {
-            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
+            var noTva = (((cart.items[i].packet*cart.items[i].unitConversion)+(cart.items[i].unit))*(cart.items[i].prixVente));
             if(cart.items[i].tva != null && cart.items[i].tva > 0)
             {
                 $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
@@ -3650,29 +4035,38 @@ angular.module('starter.controllers', ['starter.services'])
                     {
                         if(article.promotions.length > 0)
                         {
-                            article.promotions = article.promotions.split(', ').map(Number)
+                            console.log("-------------------------------");
+                            console.log(article);
+                            console.log(article.promotions);
+                            article.promotions = JSON.parse("["+article.promotions+"]");
+                            console.log(article.promotions);
+                            console.log(article);
+                            console.log("-------------------------------");
                         }
                     }
                     var items = JSON.parse(window.localStorage['cart'] || '{}');
                     var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-                    angular.forEach(sbds, function(sbd){
-                        if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                        {
-                            var total = 0;
-                            var found = false;
-                            angular.forEach(sbd.articles, function(innerArticle){
-                                total+=innerArticle.qty;
-                                if(article.id_db == innerArticle.id)
-                                {
-                                    found = true; 
-                                }
-                            });
-                            if(found)
+                    if(article.groupeSBD != null)
+                    {
+                        angular.forEach(sbds, function(sbd){
+                            if(article.groupeSBD == sbd.id)
                             {
-                                article.done = sbd.min <= total ? true : false;
+                                var total = 0;
+                                var found = false;
+                                angular.forEach(sbd.articles, function(innerArticle){
+                                    total+=innerArticle.qty;
+                                    if(article.id_db == innerArticle.id)
+                                    {
+                                        found = true; 
+                                    }
+                                });
+                                if(found)
+                                {
+                                    article.done = sbd.min <= total ? true : false;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                     var cartItems = items.items;
                     var inCart = false;
                     angular.forEach(cartItems, function(cartItem){
@@ -3710,11 +4104,7 @@ angular.module('starter.controllers', ['starter.services'])
                         }
                         else
                         {
-                            console.log("_____________");
-                            console.log("NOT IN CART !");
-                            console.log(JSON.stringify(cartItem));
-                            console.log(JSON.stringify(article));
-                            console.log("_____________");
+                            
                         }
                     });
                     if(!inCart)
@@ -3744,6 +4134,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.currentBrand = {};
     $scope.articles = [];
     function check(realtime){
+                console.log(realtime);
                 refreshTotalBill();
                 var start = Date.now();
                 var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
@@ -3763,7 +4154,7 @@ angular.module('starter.controllers', ['starter.services'])
                                         angular.forEach(sbd.articles, function(innerArticle){
                                             if(article.id_db == innerArticle.id)
                                             {
-                                                innerArticle.qty = article.unit+(article.packet*10);        
+                                                innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
                                             }
                                         });
                                     }
@@ -3793,28 +4184,61 @@ angular.module('starter.controllers', ['starter.services'])
                                         console.log("Article Units : "+article.unit);
                                         item.unit+=(article.unit - item.unit);
                                     }
-                                    refreshTotalBill();
                                     return;
                                 }
-                                refreshTotalBill();
                             });
                             if(!found)
                             {
                                 article.inCart = true;
                                 currentBasket.items.push(article);
                             }
+                            $scope.data.items = currentBasket.items;
                             window.localStorage['cart'] = JSON.stringify(currentBasket);
                                 
                         }
 
+                        var totalToCount = 0;
+                        for(var i = 0 ; i < currentBasket.items.length ; i++)
+                        {
+                            var item = currentBasket.items[i];
+                            if(item.quotaVALUE != 0 || item.quotaQTY != 0)
+                            {
+                              if( ( (item.packet*item.unitConversion) + item.unit <= $filter('quota')(item) ) )
+                              {
+                                totalToCount+=((item.unit+(item.packet * item.unitConversion))*item.prixVente);
+                              }
+                              else
+                              {
+                                continue;
+                              }
+                            }
+                            else
+                            {
+                              continue;
+                            }
+                            
+                        }
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log(totalToCount);
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+                        console.log("---------------------------------------------------------")
+
 
                         var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        refreshTotalBill();
                         for(var i = 0 ; i < promotions.length ; i++)
                         {
                             if(promotions[i].type == 'PC')
                             {
-                                if(promotions[i].ca <= $scope.totalBill)
+                                if(promotions[i].ca <= totalToCount)
                                 {
                                     promotions[i].consumed = true;
                                 }
@@ -3825,221 +4249,9 @@ angular.module('starter.controllers', ['starter.services'])
                             }
                         }
                         window.localStorage['promotions'] = JSON.stringify(promotions);
-                        promotions = null;
 
 
-                        if(article.promotions != null)
-                        {
-                            console.log('Cet Article Est En Promo');
-                            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                            console.log(promotions);
-                            console.log(article);
-                            var cart = currentBasket;
-                            for(var i = 0 ; i < article.promotions.length ; i++)
-                            {
-                                for(var j = 0 ; j < promotions.length ; j++)
-                                {
-                                    if(promotions[j].id == article.promotions[i])
-                                    {
-                                        console.log('GOTCHA !!');
-                                        console.log(promotions[j]);
-                                        // Count the qty of all articles that are inclueded in this promotion
-                                        var count = 0;
-                                        // Count ca of the articles
-                                        var ca = 0;
-                                        // total of all items in cart
-                                        var total = 0;
-                                        // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
-                                        var items = [];
-                                        // Looping into all the articles in this promotion
-                                        for(var k = 0 ; k < promotions[j].articles.length ; k++)
-                                        {
-                                            //Now looping in all articles in CART
-                                            console.log("THIS IS THE CART");
-                                            console.log(cart);
-                                            for(var l = 0 ; l < cart.items.length ; l++)
-                                            {
-                                                var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
-                                                var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id == promotions[j].articles[k].id)
-                                                {
-                                                    console.log("FOUND IN CART");
-                                                    count+=qty;
-                                                    ca+=amount;
-                                                    items.push({ id: cart.items[l].id, qty: qty });
-                                                }
-                                                else
-                                                {
-                                                    console.log("NOT FOUND IN CART");
-                                                }
-                                                total+=amount;
-                                            }
-                                        }
-                                        if(promotions[j].type == "PMT")
-                                        {
-                                            if(ca>=promotions[j].ca)
-                                            {
-                                                promotions[j].consumed = true;
-                                                console.log(promotions[j].consumed);
-                                                console.log(promotions[j].id);
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                            else
-                                            {
-                                                promotions[j].consumed = false;
-                                                console.log("NO GIFT !");
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                        }
-                                        if(promotions[j].type == "PP")
-                                        {
-                                            if(Boolean(promotions[j].melange))
-                                            {
-                                                console.log(items);
-                                                console.log("MELANGE");
-                                                if(Boolean(promotions[j].cummulable))
-                                                {
-                                                    console.log("MELANGE CUMMULABLE");
-                                                    console.log("MIN :");
-                                                    console.log(promotions[j].qte);
-                                                    console.log("CURRENT :");
-                                                    console.log(count);
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        promotions[j].consumed = true;
-                                                        console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
-                                                        var repetitions = Math.trunc(count / promotions[j].qte);
-                                                        console.log(repetitions);
-                                                        if(promotions[j].max == null)
-                                                        {
-                                                            promotions[j].cumule = repetitions;
-                                                        }
-                                                        else
-                                                        {
-                                                            if(repetitions >= promotions[j].max)
-                                                            {
-                                                                promotions[j].cumule = promotions[j].max;
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = repetitions;
-                                                            }
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                        console.log("FAR AWAY BUDDY !");
-                                                        console.log("MIN :");
-                                                        console.log(promotions[j].qte);
-                                                        console.log("CURRENT :");
-                                                        console.log(count);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        promotions[j].consumed = true;
-                                                        promotions[j].cumule = 1;
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                var finalRepetitions = 0;
-                                                var consumed = false;
-                                                if(promotions[j].articles.length == items.length)
-                                                {
-                                                    var count = 0;
-                                                    for(var m = 0; m < promotions[j].articles.length; m++)
-                                                    {
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            if(promotions[j].articles[m].id == items[n].id)
-                                                            {
-                                                                if(promotions[j].articles[m].qty <= items[n].qty)
-                                                                {
-                                                                    console.log(items[n].qty);
-                                                                    items[n].qty = Math.trunc(items[n].qty/promotions[j].articles[m].qty)
-                                                                    console.log("RESPECTANT LES CRITERES");
-                                                                    ++count;
-                                                                    console.log(count);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if(count == promotions[j].articles.length)
-                                                    {
-                                                        console.log(items);
-                                                        var trunQty = 0;
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            console.log(items[n].qty);
-                                                            trunQty+=items[n].qty;
-                                                        }
-                                                        console.log(Math.trunc(trunQty/promotions[j].articles.length));
-                                                        promotions[j].cumule = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        var trunc = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        if(trunc >= 1)
-                                                        {
-                                                            console.log("CONSUMED");
-                                                            promotions[j].consumed = true;
-                                                            if(Boolean(promotions[j].cummulable))
-                                                            {
-                                                                if(promotions[j].max != null || promotions[j].max > 0 || typeof promotions[j].max == "undefined")
-                                                                {
-                                                                    if(trunc >= promotions[j].max)
-                                                                    {
-                                                                        promotions[j].cumule = promotions[j].max;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        promotions[j].cumule = trunc;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    promotions[j].cumule = trunc;
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = 1;
-                                                            }
-
-                                                        }
-                                                        else
-                                                        {
-                                                            console.log("NO CHANCE !");
-                                                            promotions[j].consumed = false;
-                                                        }
-                                                        
-                                                    }
-                                                    else
-                                                    {
-                                                        console.log("NO CHANCE !");
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    console.log("NO CHANCE !");
-                                                    promotions[j].consumed = false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                console.log(promotions);
-                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                            }
-                            console.log("ALL THE PROMOTIONS ARE UP TO DATE");
-                        }
+                        Promotions.promotionTreatment(article);
 
                     }
                 });
@@ -4055,7 +4267,8 @@ angular.module('starter.controllers', ['starter.services'])
     }
     
     $scope.backward = function(){
-        if($scope.back)
+
+        if($scope.back && !CartUtilities.getOutOfQuota())
         {
             check(false);
             if($scope.currentStep > 0)
@@ -4074,9 +4287,13 @@ angular.module('starter.controllers', ['starter.services'])
                 $scope.back = false;
             }
         }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+        }
     };
     $scope.forward = function(){
-        if($scope.forw)
+        if($scope.forw && !CartUtilities.getOutOfQuota())
             {
                 check(false);
                 if($scope.currentStep < $scope.brandFives.length)
@@ -4093,27 +4310,30 @@ angular.module('starter.controllers', ['starter.services'])
                     }
                 }
             }
+            else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+        }
     };
     $scope.goCart = function(){
-        if(JSON.parse(window.localStorage['done']))
-        {
-            $state.go("app.remainings");
-        }
-        else
-        {
-            if(JSON.parse(window.localStorage['cart']).items.length > 0)
+        if(JSON.parse(window.localStorage['cart']).items.length > 0)
             {
                 $state.go("app.cart");
             }
             else
             {
                 $ionicPopup.alert({
-                    title: '<h3>Panier vide !</h3>',
-                    template: "<b>Le panier doit contenir au moins un article.</b>"
+                    title: "Panier vide !",
+                    buttons: [
+                        {
+                            text: "OK",
+                            type: "button-assertive",
+                            cssClass: "assertive-survey"
+                        }
+                    ],
+                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
                 });
             }
-            
-        }
     };
 
     Marques.getBrandFiveFromLocalDB().then(
@@ -4143,7 +4363,10 @@ angular.module('starter.controllers', ['starter.services'])
 })
 
 .controller('MissionsCtrl', function($scope, $stateParams, $timeout, ionicMaterialMotion, ionicMaterialInk) {
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.$parent.clearFabs();
     $scope.isExpanded = true;
     $scope.$parent.setExpanded(true);
@@ -4162,7 +4385,10 @@ angular.module('starter.controllers', ['starter.services'])
 
 .controller('ProductsCtrl', function($scope, $stateParams, $timeout, ionicMaterialInk, ionicMaterialMotion) {
     $scope.$parent.clearFabs();
-    $scope.$parent.showHeader();
+    $timeout(function()
+        {
+            $scope.$parent.showHeader();
+        }, 500);
     $scope.isExpanded = true;
     $scope.$parent.setExpanded(true);
     $scope.$parent.setHeaderFab(false);

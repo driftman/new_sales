@@ -1,4 +1,4 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts">
+<ion-view view-title="C.A : {{ ca | number : 2 }} DHS" style="font-size: 13px;">
     <ion-content ng-class="{expanded:$scope.isExpanded}">
         <div class="hero slide-up" style="
   background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
@@ -10,13 +10,13 @@
         ">
             <div class="content">
                 <div class="avatar" style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
-                <h3><a class="light">{{infos.name+' '+infos.second_name}} - Vendeur</a></h3>
+                <h3 style="font-size: 16px;"><a class="light">{{infos.name+' '+infos.second_name | uppercase }} - Vendeur</a></h3>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; ">C.A : {{ ca | number : 2}} DHS</h4>
+                margin-bottom: 0px; font-size: 16px; ">C.A : {{ ca | number : 2}} DHS</h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; ">Golden Points : {{ profile.golden_points }} / 250 pts</h4>
+                margin-bottom: 0px; font-size: 16px;">Golden Points : {{ profile.golden_points }} / 250 pts</h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; ">Golden Stores : {{ profile.golden_stores }} / 20</h4>
+                margin-bottom: 0px; font-size: 16px;">Golden Stores : {{ profile.golden_stores }} / 20</h4>
             </div>
         </div>
         <!-- <div class="tabs tabs-dark tabs-icon-top static" style="padding: 5px; background: white; border-bottom: 2.5px solid black; border-top: 2.5px solid black;">
@@ -56,7 +56,7 @@
           </div>
         </div>
         
-        <h4 class="content padding double-padding-x" style="color: #B71C1C;
+        <!-- <h4 class="content padding double-padding-x" style="color: #B71C1C;
     font-weight: 900;">5 dernières visites :</h4>
         <div class="key_map_container" style="margin: 0 auto;">
             <span class="key_map" style="text-align: center;">
@@ -71,6 +71,6 @@
                 <p style="font-weight: 900;">{{ mission.address }}</p>
                 <i style="color: {{ mission.state | flag }};" class="icon ion-flag"></i>
             </a>
-        </div>
+        </div> -->
     </ion-content>
 </ion-view>

@@ -1,15 +1,15 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts">
+<ion-view view-title="C.A : {{ ca | number : 2 }} DHS">
     <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
        <div 
        style="
        position: relative;">
-      <a href="#" style="margin-left: 20px;" ng-click = "backward()" ng-show = "back"><i class="icon ion-ios-arrow-left" 
+      <span style="margin-left: 20px;" ng-click = "backward()" ng-show = "back"><i class="icon ion-android-arrow-back" 
             style="
             float: left; 
             color: #F9FFF9;
-            font-size: 40px;
+            font-size: 45px;
             margin-left: 8px;"
-            ></i></a>
+            ></i></span>
 
 
             <label style="
@@ -17,26 +17,26 @@
             left: 0;
             top: 1.5px;
             margin: 7px;
-            margin-left: 30px;
+            margin-left: 40px;
             font-size: 15px;
             font-weight: 900;
-            "><input 
+            "><!-- <input 
             ng-model="articleName" 
             placeholder="Filtrer"
             style="
             border-radius: 5px;
             max-width: 50%; 
             font-weight: 900;
-            font-size: 13px;"> <b style="margin-left: 35px; font-style: italic;">{{ currentBrand.name }}</b> 
+            font-size: 13px;"/> --> <b style="margin-left: 35px; font-style: italic;">{{ currentBrand.name }}</b> 
             </label>
 
-            <a href="#" ng-click = "forward()" ng-show = "forw" class="icon ion-ios-arrow-right" 
+            <span ng-click = "forward()" ng-show = "forw" class="icon ion-android-arrow-forward" 
             style="
             float: right; 
             color: #F9FFF9;
-            font-size: 40px;
+            font-size: 45px;
             margin-right: 8px;"
-            ></a>
+            ></span>
             </div>
             <div class="row" style="
                 margin: 0;
@@ -48,6 +48,7 @@
                 margin-top: 15px; 
                 background-color: #3F51B5; 
                 color: white;
+                font-size: 10px;
               margin: 0; 
               margin-top: 30px;
               margin: 0;
@@ -58,7 +59,7 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                font-size: 14px; 
+                font-size: 11.5px; 
                 font-weight: 900;
                 text-align: left;">désignation({{cnt}})</div>
                 
@@ -69,7 +70,7 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11.5px; 
                 font-weight: 900; 
                 float: left;">unité</div>
                 <div class="col col-15" 
@@ -79,7 +80,7 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11.5px; 
                 font-weight: 900; 
                 float: left;">caisse</div>
                 <div class="col col-15" 
@@ -89,7 +90,7 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11.5px; 
                 font-weight: 900; 
                 float: left;">total</div>
                 <div class="col" 
@@ -99,9 +100,9 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11.5px;  
                 font-weight: 900; 
-                float: left;">stock</div>
+                float: left;">quota</div>
               </div>
     </div>
     <ion-content 
@@ -109,7 +110,7 @@
           <div class="list" style="
           height: 300px;
           margin: 0;
-          margin-top: 60px;
+          margin-top: 65px;
           padding: 0;">
             <div class="item" 
             style="
@@ -148,7 +149,7 @@
                     font-size: 10.5px; 
                     font-weight: 900; 
                     text-align: left;">PPQ: {{ article.past }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
-                    font-size: 21.5px; color: #B71C1C;">&#8471</span></p></div>
+                    font-size: 25px; color: #B71C1C;">&#8471</span></p></div>
                 
                 <div class="col col-15" style="
                 margin: 0;
@@ -182,22 +183,22 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">---</div>
+                border: none;">{{ article | quota }}</div>
                 </div>
             </div>
           </div>
             
 	</ion-content>
-  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+  <div class="bar bar-footer bar-balanced" ng-show="footerBar" style="background-color: #B71C1C;">
     <!-- <div class="title">
         <a ng-click="goCart()" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
         Total : {{totalBill | promotion }} DHS <a ng-show="nextStep" ng-click = "next()" > <i style="float: right;
     font-weight: 900;
     font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div>  -->
     <div class="title">
-      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
-      <span ng-click="cart()">Total : {{totalBill | promotion }} DHS</span>
-      <a ng-click="next()" ng-show="hasNext && done" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+      <span ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></span>
+      <span ng-click="goCart()">{{ data.items | total : 'ttc' | number : 2 }} DHS</span>
+      <span ng-click="next()" ng-show="hasNext && done" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></span>
     </div>
 
   </div>
