@@ -148,13 +148,7 @@
                 <div class="col offset" style="border-left: 1px solid black; border-top: 1px solid black; border: none;"></div>
                 <div class="col offset" style="border-top: 1px solid black; border: none;"></div>
                 <div class="col" style="background-color: #ADA7A7; border: none;">TOTAL H.T</div>
-                <div class="col" style="border: none;">{{ commande.ligneCommandes | total }} DHS</div>
-            </div>
-            <div class="row" style="border: none;">
-                <div class="col offset" style="border-left: 1px solid black; border-bottom: 1px solid black; border: none;"></div>
-                <div class="col offset" style="border-bottom: 1px solid black; border: none;"></div>
-                <div class="col" style="background-color: #ADA7A7; border: none;">TOTAL T.T.C</div>
-                <div class="col" style="border: none;">0 DHS</div>
+                <div class="col" style="border: none;">{{ commande.ligneCommandes | totalClientFacture | number : 2 }} DHS</div>
             </div>
 
           </ion-slide>

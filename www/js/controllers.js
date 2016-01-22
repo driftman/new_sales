@@ -1870,24 +1870,53 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandsCtrl', function($scope, $state, Commandes, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
-    console.log(position);
+.controller('BrandsCtrl', function($scope, $state, Commandes, IonicPopUpUtilities, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
+    
+    
+    // PROPER TO DATA !!
     $scope.data = {};
     $scope.data.items = JSON.parse(window.localStorage['cart']).items;
+
+    //PROPER TO CALL STEPS !!
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
+
+    // NEXT STEP !!
     $scope.next = function(){
         if(position.hasNext)
             {
-                $state.go(position.nextStep.name);
+                var marques = JSON.parse(window.localStorage['marques'] || "{}")
+                var canGo = typeof(marques.exclusion) == "undefined" ? false : marques.exclusion.canGo;
+                var gone = typeof(marques.exclusion) == "undefined" || typeof(marques.exclusion.gone) == "undefined"  ? false : marques.exclusion.gone;
+                if(canGo && !gone)
+                {
+                    marques.exclusion.gone = true;
+                    window.localStorage['marques'] = JSON.stringify(marques);
+                    $state.go('app.brand',{ name:  "ACE", mission: $stateParams.mission});
+                }
+                else
+                {
+                    $state.go(position.nextStep.name);
+                }
+                
             }
     };
+    // PREVIOUS STEP !!
     $scope.previous = function(){
         if(position.hasPrevious)
             {
                 $state.go(position.previousStep.name);
             }
     };
+
+    // EXCLUSIONS FROM THE MEETING OF 21/01/2016  , Proposed by MONCEF in order to access to a predefined brand by conditions !!
+    // HERE the brand that is in condition is ACE.
+    var _marques = JSON.parse(window.localStorage['marques'] || "{}");
+    var _gone = typeof(_marques.exclusion) == "undefined" || typeof(_marques.exclusion.gone) == "undefined"  ? false : _marques.exclusion.gone;
+    var exclusion = _gone ? [] : [10];
+
+
+    
     $scope.ca = 0;
     $scope.goCart = function(){
         if(JSON.parse(window.localStorage['done']))
@@ -1917,40 +1946,29 @@ angular.module('starter.controllers', ['starter.services'])
             
         }
     };
-    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
-    $scope.totalBill = 0;
-    var currentCart = JSON.parse(window.localStorage['cart'] || '{}');
-     function refreshTotalBill()
-        {
-            var cart = JSON.parse(window.localStorage['cart'] || '{}');
-            $scope.totalBill = 0;
-            for(var i = 0 ; i < cart.items.length ; i++)
-            {
-                console.log(cart.items[i]);
-                var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
-                if(cart.items[i].tva != null && cart.items[i].tva > 0)
-                {
-                    $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
-                }
-                else
-                {
-                    $scope.totalBill+=noTva;
-                }
-                
-            }
-            cart = null;
 
-        }
-        refreshTotalBill();
-    Articles.getMarques().then(
+
+    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
+    
+    var marques = JSON.parse(window.localStorage['marques'] || "{}");
+
+    var canGoToExclusion = typeof(marques.exclusion) != "undefined" && marques.exclusion.canGo;
+    
+    Articles.getMarques(exclusion).then(
         function(marques){
             var count = marques.length;
+            var exclusionCount = 0;
             for(var i = 0 ; i < count - (count % 5) ; i+=5)
             {
                 var row = [];
                 for(var j = i ; j < i+5 ; j++)
                 {
-                    console.log("j"+j);
+                    var checked = typeof(JSON.parse(window.localStorage['marques'] || "{}")[marques[j].marqueArticle]) != "undefined";
+                    if(checked)
+                    {
+                        ++exclusionCount;
+                    }
+                    marques[j].checked = checked;
                     row.push(marques[j]);
                 }
                 $scope.rows.push(row);
@@ -1958,13 +1976,36 @@ angular.module('starter.controllers', ['starter.services'])
             var finalRow = [];
             for(var i = count - (count % 5) ; i < count ; i++)
             {
+                var checked = typeof(JSON.parse(window.localStorage['marques'] || "{}")[marques[i].marqueArticle]) != "undefined";
+                if(checked)
+                {
+                    ++exclusionCount;
+                }
+                marques[i].checked = checked;
                 finalRow.push(marques[i]);
             }
             $scope.rows.push(finalRow);
+            // IF THE CAN GO IS ALREADY SETTED THERE IS NO NEED TO SET !!
+
+            var _marques = JSON.parse(window.localStorage['marques'] || "{}");
+
+            if(typeof(_marques.exclusion) == "undefined")
+            {
+                if(exclusionCount === count)
+                {
+                    canGoToExclusion = true;
+                    _marques.exclusion = {};
+                    _marques.exclusion.canGo = canGoToExclusion;
+                    window.localStorage['marques'] = JSON.stringify(_marques);
+                    $ionicPopup.alert(IonicPopUpUtilities.alert("Bravo !", "Vous avez atteint l'objectif 100% distribution"));
+                }
+            }
+
         }, 
         function(error){
             console.log(error);
         });
+    
     $scope.goToBrand = function(marque){
         $state.go('app.brand',{ name:  marque, mission: $stateParams.mission});
     };
@@ -2084,15 +2125,7 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
-        
-       /* if(position.hasNext)
-            {
-                $state.transitionTo(position.nextStep.name);
-            }*/
-            
-            if(!JSON.parse(window.localStorage['mission']).done)
-                {
-                    var cart = JSON.parse(window.localStorage['cart'] || '{}');
+        var cart = JSON.parse(window.localStorage['cart'] || '{}');
 
                     var items = cart.items;
 
@@ -2114,7 +2147,14 @@ angular.module('starter.controllers', ['starter.services'])
                    if($scope.currentMethod != null && typeof($scope.currentMethod) != "undefined")
                         {
                             $scope.pay();
-                            $state.transitionTo(position.nextStep.name);
+                            if($scope.hasNext)
+                            {
+                                $state.transitionTo(position.nextStep.name);
+                            }
+                            else
+                            {
+                                $state.transitionTo("app.profile");
+                            }
                         }
                         else
                         {
@@ -2130,11 +2170,6 @@ angular.module('starter.controllers', ['starter.services'])
                                 template: '<span style="font-size: 12px; font-weight: 600;">Veuillez choisir une méthode de paiement !</span>'
                             });
                         }
-                }
-                else
-                {
-                    $state.transitionTo(position.nextStep.name);
-                }
     };
     $scope.previous = function(){
         if(position.hasPrevious)
@@ -2883,6 +2918,9 @@ angular.module('starter.controllers', ['starter.services'])
     {
         $scope.footerBar = true;
     }
+    $scope.checked = function(col){
+        return true;
+    };
     $scope.ca = 0;
     $scope.infos = JSON.parse(window.localStorage['profile']);    
     $scope.marque = $stateParams.name;
@@ -3808,7 +3846,6 @@ angular.module('starter.controllers', ['starter.services'])
             }
         }
         window.localStorage['sbd'] = JSON.stringify(sbds);
-        console.log(sbds);
         sbds = null;
         refreshBrandRealTime();
     };
@@ -3855,20 +3892,13 @@ angular.module('starter.controllers', ['starter.services'])
     };
     $scope.infos = JSON.parse(window.localStorage['profile']);
     var mission = JSON.parse(window.localStorage['mission'] || '{}');
-    $scope.change = function(){
-        refreshBrandRealTime();
+    $scope.change = function(article){
+        console.log(article);
+        refreshBrandRealTime(article);
     };
     $scope.totalBill = 0;
     $scope.articles = [];
     $scope.cnt = 0;
-    var currentCart = JSON.parse(window.localStorage['cart'] || '{}');
-    console.log("current Cart "+JSON.stringify(currentCart));
-    angular.forEach(currentCart.items, function(value){
-        if(typeof value === "object")
-        {
-            $scope.totalBill+=(((value.packet*value.unitConversion)*(value.prixVente))+(value.unit*value.prixVente));
-        }
-    });
 
     
     $scope.clicked = function(article){
@@ -3923,39 +3953,12 @@ angular.module('starter.controllers', ['starter.services'])
         }
         window.localStorage['sbd'] = JSON.stringify(sbds);
         console.log(sbds);
-        refreshBrandRealTime();
+        refreshBrandRealTime(article);
     };
 
-    $scope.toBrands = function(){
-        refreshBrandRealTime();
-        $state.go('app.brands');
-    };
+    function refreshBrandRealTime(article){
+        check(article);
 
-    function refreshTotalBill()
-    {
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        $scope.totalBill = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
-        {
-            var noTva = (((cart.items[i].packet*cart.items[i].unitConversion)+(cart.items[i].unit))*(cart.items[i].prixVente));
-            if(cart.items[i].tva != null && cart.items[i].tva > 0)
-            {
-                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
-            }
-            else
-            {
-                $scope.totalBill+=noTva;
-            }
-            
-        }
-        cart = null;
-
-    }
-    function refreshBrandRealTime(){
-        refreshTotalBill();
-        check(false);
-        refreshTotalBill();
-        $scope.totalBill = 0;
         angular.forEach($scope.articles, function(article){
             var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
             angular.forEach(sbds, function(sbd){
@@ -3979,18 +3982,15 @@ angular.module('starter.controllers', ['starter.services'])
             });
 
         });
-        refreshTotalBill();
     }
     function refreshBrand(brandName){
         $ionicLoading.show({
                 template: "chargement ..."
             });
             
-        refreshTotalBill();
-        $scope.totalBill = 0;
         var testItems = [];
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        refreshTotalBill();
+    
         Articles.getArticlesByMarque(brandName).then(
             function(articles){
                 console.log(articles);
@@ -4112,7 +4112,6 @@ angular.module('starter.controllers', ['starter.services'])
                        $scope.articles.push(article);
                     }
                 });
-                refreshBrandRealTime();
 
             }, 
             function(error){
@@ -4133,9 +4132,11 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.brand = {};
     $scope.currentBrand = {};
     $scope.articles = [];
-    function check(realtime){
-                console.log(realtime);
-                refreshTotalBill();
+    function check(article){
+                if(article.unit == 0 && article.packet == 0)
+                {   
+                    CartUtilities.dropFromCart(article);
+                }
                 var start = Date.now();
                 var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
                 var sbds = JSON.parse(window.localStorage['sbd']);
@@ -4160,42 +4161,11 @@ angular.module('starter.controllers', ['starter.services'])
                                     }
                                 }
                         });
-                       window.localStorage['sbd'] = JSON.stringify(sbds);
+                        window.localStorage['sbd'] = JSON.stringify(sbds);
+
+                        // ADD IT TO CART OR UPDATE THE QTYs !!
                        
-                       if(currentBasket.items.length == 0)
-                        {
-                            article.inCart = true;
-                            currentBasket.items.push(article);
-                        }
-                        else
-                        {
-                            var found = false;
-                            angular.forEach(currentBasket.items, function(item){
-                                if(item.id == article.id)
-                                {
-                                    found = true;
-                                    if(article.packet > 0)
-                                    {
-                                        console.log("Article Packet : "+article.packet);
-                                        item.packet+=(article.packet - item.packet);
-                                    }
-                                    if(article.unit > 0)
-                                    {
-                                        console.log("Article Units : "+article.unit);
-                                        item.unit+=(article.unit - item.unit);
-                                    }
-                                    return;
-                                }
-                            });
-                            if(!found)
-                            {
-                                article.inCart = true;
-                                currentBasket.items.push(article);
-                            }
-                            $scope.data.items = currentBasket.items;
-                            window.localStorage['cart'] = JSON.stringify(currentBasket);
-                                
-                        }
+                        CartUtilities.addOrModify(article); 
 
                         var totalToCount = 0;
                         for(var i = 0 ; i < currentBasket.items.length ; i++)
@@ -4251,19 +4221,11 @@ angular.module('starter.controllers', ['starter.services'])
                         window.localStorage['promotions'] = JSON.stringify(promotions);
 
 
-                        Promotions.promotionTreatment(article);
+                        //Promotions.promotionTreatment(article);
 
                     }
                 });
-                console.log(currentBasket);
-                window.localStorage['cart'] = JSON.stringify(currentBasket);
-                var end = Date.now();
-                console.log("TRUE DURATION :"+(end-start));
-                if(realtime)
-                {
-                    $scope.currentBrand = $scope.brandFives[$scope.currentStep];
-                    refreshBrand($scope.currentBrand.name);
-                }
+                
     }
     
     $scope.backward = function(){

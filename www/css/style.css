@@ -305,11 +305,9 @@ div.col.col-brand-five {
 }
 .col.brands {
     border: none; 
-    padding: 0; 
+    
     height: 70px; 
-    max-width: 70px;
-    margin-right: 7px;
-    margin-bottom: 14px;
+    
 }
 .col.form {
     border: none;

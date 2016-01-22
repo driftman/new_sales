@@ -33,9 +33,9 @@ angular.module('starter',
             if (window.StatusBar) {
                 StatusBar.styleDefault();
             }
-          DB.init();
+          
         });
-        
+        DB.init();
          
          
           

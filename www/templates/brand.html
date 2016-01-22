@@ -1,4 +1,4 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20." >
+<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts " >
     <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
        <div 
        style="
@@ -142,13 +142,13 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" ng-change="confirm()" value="0" ng-model=" article.unit" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input>
+                border: none;"><input ng-readonly="article.quotaVALUE == 0 &&  article.quotaQTY == 0" type="number" ng-change="confirm()" value="0" ng-model=" article.unit" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input>
                 </div>
                 <div class="col col-15" style="
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" ng-change="confirm()" ng-model="article.packet" value="0" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input></div>
+                border: none;"><input ng-readonly="article.quotaVALUE == 0 &&  article.quotaQTY == 0" type="number" ng-change="confirm()" ng-model="article.packet" value="0" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input></div>
                 <div class="col col-15" style="
                 border: none;
                 margin: 0;

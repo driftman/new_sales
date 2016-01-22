@@ -7,13 +7,13 @@ myapp.config(function ($httpProvider) {
 
 */
 var DB_CONFIG = { 
-    name : "new_sales141",
+    name : "new_sales160",
     tables : 
     [
       {
         name : "clients",
-        check_url : "http://192.168.100.181:8082/newsales/rest/vendor/roads/check",
-        synchronize_url : "http://192.168.100.181:8082/newsales/rest/roads/sync/",
+        check_url : "http://192.168.100.140:8082/newsales/rest/vendor/roads/check",
+        synchronize_url : "http://192.168.100.140:8082/newsales/rest/roads/sync/",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "id_db" , value : "integer unique not null" },
@@ -492,7 +492,7 @@ angular.module('starter.services', ['ngCordova'])
     var value = ( (input.packet * input.unitConversion) + input.unit) * input.prixVente;
     if(input.quotaQTY != 0 || input.quotaVALUE != 0)
     {
-      console.log("THIS ARTICLE IS UNDER QUOTA !!");
+      //console.log("THIS ARTICLE IS UNDER QUOTA !!");
       if(input.quotaQTY != 0)
       {
         if(qtyCs > input.quotaQTY)
@@ -515,7 +515,6 @@ angular.module('starter.services', ['ngCordova'])
       {
         if(value > input.quotaVALUE)
         {
-          console.log("VALUE : "+value+", QUOTA VALUE : "+input.quotaVALUE);
           return "#DAA9A9;";
         }
         else
@@ -533,7 +532,7 @@ angular.module('starter.services', ['ngCordova'])
     }
     else if(input.quotaQTY == 0 && input.quotaVALUE == 0)
     {
-      return "#DAA9A9;";
+      return "transparent;";
     }
     else
     {
@@ -621,6 +620,60 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
+.filter('promotionConsumed', function(){
+  return function(promotions){
+
+    //console.log(promotions);
+
+    if(promotions != null && typeof(promotions) != "undefined")
+    {
+
+      var promotionsMemory = JSON.parse(window.localStorage['promotions'] || '[]');
+
+      var found = false;
+
+      for(var i = 0, len = promotions.length; i < len ; i++)
+      {
+        var _loopExit = false;
+
+        var promotionId = promotions[i];
+
+        for(var j = 0, len = promotionsMemory.length ; j < len ; j++)
+        {
+          var promotionMemoryId = promotionsMemory[j].id;
+
+          if(promotionId == promotionMemoryId && promotionsMemory[j].consumed)
+          {
+            _loopExit = true;
+            found = true;
+            break;
+          }
+        }
+
+        if(_loopExit)
+        {
+          break;
+        }
+
+      }
+      if(found)
+      {
+        return "green;"
+      }
+      else
+      {
+        return "red";
+      }
+
+    }
+    else
+    {
+      return "red";
+    }
+    
+  };
+})
+
 .filter('quota', function(){
   return function(article){
     if(article.quotaQTY != 0 || article.quotaVALUE != 0)
@@ -637,14 +690,14 @@ angular.module('starter.services', ['ngCordova'])
         }
         else
         {
-          return Math.trunc( (article.quotaVALUE / article.unitConversion) / article.prixVente );
+          return Math.trunc( (article.quotaVALUE / article.prixVente ) /  article.unitConversion );
         }
         
       }
     }
     else
     {
-      return 0;
+      return "-";
     }
   };
 })
@@ -738,6 +791,19 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
+.filter('totalClientFacture', function(){
+  return function(lignes){
+    console.log(lignes);
+    var total = 0;
+    for(var i = 0, len = lignes.length ; i < len ; i++)
+    {
+      var ligne = lignes[i];
+      total+=ligne.total;
+    }
+    return total;
+  };
+})
+
 .filter('total', function(){
   return function(items, param, isLivreur){
     var total = 0;
@@ -784,7 +850,7 @@ angular.module('starter.services', ['ngCordova'])
       angular.forEach(JSON.parse(window.localStorage['cart']).items, function(item){
         if(item.prixVente != 0)
         {
-          console.log(item)
+          //console.log(item)
           var qty = (item.packet*item.unitConversion) + item.unit;
           var prixHT = item.prixVente * qty;
           var prixTTC = prixHT + prixHT*(20/100);
@@ -1077,59 +1143,47 @@ angular.module('starter.services', ['ngCordova'])
   function sync(id){
     var deferred = $q.defer();
     var requests = [];
-    $http.get("http://192.168.100.181:8082/newsales/rest/livreurs/"+id+"/stocks", { timeout : 5000}).then(
+    $http.get("http://192.168.100.140:8082/newsales/rest/livreurs/"+id+"/stocks").then(
       function(success){
         console.log(success);
-        var stockLines = success.data.content.stockArticleDto;
-        var addons = []
-        for(var i = 0, len = stockLines.length; i < len ; i++)
+        if(typeof(success.data.content) != "undefined")
         {
-          var stockLine = stockLines[i];
-          addons.push(convertStockLineObjectIntoParam(stockLine));
-        }
-        requests.push("DELETE FROM stock_livreur WHERE livreur_id = "+JSON.parse(window.localStorage["profile"]).id_db+";");
-        requests.push("INSERT INTO stock_livreur(item, packet, unit, livreur_id) VALUES "+addons.join(", ")+";");
-        for(var i = 0, len = requests.length ; i < len ; i++)
-        {
-          console.log("THIS IS IT !!")
-          console.log(requests[i])
-          DB.query(requests[i]).then(
-              function(success){
-                console.log(success);
-                deferred.resolve(success);
-              }, 
-              function(error){
-                console.log(error);
-                deferred.resolve(error);
-              });
+          var stockLines = success.data.content;
+          console.log(stockLines)
+          var addons = []
+          for(var i = 0, len = stockLines.length; i < len ; i++)
+          {
+            var stockLine = stockLines[i];
+            addons.push(convertStockLineObjectIntoParam(stockLine));
+          }
+          requests.push("DELETE FROM stock_livreur WHERE livreur_id = "+JSON.parse(window.localStorage["profile"]).id_db+";");
+          requests.push("INSERT INTO stock_livreur(item, packet, unit, livreur_id) VALUES "+addons.join(", ")+";");
+          console.log(requests);
+          for(var i = 0, len = requests.length ; i < len ; i++)
+          {
+            console.log("THIS IS IT !!")
+            console.log(requests[i])
+            DB.query(requests[i]).then(
+                function(success){
+                  console.log(success);
+                  deferred.resolve(success);
+                }, 
+                function(error){
+                  console.log(error);
+                  deferred.resolve(error);
+                });
+          }
         }
       }, 
       function(error){
-        var requests = [];
-        requests.push("DELETE FROM stock_livreur WHERE livreur_id = "+JSON.parse(window.localStorage["profile"]).id_db+";");
-        requests.push("INSERT INTO stock_livreur(item, packet, unit, livreur_id) VALUES (1, 10, 100, 2), (2, 10, 100, 2), (3, 10, 100, 2), (36, 10, 100, 2), (37, 10, 100, 2), (38, 10, 100, 2), (35, 10, 100, 2);");
-        for(var i = 0, len = requests.length ; i < len ; i++)
-        {
-          console.log("THIS IS IT !!")
-          console.log(requests[i])
-          DB.query(requests[i]).then(
-              function(success){
-                console.log(success);
-                deferred.resolve(success);
-              }, 
-              function(error){
-                console.log(error);
-                deferred.resolve(error);
-              });
-        }
-        deferred.resolve(requests);
+        deferred.resolve([]);
       });
     return deferred.promise;
   }
 
   function convertStockLineObjectIntoParam(stockLine)
   {
-    return "("+stockLine.articleID+", "+stockLine.stockSecondaire+", "+stockLine.stockPrincipal+", "+JSON.parse(window.localStorage["profile"]).id_db+")";
+    return "("+stockLine.itemID+", "+stockLine.stockSecondaire+", "+stockLine.stockPrincipale+", "+JSON.parse(window.localStorage["profile"]).id_db+")";
   }
 })
 
@@ -1140,7 +1194,7 @@ angular.module('starter.services', ['ngCordova'])
             if (typeof(profile.token) != "undefined") {
                 config.headers['Authorization'] = 'Basic ' +profile.token;
             }
-            console.log(config)
+            //console.log(config)
             return config;
         }
     };
@@ -1155,7 +1209,7 @@ angular.module('starter.services', ['ngCordova'])
   function sync()
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/planTarifaire/AllPlanTarifaire",
+      url: "http://192.168.100.140:8082/newsales/rest/planTarifaire/AllPlanTarifaire",
       method: "GET"
     };
     return $http(request);
@@ -1259,16 +1313,16 @@ angular.module('starter.services', ['ngCordova'])
     var activite = JSON.parse(window.localStorage['profile']).activite;
     var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/activities/"+activite+"/questionnaire/mobile",
+      url: "http://192.168.100.140:8082/newsales/rest/activities/"+activite+"/questionnaire/mobile",
       method: "GET"
     };
     var config = {
       timeout: 5000
     };
-    $http.get("http://192.168.100.181:8082/newsales/rest/activities/1/questionnaire/mobile", config).then(
+    $http.get("http://192.168.100.140:8082/newsales/rest/activities/1/questionnaire/mobile").then(
       function(success){  
         console.log(success);
-        var surveys = success.data.content;
+        var surveys = success.data.content || [];
         var requests = [];
         console.log(surveys);
         var addonsSurveys = [];
@@ -1285,7 +1339,7 @@ angular.module('starter.services', ['ngCordova'])
       }, 
       function(error){
         console.log(error)
-        deferred.reject(error);
+        deferred.resolve([]);
       });
     return deferred.promise;
   }
@@ -1296,23 +1350,33 @@ angular.module('starter.services', ['ngCordova'])
     sync().then(
       function(success){
         console.log(success);
-        var requests = [];
-        requests.push("DELETE FROM surveys;");
-        requests = requests.concat(success);
-        angular.forEach(requests, function(request){
+        
+        
+        if(success.length > 0)
+        {
+          var requests = [];
+          requests.push("DELETE FROM surveys;");
+          requests = requests.concat(success);
+          angular.forEach(requests, function(request){
           DB.query(request).then(
-          function(success){
-            console.log(success);
-            deferred.resolve(success);
-          }, 
-          function(error){
-            console.log(error);
-            deferred.resolve(error);
+            function(success){
+              console.log(success);
+              deferred.resolve(success);
+            }, 
+            function(error){
+              console.log(error);
+              deferred.resolve(error);
+            });
           });
-        });
+        }
+        else
+        {
+          deferred.resolve("NONE !");
+        }
+        
       }, 
       function(error){
-        deferred.resolve(error);
+        deferred.resolve([]);
       });
     return deferred.promise;
   }
@@ -1373,10 +1437,104 @@ angular.module('starter.services', ['ngCordova'])
   
 })
 
-.factory("CartUtilities", function(){
+.factory("CartUtilities", function(Promotions){
   return {
-    getOutOfQuota : getOutOfQuota
+    getOutOfQuota : getOutOfQuota,
+    dropFromCart : dropFromCart,
+    addToCart : addToCart,
+    addOrModify : addOrModify
   };
+
+
+  function addOrModify(article)
+  {
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+
+    if(cart.items.length == 0)
+    {
+      console.log("EMPTY CART !");
+      addToCart(article);
+    }
+    else
+    {
+      console.log("NON EMPTY CART ! ");
+
+      var found = false;
+
+      for(var i = 0, len = cart.items.length ; i < len ; i++)
+      {
+        var cartItem = cart.items[i];
+
+        if(article.id_db == cartItem.id_db)
+        {
+          cartItem.unit = article.unit;
+          cartItem.packet = article.packet;
+          found = true;
+          break;
+        }
+
+      }
+
+      if(!found)
+      {
+        cart.items.push(article);
+      }
+
+      window.localStorage['cart'] =  JSON.stringify(cart);
+
+      if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
+      {
+        Promotions.promotionTreatment(article);
+      }
+
+      cart = null;
+
+    }
+
+  }
+
+  function addToCart(article)
+  {
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+
+    console.log(article);
+    cart.items.push(article);
+
+    window.localStorage['cart'] =  JSON.stringify(cart);
+
+    if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
+    {
+      Promotions.promotionTreatment(article);
+    }
+
+    cart = null;
+  }
+
+  function dropFromCart(article)
+  {
+
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+
+    for(var i = cart.items.length - 1 ; i >= 0 ; i--)
+    {
+      var cartItem = cart.items[i];
+      if(article.id_db == cartItem.id_db)
+      {
+        cart.items.splice(i, 1);
+        break;
+      }
+    }
+
+    window.localStorage['cart'] =  JSON.stringify(cart);
+
+    if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
+    {
+      Promotions.promotionTreatment(article);
+    }
+
+    cart = null;
+
+  }
 
   function getOutOfQuota()
   {
@@ -1453,30 +1611,37 @@ angular.module('starter.services', ['ngCordova'])
   {
 
   }
-  function sync()
+  function sync(vendeurId)
   {
     var deferred = $q.defer();
 
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/itemQuotas/getItemQuotas",
+      url: "http://192.168.100.140:8082/newsales/rest/itemQuotas/getItemQuotas",
       method: "GET"
     };
 
-    $http.get("http://192.168.100.181:8082/newsales/rest/itemQuotas/getItemQuotas", { timeout: 10000}).then(
+    $http.get("http://192.168.100.140:8082/newsales/rest/itemQuotas/getItemQuotas").then(
       function(success){
         var requests = [];
         var addons = [];
         var quotas = success.data;
-        for(var i = 0, len = quotas.length ; i < len ; i++)
+        if(quotas.length > 0)
         {
-          var quota = quotas[i];
-          quota.debut = DateUtilities.convertLongToYYYYMMDD(new Date(quota.debut));
-          quota.fin = DateUtilities.convertLongToYYYYMMDD(new Date(quota.fin));
-          addons.push(convertQuotaToAddon(quota));
+          for(var i = 0, len = quotas.length ; i < len ; i++)
+          {
+            var quota = quotas[i];
+            quota.debut = DateUtilities.convertLongToYYYYMMDD(new Date(quota.debut));
+            quota.fin = DateUtilities.convertLongToYYYYMMDD(new Date(quota.fin));
+            addons.push(convertQuotaToAddon(quota));
+          }
+          requests.push("DELETE FROM quota_vendeur;");
+          requests.push("INSERT INTO quota_vendeur(id, itemId, qty, value, debut, fin) VALUES "+addons.join(", ")+";");
+          deferred.resolve(requests);
         }
-        requests.push("DELETE FROM quota_vendeur;");
-        requests.push("INSERT INTO quota_vendeur(id, itemId, qty, value, debut, fin) VALUES "+addons.join(", ")+";");
-        deferred.resolve(requests);
+        else
+        {
+          deferred.resolve([]);
+        }
       }, 
       function(error){
         deferred.resolve([]);
@@ -1564,9 +1729,9 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     var request = {
       method: "GET",
-      url: "http://192.168.100.181:8082/newsales/rest/payements"
+      url: "http://192.168.100.140:8082/newsales/rest/payements"
     };
-    $http.get("http://192.168.100.181:8082/newsales/rest/payements").then(
+    $http.get("http://192.168.100.140:8082/newsales/rest/payements").then(
       function(success){
         deferred.resolve(success.data);
       },
@@ -1632,7 +1797,7 @@ angular.module('starter.services', ['ngCordova'])
         }
         var request = {
         data: data,
-        url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+idLivreur+"/sync",
+        url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+idLivreur+"/sync",
         method: "PUT"
         };
         $http(request).then(
@@ -1944,7 +2109,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://192.168.100.181:8082/newsales/rest/orders/add",
+        url: "http://192.168.100.140:8082/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
@@ -1970,7 +2135,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         {
           var request = {
           method: "POST",
-          url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+idLivreur+"/sync/missions",
+          url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+idLivreur+"/sync/missions",
           data: finalVisits
           };
           $http(request).then(
@@ -2221,7 +2386,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function gatherSyncData(syncData, vendeurId)
   {
       var request = {
-        url: "http://192.168.100.181:8082/newsales/rest/vendors/"+vendeurId+"/mobile/synchronisation",
+        url: "http://192.168.100.140:8082/newsales/rest/vendors/"+vendeurId+"/mobile/synchronisation",
         method: "POST",
         data: syncData
       };
@@ -2236,7 +2401,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     var promotions = Promotions.syncPromotions();
     var callSteps = CallSteps.sync();
     var sbds = SBD.syncSBDFromAPI();
-    var quotas = Quotas.sync();
+    var quotas = Quotas.sync(vendeurId);
     var planTarifaire = PlanTarifaire.addToDB();
     return $q.all(new Array(inputData, outputData, surveys, methodePaiements, promotions, callSteps, sbds, quotas, planTarifaire));
   }
@@ -2430,7 +2595,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
     var deferred = $q.defer();
     var request = {
-      url: 'http://192.168.100.181:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
+      url: 'http://192.168.100.140:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
       method: 'GET'
     };
     $http(request).then(
@@ -2653,7 +2818,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       return deferred.promise;
   }
 })
-.factory("PrinterService", function($q, $filter){
+.factory("PrinterService", function($q, $filter, DateUtilities){
 
   var header = 
                 "PW 831\r\n" +
@@ -2673,6 +2838,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                 "T 5 0 11 172 Adresse :\r\n" +
                 "T 5 0 500 60 Region :\r\n" +
                 "T 4 0 326 11 DISLOG\r\n" + 
+                "T 5 0 10 11 Date :"+DateUtilities.convertLongToYYYYMMDD(new Date())+"\r\n" +
                 // LABELS DES LIGNES DE COMMANDES !
                 "T 5 0 716 340 MT TTC\r\n" +
                 "T 5 0 624 340 PU\r\n" +
@@ -2723,7 +2889,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                   "T 7 0 630 35 "+mission.route_id+"\r\n" +
                   "T 7 0 150 199 "+mission.ville+"\r\n" +
                   "T 7 0 150 173 "+mission.adresse+"\r\n" +
-                  "T 7 0 437 254 "+(typeof(mission.commande) == "undefined" ? "CM"+new Date().getTime() : mission.commande)+"\r\n" +
+                  "T 7 0 437 254 "+(typeof(mission.commande) == "undefined" ? "CM"+DateUtilities.convertLongToYYYYMMDD(new Date()) : mission.commande)+"\r\n" +
                   "T 7 0 630 9 "+vendeur.name+" "+vendeur.second_name+"\r\n";
 
     var startLigneCommande = 370;
@@ -2803,7 +2969,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     console.log("we are in ");
     var deferred = $q.defer();
     // DO IT !!!!!!!!!!!!!! "+JSON.parse(window.localStorage["profile"]).activite+"
-    $http.get("http://192.168.100.181:8082/newsales/rest/screens/activities/1/mobile")
+    $http.get("http://192.168.100.140:8082/newsales/rest/screens/activities/1/mobile")
     .then(
       function(success){
         console.log(success);
@@ -2966,7 +3132,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getHighestInApi(_idLivreur)
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
+      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
       method: "GET"
     };
     return $http(request);
@@ -2975,7 +3141,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getAllFromApi(_idLivreur)
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions",
+      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions",
       method: "GET"
     };
     return $http(request);
@@ -2985,7 +3151,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getFromAPointApi(_idLivreur, point)
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
+      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
       method: "GET"
     };
     return $http(request);
@@ -3206,7 +3372,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://192.168.100.181:8082/newsales/newsales/rest/orders/add",
+        url: "http://192.168.100.140:8082/newsales/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
@@ -3461,7 +3627,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   {
     var req = {
       method : "PUT",
-      url : "http://192.168.100.181:8082/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
+      url : "http://192.168.100.140:8082/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
     };
     return $http(req);
   }
@@ -3618,13 +3784,13 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           innerId = data.id_db;
           console.log("1179 :"+innerId);
         }
-      $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_id+"/clients/check").then(
+      $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_id+"/clients/check").then(
         function(data, status, headers){
           var outerId = data.data;
           if(innerId < outerId)
           {
             console.log("some updates are waiting ...");
-            $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
+            $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
               function(data, status, headers){
                 angular.forEach(data.data, function(client){
                   var object = {};
@@ -3746,7 +3912,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     var deferred = $q.defer();
     var req = {
       method :"GET",
-      url : "http://192.168.100.181:8082/newsales/rest/brandfive"
+      url : "http://192.168.100.140:8082/newsales/rest/brandfive"
     };
     return $http(req).then(
       function(brandFive, status, headers){
@@ -3798,7 +3964,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function syncAllArticles()
   {
     var params = {
-      url: "http://192.168.100.181:8082/newsales/rest/items",
+      url: "http://192.168.100.140:8082/newsales/rest/items",
       method: "GET"
     };
     $http(params).then(
@@ -3829,7 +3995,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           console.log("BASE DE DONNEE NON VIDE  !!");
           highestIDDB = success.id_db;
           var request = {
-            url: "http://192.168.100.181:8082/newsales/rest/items/sync",
+            url: "http://192.168.100.140:8082/newsales/rest/items/sync",
             method: 'GET'
           };
 
@@ -3859,7 +4025,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function syncArticlesFrom(_id)
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/items/from/"+_id,
+      url: "http://192.168.100.140:8082/newsales/rest/items/from/"+_id,
       method: 'GET'
     };
     $http(request).then(
@@ -3907,9 +4073,13 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     });
   }
 
-  function getMarques()
+  function getMarques(exclusion)
   {
-    return DB.query("SELECT * FROM marque").then(
+    if(typeof(exclusion) == "undefined")
+    {
+      exclusion = [];
+    }
+    return DB.query("SELECT * FROM marque WHERE id NOT IN ("+exclusion.join(", ")+")").then(
       function(marques){
         return DB.fetchAll(marques);
       }, 
@@ -4234,7 +4404,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function setMissionLivredInAPI(id)
   {
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/livreurs/sync/"+id,
+      url: "http://192.168.100.140:8082/newsales/rest/livreurs/sync/"+id,
       method: "GET"
     };
 
@@ -4579,7 +4749,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         {
           innerId = mission.id_db;
         }
-        $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
+        $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
           function(mission, status, headers){
             console.log(mission);
             outerId = mission.data;
@@ -4589,7 +4759,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
             {
               console.log("Some updates remaining ...");
               var finalMissions = [];
-              $http.get("http://192.168.100.181:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
+              $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
                 function(missions, status, headers){
                   deferred.resolve(missions.data);
                   var newMissions = [];
@@ -4707,17 +4877,17 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       var maxDB;
       var maxAPI;
       var routes = {
-        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/",
+        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/",
         method : "GET"
       };
       var routesCheck = {
-        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/check",
+        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/check",
         method : "GET"
       };
       function fromStartPoint(id, _id)
       {
         return {
-        url : "http://192.168.100.181:8082/newsales/rest/vendors/mobile/"+id+"/roads/from/"+_id,
+        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+id+"/roads/from/"+_id,
         method : "GET"
         };
       }
@@ -4953,7 +5123,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         var item = items[i];
         if(item.quotaVALUE != 0 || item.quotaQTY != 0)
         {
-          if(item.quotaVALUE != 0 && item.quotaVALUE >= (item.prixVente*item.packet))
+          if(item.quotaVALUE item.quotaQTY != 0 && item.quotaVALUE >= (item.prixVente*item.packet))
           {
 
           }
@@ -5035,11 +5205,12 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                               var amount= ((cart.items[l].packet*cart.items[l].unitConversion + cart.items[l].unit)*cart.items[l].prixVente);
                               if(cart.items[l].id_db == promotions[j].articles[k].id)
                               {
-                                  console.log("FOUND IN CART");
-                                  count+=qty;
+                                  var finalQTY = promotions[j].articles[k].conditionning_unit == "Un" ? qty : csQty;
+                                  count+=finalQTY;
                                   ca+=amount;
-                                  items.push({ id: cart.items[l].id_db, qty: promotions[j].articles[k].conditionning_unit == "Un" ? qty : csQty });
-                                  console.log(items);
+                                  var itemObject = { id: cart.items[l].id_db, qty: finalQTY };
+                                  console.log(itemObject);
+                                  items.push(itemObject);
                               }
                               total+=amount;
                           }
@@ -5126,6 +5297,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                   else
                                   {
                                       promotions[j].consumed = false;
+                                      promotions[j].cumule = 0;
                                   }
                               }
                           }
@@ -5253,7 +5425,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     var JSONCONTENT = [{"id":1,"priorite":null,"qte":null,"montant":null,"max_steps":null,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":3,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":1,"quantite":10,"uconditionement":"Un"},{"itemId":2,"quantite":12,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":2,"priorite":null,"qte":null,"montant":1000.0,"max_steps":3,"cummulable":true,"type":"PMT","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":true,"article_gratuits":[[{"itemId":35,"quantite":1,"uconditionement":"Un"}],[{"itemId":36,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":3,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":4,"priorite":null,"qte":null,"montant":20000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32786],"promoPaliers":[]},{"id":5,"priorite":null,"qte":null,"montant":1000.0,"max_steps":null,"cummulable":false,"type":"PMT","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":6,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32785,32786],"promoPaliers":[]},{"id":10,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32787],"promoPaliers":[]},{"id":15,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":18,"priorite":null,"qte":null,"montant":30000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":5.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32784,32783],"promoPaliers":[]},{"id":19,"priorite":null,"qte":null,"montant":15000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32783],"promoPaliers":[]},{"id":20,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":509,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":21,"priorite":null,"qte":null,"montant":null,"max_steps":3,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":511,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":509,"quantite":6,"uconditionement":"Un"},{"itemId":510,"quantite":4,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":25,"priorite":null,"qte":12,"montant":null,"max_steps":null,"cummulable":false,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":true,"coupons":true,"article_gratuits":[[{"itemId":2,"quantite":1,"uconditionement":"Un"}],[{"itemId":3,"quantite":2,"uconditionement":"Un"}],[{"itemId":35,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"},{"itemId":1,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]}];
     var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.181:8082/newsales/rest/promotions/AllPromoParMois",
+      url: "http://192.168.100.140:8082/newsales/rest/promotions/AllPromoParMois",
       method: "GET"
     };
     var count = 0;
@@ -5466,7 +5638,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   function sync(){
     var deferred = $q.defer();
-    $http.get("http://192.168.100.181:8082/newsales/rest/clients/road/1/sync")
+    $http.get("http://192.168.100.140:8082/newsales/rest/clients/road/1/sync")
     .then(
       
       function(data, status, headers){
@@ -5484,7 +5656,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
             console.log("YOUR CURRENT DATABASE IS NOT UP TO DATE !");
             console.log((idAPI-idDB)+" routes are waitiing to be pushed in your local DB");
             console.log("HERE IS THE ROUTES !!");
-            $http.get("http://192.168.100.181:8082/newsales/rest/clients/road/1/sync/"+idDB).then(
+            $http.get("http://192.168.100.140:8082/newsales/rest/clients/road/1/sync/"+idDB).then(
               function(data, status, headers){
                 var clients = data.data;
                 angular.forEach(clients, function(client){
@@ -5536,7 +5708,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   function highestIDInDB()
   {
-    $http.get("http://192.168.100.181:8082/newsales/rest/roads/check")
+    $http.get("http://192.168.100.140:8082/newsales/rest/roads/check")
     .success(function(data, status, headers){
       console.log("THE HIGHEST ID IN DB IS : "+data.id);
     })
