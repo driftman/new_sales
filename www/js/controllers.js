@@ -662,12 +662,6 @@ angular.module('starter.controllers', ['starter.services'])
     EntryPoint)
 {
     $scope.$parent.clearFabs();
-    $scope.hasHeaderFabLeft = false;
-    $scope.hasHeaderFabRight = false;
-    $timeout(function()
-        {
-            $scope.$parent.showHeader();
-        }, 500);
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
@@ -3851,9 +3845,20 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
-    $scope.data = {};
-    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
+.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+    
+
+    $scope.brandFives = [];
+
+    Marques.getBrandFiveFromLocalDB().then(
+        function(brandfives){
+            $scope.brandFives = brandfives;
+            $scope.currentBrand = $scope.brandFives[$scope.currentStep];
+            refreshBrand($scope.currentBrand.name);
+        }, 
+        function(error){
+            console.log(error);
+        });
 
     $scope.footerBar = true;
     window.addEventListener("native.keyboardshow", keyboardShowHandler);
@@ -3866,8 +3871,9 @@ angular.module('starter.controllers', ['starter.services'])
     {
         $scope.footerBar = true;
     }
+
     window.localStorage['done'] = typeof window.localStorage['done'] == "undefined" ? JSON.stringify(false) : JSON.parse(window.localStorage['done']);
-    console.log(position);
+    
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
@@ -3890,99 +3896,46 @@ angular.module('starter.controllers', ['starter.services'])
                 $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
             }
     };
-    $scope.infos = JSON.parse(window.localStorage['profile']);
-    var mission = JSON.parse(window.localStorage['mission'] || '{}');
-    $scope.change = function(article){
-        console.log(article);
-        refreshBrandRealTime(article);
-    };
-    $scope.totalBill = 0;
+
+    //DEFAULT SETTINGs
+    var defaultStep = 0;
+    //
+    $scope.currentStep = defaultStep;
+    //CAN GO BACK "BY DEFAULT THE FIRST STEP IS 0 SO  -1 IS IMPOSSIBLE"
+    $scope.back = false;
+    //BY DEFAULT WE WAN MOVE FORWARD IF AND ONLY IF THE SIZE OF THE BRANDS IS STRICTLY GREATHER THAN 0
+    $scope.forw = true;
+    //IF THE THE LAST BRAND IS ALREADY ACHIEVED !! SO WE CAN MOVE TO THE NEXT CALL STEP !
+    $scope.done = JSON.parse(window.localStorage['done'] || 'false');
+
+    $scope.marques = [];
+    
+    $scope.brandFives = [];
+
+    $scope.brand = {};
+
+    $scope.currentBrand = {};
+
     $scope.articles = [];
-    $scope.cnt = 0;
+
+    //THE SCOPE CONTAINING THE ITEMS !
+    $scope.articles = [];
+
+    //THE CALLER INFOS !! (PREVENDEUR - VENDEUR)
+    $scope.infos = JSON.parse(window.localStorage['profile']);
+
+    //REAL TIME PROCESS !!
+    //ADDING ITEMS TO CART, REMOVING THEM, MODIFY QTYs, PROMOTIONS && SBDs
+    $scope.change = function(article){
+        check(article);
+    };
+    
+    
 
     
-    $scope.clicked = function(article){
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        var articles = angular.copy($scope.articles);
-        for(var i = 0 ; i < articles.length ; i++)
-        {
-            console.log(i)
-            if(articles[i].id_db == article.id_db)
-            {
-                articles[i].unit = 0;
-                articles[i].packet = 0;
-                articles[i].inCart = false;
-            }
-        }
-        $scope.articles = articles;
-        console.log(cart.items.length)
-        for(var i = cart.items.length - 1 ; i >= 0 ; i--)
-        {
-            console.log(i)
-            var item = cart.items[i];
-            if(item.id_db == article.id_db)
-            {
-                console.log("yes")
-                cart.items.splice(i, 1);
-                $scope.data.items = cart.items;
-                window.localStorage['cart'] = JSON.stringify(cart);
-                break;
-            }
-        }
+    
 
-
-        console.log(cart);
-        cart = null;
-        if(article.groupeSBD != null)
-        {
-            console.log(article);
-            for(var i = 0 ; i < sbds.length ; i++)
-            {
-                if(article.groupeSBD == sbds[i].id)
-                {
-                    for(var j = 0 ; j < sbds[i].articles.length ; j++)
-                    {
-                        if(sbds[i].articles[j].id == article.id_db)
-                        {
-                            sbds[i].articles[j].qty = 0;
-                        }
-                    }
-                }
-            }
-        }
-        window.localStorage['sbd'] = JSON.stringify(sbds);
-        console.log(sbds);
-        refreshBrandRealTime(article);
-    };
-
-    function refreshBrandRealTime(article){
-        check(article);
-
-        angular.forEach($scope.articles, function(article){
-            var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-            angular.forEach(sbds, function(sbd){
-                if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                {
-                    var total = 0;
-                    var found = false;
-                    angular.forEach(sbd.articles, function(innerArticle){
-                        total+=innerArticle.qty;
-                        if(article.id_db == innerArticle.id)
-                        {
-                            found = true; 
-                        }
-                    });
-                    if(found)
-                    {
-                        article.done = sbd.min <= total ? true : false;
-                        console.log(article.done);
-                    }
-                }
-            });
-
-        });
-    }
+   
     function refreshBrand(brandName){
         $ionicLoading.show({
                 template: "chargement ..."
@@ -3993,252 +3946,98 @@ angular.module('starter.controllers', ['starter.services'])
     
         Articles.getArticlesByMarque(brandName).then(
             function(articles){
-                console.log(articles);
-                if(typeof window.localStorage['marques'] == "undefined")
-                {
-                    window.localStorage['marques'] == '{}';
-                }
-                var marques = JSON.parse(window.localStorage['marques'] || '{}');
-                if(articles.length > 0 && typeof marques[brandName] == 'undefined')
-                {
-                    marques[brandName] = articles;
-                    window.localStorage['marques'] = JSON.stringify(marques);
-                }
-                var from = Date.now();
-                $scope.articles = [];
-                angular.forEach(articles, function(article){
-                    LigneCommandes
-                    .pastPurchacedQuantity(article.id_db, cart.mission)
-                    .then(
-                        function(success){
-                            if(success.length > 0)
-                            {
-                                var array = [];
-                                angular.forEach(success, function(object)
-                                {
-                                    array.push(object.qty);
-                                });
-                                article.past = array.toString();
-                            }
-                            else
-                            {
-                                article.past = "0,0,0";
-                            }
-                        }, 
-                        function(error){console.log(error.message);});
 
-                    article.packet = 0;
-                    article.unit = 0;
-                    article.inCart = false;
-                    article.done = article.groupeSBD == null ? true : false;
-                    if(article.promotions != null)
+                //ADD BRANDS TO LOCAL STORAGE
+                Marques.addMarqueToLocalStorage(brandName, articles);
+                //INITIALIZE THE LIST OF ITEMS
+                $scope.articles = [];
+                //IMPLEMENTATION OF THE DATA STRUCTURE
+                for(var i = 0, len = articles.length ; i < len ; i++)
+                {
+
+
+                    var article = articles[i];
+
+                    var cartResult = CartUtilities.existInCart(article);
+
+                    if(cartResult == null)
                     {
-                        if(article.promotions.length > 0)
-                        {
-                            console.log("-------------------------------");
-                            console.log(article);
-                            console.log(article.promotions);
-                            article.promotions = JSON.parse("["+article.promotions+"]");
-                            console.log(article.promotions);
-                            console.log(article);
-                            console.log("-------------------------------");
-                        }
+                        article = Articles.prepareForScope(article);
                     }
-                    var items = JSON.parse(window.localStorage['cart'] || '{}');
-                    var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-                    if(article.groupeSBD != null)
+                    else
                     {
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD == sbd.id)
-                            {
-                                var total = 0;
-                                var found = false;
-                                angular.forEach(sbd.articles, function(innerArticle){
-                                    total+=innerArticle.qty;
-                                    if(article.id_db == innerArticle.id)
-                                    {
-                                        found = true; 
-                                    }
-                                });
-                                if(found)
-                                {
-                                    article.done = sbd.min <= total ? true : false;
-                                }
-                            }
-                        });
+                        article = cartResult;
                     }
-                    var cartItems = items.items;
-                    var inCart = false;
-                    angular.forEach(cartItems, function(cartItem){
-                        if(article.id_db == cartItem.id_db)
-                        {
-                            console.log("IN CART !!");
-                            inCart = true;
-                            angular.forEach(sbds, function(sbd){
-                                if(cartItem.groupeSBD != null && cartItem.groupeSBD == sbd.id)
-                                {
-                                    var total = 0;
-                                    var found = false;
-                                   if(sbd.articles != null && sbd.articles.length > 0)
-                                   {
-                                         angular.forEach(sbd.articles, function(innerArticle){
-                                            total+=innerArticle.qty;
-                                            if(cartItem.id_db == innerArticle.id)
-                                            {
-                                                found = true; 
-                                            }
-                                        });
-                                        if(found)
-                                        {
-                                            cartItem.done = sbd.min <= total ? true : false;
-                                        }
-                                   }
-                                   else
-                                   {
-                                        cartItem.done = true;
-                                   }
-                                }
-                            });
-                            console.log(cartItem);
-                            $scope.articles.push(cartItem);
-                        }
-                        else
-                        {
-                            
-                        }
-                    });
-                    if(!inCart)
-                    {
-                       $scope.articles.push(article);
-                    }
-                });
+
+
+                    // SHOULD ADD AND SBD TREATMENT !!
+                    //
+                    //
+                    //////////////////////////////////
+
+                    $scope.articles.push(article);
+
+                    
+                }
 
             }, 
             function(error){
-                console.log(error.message);
-            });
-        $timeout(function(){
+                console.log(error);
+            })
+            .finally(function(){
                 $ionicLoading.hide();
-            }, 1000);
+            });
     }
-    $scope.back = false;
-    $scope.forw = true;
-    $scope.done = JSON.parse(window.localStorage['done'] || 'false');
-    var defaultStep = 0;
-    $scope.currentStep = defaultStep;
-    $scope.marques = [];
+
     
-    $scope.brandFives = [];
-    $scope.brand = {};
-    $scope.currentBrand = {};
-    $scope.articles = [];
-    function check(article){
-                if(article.unit == 0 && article.packet == 0)
-                {   
+    function check(article)
+    {
+
+                if(!Articles.outOfQuota(article))
+                {
+                    console.log("GOOD !");
+                    var toDrop = false;
+                    if(article.unit == 0 && article.packet == 0)
+                    {   
+                        toDrop = true;
+                        CartUtilities.dropFromCart(article);
+                    }
+                   
+                    // ADD IT TO CART OR UPDATE THE QTYs !!
+                   
+                    if(!toDrop)
+                    {
+                        CartUtilities.addOrModify(article); 
+                    }
+                }
+                else
+                {
+                    console.log("NOT GOOD !");
                     CartUtilities.dropFromCart(article);
                 }
-                var start = Date.now();
-                var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
-                var sbds = JSON.parse(window.localStorage['sbd']);
-                console.log(sbds);
-                var currentArticles =  angular.copy($scope.articles);
-                angular.forEach(currentArticles, function(article)
+
+                if(article.groupeSBD != null && typeof(article.groupeSBD) != "undefined")
                 {
-                    if(article.packet > 0 || article.unit > 0)
-                    {
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                                {
-                                    console.log(article);
-                                    if(sbd.articles != null && sbd.articles.length > 0)
-                                    {
-                                        angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id_db == innerArticle.id)
-                                            {
-                                                innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
-                                            }
-                                        });
-                                    }
-                                }
-                        });
-                        window.localStorage['sbd'] = JSON.stringify(sbds);
+                    SBD.SBDTreatment(article);
+                }
 
-                        // ADD IT TO CART OR UPDATE THE QTYs !!
-                       
-                        CartUtilities.addOrModify(article); 
-
-                        var totalToCount = 0;
-                        for(var i = 0 ; i < currentBasket.items.length ; i++)
-                        {
-                            var item = currentBasket.items[i];
-                            if(item.quotaVALUE != 0 || item.quotaQTY != 0)
-                            {
-                              if( ( (item.packet*item.unitConversion) + item.unit <= $filter('quota')(item) ) )
-                              {
-                                totalToCount+=((item.unit+(item.packet * item.unitConversion))*item.prixVente);
-                              }
-                              else
-                              {
-                                continue;
-                              }
-                            }
-                            else
-                            {
-                              continue;
-                            }
-                            
-                        }
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log(totalToCount);
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-                        console.log("---------------------------------------------------------")
-
-
-                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        for(var i = 0 ; i < promotions.length ; i++)
-                        {
-                            if(promotions[i].type == 'PC')
-                            {
-                                if(promotions[i].ca <= totalToCount)
-                                {
-                                    promotions[i].consumed = true;
-                                }
-                                else
-                                {
-                                    promotions[i].consumed = false;
-                                }
-                            }
-                        }
-                        window.localStorage['promotions'] = JSON.stringify(promotions);
-
-
-                        //Promotions.promotionTreatment(article);
-
-                    }
-                });
-                
+                Promotions.promotionTreatment(article); 
     }
     
     $scope.backward = function(){
 
-        if($scope.back && !CartUtilities.getOutOfQuota())
+        if($scope.back && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
         {
-            check(false);
             if($scope.currentStep > 0)
             {
                 $scope.forw = true;
-                var result = $scope.currentStep-=1;
+
+                --$scope.currentStep;
+
                 $scope.currentBrand = $scope.brandFives[$scope.currentStep];
+
                 refreshBrand($scope.currentBrand.name);
+
                 if($scope.currentStep == 0)
                 {
                     $scope.back = false;
@@ -4255,18 +4054,22 @@ angular.module('starter.controllers', ['starter.services'])
         }
     };
     $scope.forward = function(){
-        if($scope.forw && !CartUtilities.getOutOfQuota())
+        if($scope.forw && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
             {
-                check(false);
                 if($scope.currentStep < $scope.brandFives.length)
                 {
                     $scope.back = true;
-                    var result = $scope.currentStep+=1;
+
+                    ++$scope.currentStep;
+
                     $scope.currentBrand = $scope.brandFives[$scope.currentStep];
+
                     refreshBrand($scope.currentBrand.name);
+
                     if($scope.currentStep == $scope.brandFives.length - 1)
                     {
                         $scope.forw = false;
+                        //WE ACHIEVED THE GOAL !!
                         $scope.done = true;
                         window.localStorage['done'] = JSON.stringify(true);
                     }
@@ -4277,51 +4080,8 @@ angular.module('starter.controllers', ['starter.services'])
             $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
         }
     };
-    $scope.goCart = function(){
-        if(JSON.parse(window.localStorage['cart']).items.length > 0)
-            {
-                $state.go("app.cart");
-            }
-            else
-            {
-                $ionicPopup.alert({
-                    title: "Panier vide !",
-                    buttons: [
-                        {
-                            text: "OK",
-                            type: "button-assertive",
-                            cssClass: "assertive-survey"
-                        }
-                    ],
-                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
-                });
-            }
-    };
 
-    Marques.getBrandFiveFromLocalDB().then(
-        function(brandfives){
-            console.log("BRANDFIVES !");
-            console.log("3725");
-            console.log(JSON.stringify(brandfives));
-            $scope.brandFives = brandfives;
-            $scope.currentBrand = $scope.brandFives[$scope.currentStep];
-            refreshBrand($scope.currentBrand.name);
-        }, 
-        function(error){
-            console.log(error);
-        });
-    Articles.getMarques().then(
-        function(marques){
-            angular.forEach(marques, function(marque){
-                $scope.marques.push(marque);
-            });
-        }, 
-        function(error){
-            console.log(error);
-        });
-    Articles.dumpMarques().then(function(result){
-        console.log("success");
-    });
+    
 })
 
 .controller('MissionsCtrl', function($scope, $stateParams, $timeout, ionicMaterialMotion, ionicMaterialInk) {

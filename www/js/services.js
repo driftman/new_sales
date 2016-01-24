@@ -486,57 +486,30 @@ var DB_CONFIG = {
 
 angular.module('starter.services', ['ngCordova'])
 
-.filter('backgroundSBD', function(){
+.filter('backgroundSBD', function(Articles, SBD){
   return function(input){
-    var qtyCs = input.packet + Math.trunc(input.unit/input.unitConversion);
-    var value = ( (input.packet * input.unitConversion) + input.unit) * input.prixVente;
-    if(input.quotaQTY != 0 || input.quotaVALUE != 0)
+
+    if(input.quotaQTY > 0 || input.quotaVALUE > 0)
     {
-      //console.log("THIS ARTICLE IS UNDER QUOTA !!");
-      if(input.quotaQTY != 0)
+      if(Articles.outOfQuota(input))
       {
-        if(qtyCs > input.quotaQTY)
-        {
-          return "#DAA9A9;";
-        }
-        else
-        {
-          if(input.groupeSBD != null && input.done == false)
-          {
-            return '#42A5F5';
-          }
-          else
-          {
-            return 'transparent';
-          }
-        }
+        return "#DAA9A9";
       }
       else
       {
-        if(value > input.quotaVALUE)
+        if(input.groupeSBD != null && !SBD.sbdConsumed(input.groupeSBD))
         {
-          return "#DAA9A9;";
+          return '#42A5F5';
         }
         else
         {
-          if(input.groupeSBD != null && input.done == false)
-          {
-            return '#42A5F5';
-          }
-          else
-          {
-            return 'transparent';
-          }
+          return 'transparent';
         }
       }
     }
-    else if(input.quotaQTY == 0 && input.quotaVALUE == 0)
-    {
-      return "transparent;";
-    }
     else
     {
-      if(input.groupeSBD != null && input.done == false)
+      if(input.groupeSBD != null && !SBD.sbdConsumed(input.groupeSBD))
       {
         return '#42A5F5';
       }
@@ -623,8 +596,6 @@ angular.module('starter.services', ['ngCordova'])
 .filter('promotionConsumed', function(){
   return function(promotions){
 
-    //console.log(promotions);
-
     if(promotions != null && typeof(promotions) != "undefined")
     {
 
@@ -632,7 +603,7 @@ angular.module('starter.services', ['ngCordova'])
 
       var found = false;
 
-      for(var i = 0, len = promotions.length; i < len ; i++)
+      for(var i = 0, _len = promotions.length; i < _len ; i++)
       {
         var _loopExit = false;
 
@@ -653,6 +624,10 @@ angular.module('starter.services', ['ngCordova'])
         if(_loopExit)
         {
           break;
+        }
+        else
+        {
+          continue;
         }
 
       }
@@ -1439,11 +1414,29 @@ angular.module('starter.services', ['ngCordova'])
 
 .factory("CartUtilities", function(Promotions){
   return {
+    existInCart : existInCart,
     getOutOfQuota : getOutOfQuota,
     dropFromCart : dropFromCart,
     addToCart : addToCart,
-    addOrModify : addOrModify
+    addOrModify : addOrModify,
+
   };
+
+  function existInCart(article)
+  {
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    for(var i = 0, len = cart.items.length ; i < len ; i++)
+    {
+      var cartItem = cart.items[i];
+
+      if(article.id_db == cartItem.id_db)
+      {
+        return cartItem;
+      }
+    }
+    return null;
+
+  }
 
 
   function addOrModify(article)
@@ -1482,11 +1475,6 @@ angular.module('starter.services', ['ngCordova'])
 
       window.localStorage['cart'] =  JSON.stringify(cart);
 
-      if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
-      {
-        Promotions.promotionTreatment(article);
-      }
-
       cart = null;
 
     }
@@ -1501,11 +1489,6 @@ angular.module('starter.services', ['ngCordova'])
     cart.items.push(article);
 
     window.localStorage['cart'] =  JSON.stringify(cart);
-
-    if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
-    {
-      Promotions.promotionTreatment(article);
-    }
 
     cart = null;
   }
@@ -1526,11 +1509,6 @@ angular.module('starter.services', ['ngCordova'])
     }
 
     window.localStorage['cart'] =  JSON.stringify(cart);
-
-    if( (article.promotions != null) && (typeof(article.promotions) != "undefined") && (article.promotions.length > 0) )
-    {
-      Promotions.promotionTreatment(article);
-    }
 
     cart = null;
 
@@ -2544,49 +2522,66 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     })
   }
 })
-.factory("SBD", function(DB, $http, $q){
+.factory("SBD", function(Articles, DB, $http, $q){
   return  {
     syncSBDFromAPI : syncSBDFromAPI,
-    SBDTreatment : SBDTreatment
+    SBDTreatment : SBDTreatment,
+    sbdConsumed : sbdConsumed
   };
+
+  function sbdConsumed(id)
+  {
+    var sbds = JSON.parse(window.localStorage['sbd'] || "[]");
+    for(var i = 0, len = sbds.length ; i < len ; i++)
+    {
+      var sbd = sbds[i];
+      if(id == sbd.id && sbd.consumed)
+      {
+        return true;
+      }
+      else
+      {
+        continue;
+      }
+    }
+    sbds = null;
+    return false;
+  }
 
   function SBDTreatment(item)
   {
     var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
     for(var i = 0, len = sbds.length ; i < len ; i++)
     {
-        if(item.groupeSBD == sbds[i].id)
+      var sbd = sbds[i];
+      if(item.groupeSBD == sbd.id)
+      {
+        //
+        var total = 0;
+        for(var j = 0 , len = sbd.articles.length ; j < len ; j++)
         {
-          var valid = ( item.stock - ( (item.packet * item.unitConversion) + item.unit) ) >= 0;
-          var sbd = sbds[i];
-          var total = 0;
-          for(var j = 0, len = sbd.articles.length ; j < len ; j++)
+          var sbdArticle = sbd.articles[j];
+          if(sbdArticle.id == item.id_db)
           {
-            var article = sbd.articles[j];
-            if(article.id == item.id_db)
-            {
-              if(valid)
-              {
-                article.qty = item.packet * item.unitConversion + item.unit;
-              }
-              else
-              {
-                article.qty = 0;
-              }
-            }
-            total+=article.qty;
+            //Now that the condition is true we should modiy the qty in the inner article of items's group
+            //Set the qty of the item
+            var qty = Articles.getArticleQty(item);
+            sbdArticle.qty = qty;
           }
-          if(total >= sbd.min)
-          {
-            sbd.consumed = true;
-          }
-          else
-          {
-            sbd.consumed = false;
-          }
-          window.localStorage['sbd'] = JSON.stringify(sbds);
-          break;
+          total+=sbdArticle.qty;
         }
+        sbd.consumed = (total >= sbd.min);
+        window.localStorage['sbd'] = JSON.stringify(sbds);
+        //Now that all the modifications are setted then we must exit !!
+        //Because an item can be found in only one SBD group so one time tie found there is no 
+        //need to continue the iteration ...
+        return;
+      }
+      else
+      {
+        // I know it's unuseful but i like it ;)
+        continue;
+      }
     }
   }
 
@@ -2789,26 +2784,38 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         {
             Articles.getArticleWithSBD().then(
             function(result){
+
                 var sbds = [];
-                angular.forEach(result, function(sbd){
+                for(var h = 0, len = result.length ; h < len ; h++)
+                {
+                    console.log(h)
+                    var sbd = result[h];
                     var object = {};
                     object.id = sbd.id;
                     object.min = sbd.min;
+                    object.consumed = false;
                     object.articles = [];
-                    var array = sbd.articles != null ? sbd.articles.split(",").map(Number) : [];
-                    angular.forEach(array, function(_id){
-                        var article = { id : _id, qty : 0};
-                        object.articles.push(article);
-                    });
-                    object.qty = 0;
+
+                    var array = JSON.parse("["+sbd.articles+"]" || "[]");
+                    //TO AVOID THE CONFLICT BETWEEN (len && _len) IF THE BOTH HAVE THE SAME VARIABLE THE SECOND IS OVERWRITTEN BY THE SECOND !
+                    for(var i = 0 , _len = array.length ; i < _len ; i++)
+                    {
+                      var _id = array[i];
+                      var article = {
+                        id: _id,
+                        qty: 0
+                      };
+                      object.articles.push(article);
+                    }
+
                     sbds.push(object);
-                });
+                }
                 window.localStorage['sbd'] = JSON.stringify(sbds);
                 deferred.resolve("OK");
             }, 
             function(error){
                 console.log(error.message);
-                deferred.reject("PROBLEM");
+                deferred.resolve("PROBLEM");
             });
         }
 
@@ -3935,6 +3942,10 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 .factory("Articles", function(DB, $q, $http, Marques){
   return {
+    itemInScopeOutOfQuota : itemInScopeOutOfQuota,
+    outOfQuota : outOfQuota,
+    getArticleQty : getArticleQty,
+    prepareForScope : prepareForScope,
     add : add,
     addAll : addAll,
     getArticlesByMarque : getArticlesByMarque,
@@ -3949,6 +3960,71 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     syncArticles : syncArticles,
     getHighest : getHighest
  };
+
+  function itemInScopeOutOfQuota(scopeDeepCopy)
+  {
+    for(var i = 0, len = scopeDeepCopy.length ; i < len ; i++)
+    {
+      var article = scopeDeepCopy[i];
+      if(outOfQuota(article))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function convertQuotaValueToCs(article)
+  {
+    var csIsFirstConditionningUnit = article.uniteMesure == "CS" ? true : false;
+    var totalValue = csIsFirstConditionningUnit ? (article.quotaVALUE / article.prixVente) : ( (article.quotaVALUE / article.prixVente) / article.unitConversion );
+    var cs = article.quotaQTY;
+    return Math.trunc(cs + totalValue);
+  }
+
+  function totalCs(article)
+  {
+    return Math.round(article.packet + (article.unit / article.unitConversion));
+  }
+
+  function outOfQuota(article)
+  {
+    var outOfQuota = false;
+    if(article.quotaQTY > 0 || article.quotaVALUE > 0)
+    {
+      if(convertQuotaValueToCs(article) < totalCs(article))
+      {
+        outOfQuota = true;
+        return outOfQuota;
+      }
+    }
+    else
+    {
+      return outOfQuota;
+    }
+  }
+
+  function getArticleQty(article)
+  {
+    return ( (article.packet*article.unitConversion) + article.unit );
+  }
+  function prepareForScope(article)
+  {
+    article.packet = 0;
+
+    article.unit = 0;
+
+    article.done = article.groupeSBD == null ? true : false;
+
+    if(article.promotions != null)
+    {
+        if(article.promotions.length > 0)
+        {
+            article.promotions = JSON.parse("["+article.promotions+"]");
+        }
+    }
+    return article;
+  }
 
   function getHighest()
   {
@@ -4043,7 +4119,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     /*
       I removed this "WHERE classe = 'A' just for testing be sure to add it soon !!"
     */
-      var sql_query = "SELECT GS.id_db as id, GS.qte_min as min, Group_Concat(A.id_db) AS articles FROM groupes_sbd AS GS LEFT JOIN article_sbd AS ASBD ON ASBD.id_groupe_sbd = GS.id_db LEFT JOIN articles AS A ON ASBD.id_article = A.id_db GROUP BY GS.id_db";
+      var sql_query = "SELECT GS.id_db as id, GS.qte_min as min, Group_Concat(A.id_db) AS articles FROM groupes_sbd AS GS LEFT JOIN article_sbd AS ASBD ON ASBD.id_groupe_sbd = GS.id_db JOIN articles AS A ON ASBD.id_article = A.id_db GROUP BY GS.id_db";
       return DB.query(sql_query).then(
         function(sbds){
           return DB.fetchAll(sbds);
@@ -4205,12 +4281,30 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 .factory("Marques", function(DB, $http){
   return {
+    addMarqueToLocalStorage : addMarqueToLocalStorage,
     add : add,
     addToBrandFive : addToBrandFive,
     getBrandFiveFromDB : getBrandFiveFromDB,
     getBrandFiveFromLocalDB : getBrandFiveFromLocalDB,
     getAll : getAll
   };
+
+
+  function addMarqueToLocalStorage(brandName, articles)
+  {
+    if(typeof window.localStorage['marques'] == "undefined")
+    {
+        window.localStorage['marques'] == '{}';
+    }
+
+    var marques = JSON.parse(window.localStorage['marques'] || '{}');
+
+    if(articles.length > 0 && typeof marques[brandName] == 'undefined')
+    {
+        marques[brandName] = articles;
+        window.localStorage['marques'] = JSON.stringify(marques);
+    }
+  }
 
 
   function getAll(){
@@ -5112,60 +5206,11 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     }
   }
   function promotionTreatment(article, livreur)
-  {/*
-    var ca = 0;
-    var cart = JSON.parse(window.localStorage['cart'] || '{}');
-    if(typeof(cart.items) != "undefined")
-    {
-      var items = cart.items;
-      for(var i = 0, len = items.length ; i < len ; i++)
-      {
-        var item = items[i];
-        if(item.quotaVALUE != 0 || item.quotaQTY != 0)
-        {
-          if(item.quotaVALUE item.quotaQTY != 0 && item.quotaVALUE >= (item.prixVente*item.packet))
-          {
-
-          }
-          else
-          {
-
-          }
-        }
-        else
-        {
-          continue;
-        }
-      }
-    }
-    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-    for(var i = 0, len = promotions.length ; i < len ; i++)
-    {
-      if(promotions[i].type == 'PC')
-      {
-          console.log("Promotion Client FOR YOU !!");
-          console.log(promotions[i]);
-          console.log(totalToCount);
-          if(promotions[i].ca <= totalToCount)
-          {
-              
-              promotions[i].consumed = true;
-              console.log("CONSOMME");
-
-          }
-          else
-          {
-              promotions[i].consumed = false;
-              console.log("NON CONSOMME");
-          }
-      }
-    }*/
+  {
     if(article.promotions != null)
       {
-          console.log('Cet Article Est En Promo');
+          
           var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-          console.log(promotions);
-          console.log(article);
           var cart = JSON.parse(window.localStorage['cart'] || '{}');
           for(var i = 0 ; i < article.promotions.length ; i++)
           {
