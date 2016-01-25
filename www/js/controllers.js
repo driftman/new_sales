@@ -2898,10 +2898,8 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandCtrl', function($scope, $state, $ionicPopup,  $filter, CartUtilities, IonicPopUpUtilities, Promotions, Commandes, Missions, $stateParams, Articles, LigneCommandes){
-    $scope.data = {};
-    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
-    $scope.footerBar = true;
+.controller('BrandCtrl', function($scope, $state, $ionicPopup, $stateParams, IonicPopUpUtilities, Articles, ViewController, $ionicLoading){
+   
     window.addEventListener("native.keyboardshow", keyboardShowHandler);
     window.addEventListener("native.keyboardhide", keyboardHideHandler);
     function keyboardShowHandler(e)
@@ -2912,46 +2910,47 @@ angular.module('starter.controllers', ['starter.services'])
     {
         $scope.footerBar = true;
     }
-    $scope.checked = function(col){
-        return true;
-    };
-    $scope.ca = 0;
-    $scope.infos = JSON.parse(window.localStorage['profile']);    
-    $scope.marque = $stateParams.name;
-    $scope.articles = [];
-    $scope.totalBill = 0;
-    $scope.cnt = 0;
-    var currentCart =JSON.parse(window.localStorage['cart'] || '{}');
-    $scope.goCart = function(){
-        if(JSON.parse(window.localStorage['done']))
-        {
-            $state.go("app.remainings");
-        }
-        else
-        {
-            if(JSON.parse(window.localStorage['cart']).items.length > 0)
+    var brandName = $stateParams.name;
+
+    $scope.brandName = brandName;
+    
+    $ionicLoading.show({
+                template: "chargement ..."
+            });
+    
+    Articles.getArticlesByMarque(brandName).then(
+        function(articles){
+
+            $scope.articles = [];
+
+            var _articles = ViewController.prepare(articles, brandName);
+
+            for(var i = 0 , len = _articles.length ; i < len ; i++)
             {
-                $state.go("app.cart");
+                $scope.articles.push(_articles[i]);
             }
-            else
-            {
-                $ionicPopup.alert({
-                    title: "Panier vide !",
-                    buttons: [
-                        {
-                            text: "OK",
-                            type: "button-assertive",
-                            cssClass: "assertive-survey"
-                        }
-                    ],
-                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
-                });
-            }
-            
-        }
+
+        }, 
+        function(error){
+            console.log(error);
+        })
+        .finally(function(){
+            $ionicLoading.hide();
+        });
+
+    $scope.change = function(article){
+        ViewController.check(article);
     };
-    $scope.goBack = function(){
-        if(!CartUtilities.getOutOfQuota())
+    // As the brand has no role in the call steps and is directly linked to the brands steps we only have to
+    // associate it to the brands route
+
+    $scope.back = function(){
+        //Deep copy of the article in the scope !!
+        //To avoid the launch of the watchers !!
+        //&& to not point on them !!
+        var _articles = angular.copy($scope.articles);
+
+        if(!Articles.itemInScopeOutOfQuota(_articles))
         {
             $state.transitionTo("app.brands");
         }
@@ -2959,334 +2958,8 @@ angular.module('starter.controllers', ['starter.services'])
         {
             $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
         }
-    }
-    Articles.getArticlesByMarque($scope.marque).then(
-            function(articles){
-                console.log(articles);
-                var items = JSON.parse(window.localStorage['cart'] || '{}');
-                if(typeof window.localStorage['marques'] == "undefined")
-                {
-                    window.localStorage['marques'] == '{}';
-                }
-                var marques = JSON.parse(window.localStorage['marques'] || '{}');
-                if(typeof marques[$scope.marque] == 'undefined')
-                {
-                    marques[$scope.marque] = articles;
-                    window.localStorage['marques'] = JSON.stringify(marques);
-                }
-                var from = Date.now();
-                $scope.articles = [];
-                angular.forEach(articles, function(article){
-                    LigneCommandes
-                    .pastPurchacedQuantity(article.id_db, items.mission)
-                    .then(
-                        function(success){
-                            if(success.length > 0)
-                            {
-                                var array = [];
-                                angular.forEach(success, function(object)
-                                {
-                                    array.push(object.qty);
-                                });
-                                article.past = array.toString();
-                            }
-                            else
-                            {
-                                article.past = "0,0,0";
-                            }
-                        }, 
-                        function(error){console.log(error.message);});
-
-                    article.packet = 0;
-                    article.unit = 0;
-                    article.inCart = false;
-                    article.done = article.groupeSBD == null ? true : false;
-                    article.promotions = article.promotions != null ? JSON.parse("["+article.promotions+"]"): null;
-                    
-                    var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-                    angular.forEach(sbds, function(sbd){
-                        if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                        {
-                            var total = 0;
-                            var found = false;
-                            angular.forEach(sbd.articles, function(innerArticle){
-                                total+=innerArticle.qty;
-                                if(article.id == innerArticle.id)
-                                {
-                                    found = true; 
-                                }
-                            });
-                            if(found)
-                            {
-                                article.done = sbd.min <= total ? true : false;
-                            }
-                        }
-                    });
-                    var cartItems = items.items;
-                    var inCart = false;
-                    angular.forEach(cartItems, function(cartItem){
-                        if(article.id_db == cartItem.id_db)
-                        {
-                            inCart = true;
-                            angular.forEach(sbds, function(sbd){
-                                if(cartItem.groupeSBD != null && cartItem.groupeSBD == sbd.id)
-                                {
-                                    var total = 0;
-                                    var found = false;
-                                    angular.forEach(sbd.articles, function(innerArticle){
-                                        total+=innerArticle.qty;
-                                        if(cartItem.id_db == innerArticle.id)
-                                        {
-                                            found = true; 
-                                        }
-                                    });
-                                    if(found)
-                                    {
-                                        cartItem.done = sbd.min <= total ? true : false;
-                                    }
-                                }
-                            });
-                            console.log(cartItem);
-                            $scope.articles.push(cartItem);
-                        }
-                    });
-                    if(!inCart)
-                    {
-                       $scope.articles.push(article);
-                    }
-                });
-                var to = Date.now();
-                console.log('Elapsed time : '+(to-from));
-
-            }, 
-            function(error){
-                console.log(error.message);
-            });
-    $scope.clearCart = function(){
-        console.log("clearing cart ...");
-        window.localStorage['cart'] = null;
-        $state.go("app.clients", { id : 1});
+        
     };
-
-    $scope.finish = function(){
-        console.log("finishing the deal ...");
-    };
-
-    function refreshBrandRealTime(){
-                    
-                    check(false);
-                    var testItems = [];
-                    angular.forEach($scope.articles, function(article){
-                        var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-                        angular.forEach(sbds, function(sbd){
-                            //console.log(sbd);
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                            {
-                                var total = 0;
-                                var found = false;
-                                angular.forEach(sbd.articles, function(innerArticle){
-                                    total+=innerArticle.qty;
-                                    if(article.id_db == innerArticle.id)
-                                    {
-                                        found = true; 
-                                    }
-                                });
-                                if(found)
-                                {
-                                    article.done = sbd.min <= total ? true : false;
-                                }
-                            }
-                        });
-
-                    });
-    }
-
-    function check(realtime){
-                var start = Date.now();
-                var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
-                var sbds = JSON.parse(window.localStorage['sbd']);
-                console.log(sbds);
-                var currentArticles =  angular.copy($scope.articles);
-                angular.forEach(currentArticles, function(article)
-                {
-                    if(article.packet > 0 || article.unit > 0)
-                    {
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                                {
-                                    angular.forEach(sbd.articles, function(innerArticle){
-                                        if(article.id_db == innerArticle.id)
-                                        {
-                                            innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
-                                        }
-                                    });
-                                }
-                        });
-                       window.localStorage['sbd'] = JSON.stringify(sbds);
-                       
-                       if(currentBasket.items.length == 0)
-                        {
-                            article.inCart = true;
-                            currentBasket.items.push(article);
-                        }
-                        else
-                        {
-                            var found = false;
-                            angular.forEach(currentBasket.items, function(item){
-                                if(item.id_db == article.id_db)
-                                {
-                                    found = true;
-                                    if(article.packet > 0)
-                                    {
-                                        console.log("Article Packet : "+article.packet);
-                                        item.packet+=(article.packet - item.packet);
-                                    }
-                                    if(article.unit > 0)
-                                    {
-                                        console.log("Article Units : "+article.unit);
-                                        item.unit+=(article.unit - item.unit);
-                                    }
-                                    return;
-                                }
-                            });
-                            if(!found)
-                            {
-                                article.inCart = true;
-                                currentBasket.items.push(article);
-                            }
-                                
-                        }
-                        $scope.data.items = currentBasket.items;
-                        var totalToCount = 0;
-                        for(var i = 0 ; i < currentBasket.items.length ; i++)
-                        {
-                            var item = currentBasket.items[i];
-                            if(item.quotaVALUE != 0 || item.quotaQTY != 0)
-                            {
-                              if( ( (item.packet*item.unitConversion) + item.unit <= $filter('quota')(item) ) )
-                              {
-                                totalToCount+=((item.unit+(item.packet * item.unitConversion))*item.prixVente);
-                              }
-                              else
-                              {
-                                continue;
-                              }
-                            }
-                            else
-                            {
-                              continue;
-                            }
-                            
-                        }
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        console.log(totalToCount)
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        console.log("----------------------------------------------------------------------------");
-                        $scope.totalBill = totalToCount;
-                        window.localStorage["cart"] = JSON.stringify(currentBasket);
-                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        
-                         for(var i = 0 ; i < promotions.length ; i++)
-                        {
-                            if(promotions[i].type == 'PC')
-                            {
-                                console.log("Promotion Client FOR YOU !!");
-                                console.log(promotions[i]);
-                                console.log(totalToCount);
-                                if(promotions[i].ca <= totalToCount)
-                                {
-                                    
-                                    promotions[i].consumed = true;
-                                    console.log("CONSOMME");
-
-                                }
-                                else
-                                {
-                                    promotions[i].consumed = false;
-                                    console.log("NON CONSOMME");
-                                }
-                            }
-                        }
-                        window.localStorage['promotions'] = JSON.stringify(promotions);
-
-                        if(article.promotions != null)
-                        {
-                            Promotions.promotionTreatment(article);
-                        }
-                        else
-                        {
-                            console.log("NOT IN PROMOTION");
-                        }
-                    }
-                });
-                console.log(currentBasket);
-                window.localStorage['cart'] = JSON.stringify(currentBasket);
-                var end = Date.now();
-                console.log("TRUE DURATION :"+(end-start));
-                if(realtime)
-                {
-                    $scope.currentBrand = $scope.brandFives[$scope.currentStep];
-                    refreshBrand($scope.currentBrand.name);
-                }
-    }
-
-
-
-    $scope.confirm = function(){
-        refreshBrandRealTime();
-    };
-    $scope.clicked = function(article){
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        var articles = $scope.articles;
-        for(var i = 0 ; i < articles.length ; i++)
-        {
-            if(articles[i].id == article.id)
-            {
-                articles[i].unit = 0;
-                articles[i].packet = 0;
-                articles[i].inCart = false;
-            }
-        }
-        for(var i = 0 ; i < cart.items.length || 0 ; i++)
-        {
-            if(cart.items[i].id_db === article.id_db)
-            {
-                cart.items.splice(i, 1);
-                window.localStorage['cart'] = JSON.stringify(cart);
-            }
-        }
-        console.log(cart);
-        cart = null;
-        if(article.groupeSBD != null)
-        {
-            console.log(article);
-            for(var i = 0 ; i < sbds.length ; i++)
-            {
-                if(article.groupeSBD == sbds[i].id)
-                {
-                    for(var j = 0 ; j < sbds[i].articles.length ; j++)
-                    {
-                        if(sbds[i].articles[j].id == article.id_db)
-                        {
-                            sbds[i].articles[j].qty = 0;
-                        }
-                    }
-                }
-            }
-        }
-        window.localStorage['sbd'] = JSON.stringify(sbds);
-        console.log(sbds);
-        sbds = null;
-        refreshBrandRealTime();
-    };
-
-
 })
 
 .controller('ExclusionsCtrl', function($scope,$state){
@@ -3317,7 +2990,7 @@ angular.module('starter.controllers', ['starter.services'])
     refreshTotalBill();
 })
 
-.controller('RemainingCtrl', function($scope, $state, Articles, position){
+.controller('RemainingCtrl', function($scope, $state,ViewController, Articles, Promotions, SBD, position){
     console.log(position);
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
@@ -3326,526 +2999,55 @@ angular.module('starter.controllers', ['starter.services'])
             {
                 console.log(position.nextStep.name);
                 $state.transitionTo(position.nextStep.name);
-                //$state.go(position.nextStep.name);
             }
     };
+
     $scope.previous = function(){
         if(position.hasPrevious)
             {
                 $state.go(position.previousStep.name);
             }
     };
-    $scope.ca = 0;
-    refreshTotalBill();
-    var cart = JSON.parse(window.localStorage['cart'] || '{}');
-    var sbd = JSON.parse(window.localStorage['sbd'] || '[]');
-    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-     $scope.infos = JSON.parse(window.localStorage['profile']);
-    $scope.filterValue = "sbd";
+
+    $scope.change = function(article){
+
+        ViewController.check(article);
+
+        //initialize();
+    };
+
+    $scope.infos = JSON.parse(window.localStorage['profile']);
+
     $scope.articles = [];
-    console.log(promotions);
-    var array = [];
-    for(var i = 0 ; i < sbd.length ; i++)
+
+    initialize();
+
+    function initialize()
     {
-        var count = 0;
-        for(var j = 0 ; j < sbd[i].articles.length ; j++)
-        {
-            for(var k = 0 ; k < cart.items.length ; k++)
-            {
-                if(sbd[i].articles[j].id == cart.items[k].id_db)
+        var ids = ViewController.idsRemaining();
+        
+        Articles.getArticlesInRange(ids).then(
+            function(articles){
+                $scope.articles = [];
+                
+                var _articles = ViewController.prepare(articles);
+
+                for(var i = 0, len = _articles.length ; i < len ; i++)
                 {
-                    count+=((cart.items[k].packet*10) + (cart.items[k].unit));
-                }
-            }
-        }
-        if(count<sbd[i].min)
-        {
-            for(var j = 0 ; j < sbd[i].articles.length ; j++)
-            {
-                array.push(sbd[i].articles[j].id);
-            }
-        }
-    }
-    for(var i = 0 ; i < promotions.length ; i++)
-    {
-        if(promotions[i].consumed == false)
-        {
-            for(var j = 0 ; j < promotions[i].articles.length ; j++)
-            {
-                array.push(promotions[i].articles[j].id);
-            }
-        }
-    }
-    var workAroundObject = {};
-    for(var i = 0 ; i < array.length ; i++)
-    {
-        workAroundObject[array[i]] = "-";
-    }
-    array = Object.keys(workAroundObject);
-    if(array.length == 0)
-    {
-        $state.go("app.cart");
-    }
-    Articles.getRemainingByIds(array).then(
-        function(articles){
-            angular.forEach(articles, function(article){
-                article.unit = 0;
-                article.packet = 0;
-                article.done = false;
-                article.inCart = false;
-                article.promotions = article.promotions != null ? article.promotions.split(', ').map(Number) : null;
-                var found = false;
-                angular.forEach(cart.items, function(cartItem){
-                    if(cartItem.id_db == article.id_db)
-                    {
-                        found = true;
-                        $scope.articles.push(cartItem);
-                    }
-                });
-                if(!found)
-                {
+                    var article = _articles[i];
                     $scope.articles.push(article);
                 }
+            }, 
+            function(error){
+                console.log(error);
+            }).finally(function(){
+                console.log("END !!");
             });
-            refreshBrandRealTime();
-
-        }, 
-        function(error){
-            console.log(error.message);
-        });
-
-    $scope.change = function(){
-        refreshBrandRealTime();
-    };
-
-
-     function refreshBrandRealTime(){
-
-
-                    check();
-
-                    $scope.totalBill = 0;
-                    var testItems = [];
-                    var newCart = JSON.parse(window.localStorage['cart'] || '{}');
-                    angular.forEach(newCart.items, function(value){
-                        if(typeof value === "object")
-                        {
-                            $scope.totalBill+=(((value.packet*10)*(value.prixVente))+(value.unit*value.prixVente));
-                        }
-                    });
-
-                
-                    angular.forEach($scope.articles, function(article){
-                        var sbds = (window.localStorage['sbd'] == 'null' || typeof window.localStorage['sbd'] == 'undefined') ? [] : JSON.parse(window.localStorage['sbd']);
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                            {
-                                var total = 0;
-                                var found = false;
-                                angular.forEach(sbd.articles, function(innerArticle){
-                                    total+=innerArticle.qty;
-                                    if(article.id_db == innerArticle.id)
-                                    {
-                                        found = true; 
-                                    }
-                                });
-                                if(found)
-                                {
-                                    article.done = sbd.min <= total ? true : false;
-                                }
-                            }
-                        });
-
-                    });
-    }
-    function refreshTotalBill()
-    {
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        $scope.totalBill = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
-        {
-            console.log(cart.items[i]);
-            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
-            if(cart.items[i].tva != null && cart.items[i].tva > 0)
-            {
-                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
-            }
-            else
-            {
-                $scope.totalBill+=noTva;
-            }
-            
-        }
-        cart = null;
-
     }
 
-    function check(){
-                var start = Date.now();
-                //Getting the current items in cart to work with !
-                var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
-                // Same thing for the Shopper Based Design
-                var sbds = JSON.parse(window.localStorage['sbd']);
-                angular.forEach($scope.articles, function(article)
-                {
-                        /******************** TAKING ON CONSIDERATION ONLY THE ONES WITH QTY gt 0 *******************/
-                    if(article.packet > 0 || article.unit > 0)
-                    {
-                        /******************** STARTING WITH THE SBD ********************/
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                                {
-                                    if(sbd.articles != null && sbd.articles.length > 0)
-                                    {
-                                        angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id_db == innerArticle.id)
-                                            {
-                                                innerArticle.qty = article.unit+(article.packet*10);        
-                                            }
-                                        });
-                                    }
-                                }
-                        });
-                       window.localStorage['sbd'] = JSON.stringify(sbds);
-                       /************************************************************/
-                       
-
-                       /*********************** IF THE CART IS EMPTY WE ADD DIRECTLY THE ARTICLE ***********************/
-                       if(currentBasket.items.length == 0)
-                        {
-                            article.inCart = true;
-                            currentBasket.items.push(article);
-                        }
-                        /*********************** WE'LL SEARCH FOR THE ARTICLE WITH THE SAME ID *************************/
-                        else
-                        {
-                            // FALSE BY DEFAULT !
-                            var found = false;
-                            angular.forEach(currentBasket.items, function(item){
-                                if(item.id == article.id)
-                                {
-                                    // ARTICLE FOUND FOR THE CURRENT ITERATION
-                                    found = true;
-                                    if(article.packet > 0)
-                                    {
-                                        // THE DIFFERENCE BETWEEN THE CURRENT AND CART VERSION IS ADDED
-                                        console.log("Article Packet : "+article.packet);
-                                        item.packet+=(article.packet - item.packet);
-                                    }
-                                    if(article.unit > 0)
-                                    {
-                                        console.log("Article Units : "+article.unit);
-                                        item.unit+=(article.unit - item.unit);
-                                    }
-                                    return;
-                                }
-                            });
-                            if(!found)
-                            {
-                                // NOT FOUND IN CART WE ADD THE ARTICLE TO CART
-                                article.inCart = true;
-                                // PUSHED TO CART
-                                currentBasket.items.push(article);
-                            }
-                                
-                        }
-
-                        /******************************** PROMOTIONS PART ************************************/
-
-                        /******************************** PROMOTION CLIENT ***********************************/
-                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        refreshTotalBill();
-                         for(var i = 0 ; i < promotions.length ; i++)
-                        {
-                            if(promotions[i].type == 'PC')
-                            {
-                                console.log("Promotion Client FOR YOU !!");
-                                console.log(promotions[i]);
-                                console.log($scope.totalBill);
-                                if(promotions[i].ca <= $scope.totalBill)
-                                {
-                                    
-                                    promotions[i].consumed = true;
-                                    console.log("CONSOMME");
-
-                                }
-                                else
-                                {
-                                    promotions[i].consumed = false;
-                                    console.log("NON CONSOMME");
-                                }
-                            }
-                        }
-                        window.localStorage['promotions'] = JSON.stringify(promotions); 
-
-                        /********************************* OTHERS ********************************************/
-
-                        if(article.promotions != null)
-                        {
-                            var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                            var cart = currentBasket;
-                            // WE WILL CHECK ALL THE PROMOTIONS THAT ARE IN RELATION WITH THE CURRENT ARTICLE
-                            for(var i = 0 ; i < article.promotions.length ; i++)
-                            {
-                                // IN THE INNER LOOP WE WILL ITERATE WITH ALL PROMOTIONS TO TEST WITH THEM IF THEY SAME ID WITH
-                                // OF THE CURRENT ARTICLE'S PROMOTIONS
-                                for(var j = 0 ; j < promotions.length ; j++)
-                                {
-                                    // CHECK IF eq !
-                                    if(promotions[j].id == article.promotions[i])
-                                    {
-                                        // Count the qty of all articles that are included in this promotion
-                                        var count = 0;
-                                        // Count ca of the articles
-                                        var ca = 0;
-                                        // total of all items in cart
-                                        var total = 0;
-                                        // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
-                                        var items = [];
-                                        // Looping into all the articles in this promotion
-                                        for(var k = 0 ; k < promotions[j].articles.length ; k++)
-                                        {
-                                            //Now looping in all articles in CART
-                                            console.log("THIS IS THE CART");
-                                            console.log(cart);
-                                            for(var l = 0 ; l < cart.items.length ; l++)
-                                            {
-                                                var qty= ((cart.items[l].packet*10) + cart.items[l].unit);
-                                                var amount= ((cart.items[l].packet*10 + cart.items[l].unit)*cart.items[l].prixVente);
-                                                if(cart.items[l].id_db == promotions[j].articles[k].id)
-                                                {
-                                                    console.log("FOUND IN CART");
-                                                    count+=qty;
-                                                    ca+=amount;
-                                                    items.push({ id: cart.items[l].id_db, qty: qty });
-                                                }
-                                                else
-                                                {
-                                                    console.log("NOT FOUND IN CART");
-                                                }
-                                                total+=amount;
-                                            }
-                                        }
-                                        // PROMOTION MONTANT -- AMOUNT PROMOTION
-                                        if(promotions[j].type == "PMT")
-                                        {
-                                            // CA OF ALL ARTICLES IN THE PMT PROMOTION SUP THAN MIN QTY OF THE PROMOTION
-                                            if(ca>=promotions[j].ca)
-                                            {
-                                                // THE MINIMAL CONDITION IS RESPECTED
-                                                // CURRENT CA OF ALL ARTUCLES IN PROMOTION >= -gt || -eq THE MINIMAL QTY OF THE PROMOTION
-                                                promotions[j].consumed = true;
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                            else
-                                            {
-                                                promotions[j].consumed = false;
-                                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                                            }
-                                        }
-                                        // PROMOTION PALIER
-                                        if(promotions[j].type == "PP")
-                                        {
-                                            // IF MIXED PROMOTION WE CALCULATE THE AMOUNT OF ALL ITEMS WE DO NO HAVE THE OBLIGATION TO CALCULATE
-                                            // EACH ARTICLE WITH ITS MINIMAL VALUE AND TO TEST FOR EACH ONE,
-                                            // WE JUST HAVE ADD ONE TO THE OTHER UNTIL THE FINISH OF THE LOOP !
-                                            if(Boolean(promotions[j].melange))
-                                            {
-                                                // CUMMULABLE IF THE PRE REQUISITES ARE RESPECTED MORE THAN ONCE WE DOUBLE THE PROMOTION PRIZES
-                                                // DEPENDING ON TIME OF REPETITIONs TILL THE MAX IF SETTED !
-                                                if(Boolean(promotions[j].cummulable))
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        // PROMOTION CONSUMED ! MINIMAL PREREQUISITE RESPECTED !!
-                                                        promotions[j].consumed = true;
-                                                        // 20/20 == 1 && 25/20 == 1 TRUNCATE WE TAKE THE PART BEFORE COMMA 1,9 ==> 1
-                                                        var repetitions = Math.trunc(count / promotions[j].qte);
-                                                        // IF MAX_STEPS IS SETTED
-                                                        if(promotions[j].max != null)
-                                                        {
-                                                            if(repetitions >= promotions[j].max)
-                                                            {
-                                                                // IF TRUNCATED VALUE gt MAX WE TAKE MAX !
-                                                                promotions[j].cumule = promotions[j].max;
-                                                            }
-                                                            else
-                                                            {
-                                                                // WE TAKE TRUNCATED VALUE
-                                                                promotions[j].cumule = repetitions;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            // NO MAX_STEPS SO REPETITIONS !
-                                                            promotions[j].cumule = repetitions;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                // NO CUMMULABLE !!
-                                                else
-                                                {
-                                                    if(promotions[j].qte <= count)
-                                                    {
-                                                        // NO CUMMULABLE SO ONLY 1 !
-                                                        promotions[j].consumed = true;
-                                                        promotions[j].cumule = 1;
-                                                    }
-                                                    else
-                                                    {
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                            }
-                                            // PAS DE MELANGE !
-                                            else
-                                            {
-                                                var finalRepetitions = 0;
-                                                var consumed = false;
-                                                if(promotions[j].articles.length == items.length)
-                                                {
-                                                    var count = 0;
-                                                    for(var m = 0; m < promotions[j].articles.length; m++)
-                                                    {
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            if(promotions[j].articles[m].id == items[n].id)
-                                                            {
-                                                                if(promotions[j].articles[m].qty <= items[n].qty)
-                                                                {
-                                                                    console.log(items[n].qty);
-                                                                    items[n].qty = Math.trunc(items[n].qty/promotions[j].articles[m].qty)
-                                                                    console.log("RESPECTANT LES CRITERES");
-                                                                    ++count;
-                                                                    console.log(count);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    if(count == promotions[j].articles.length)
-                                                    {
-                                                        console.log(items);
-                                                        var trunQty = 0;
-                                                        for(var n = 0; n < items.length; n++)
-                                                        {
-                                                            console.log(items[n].qty);
-                                                            trunQty+=items[n].qty;
-                                                        }
-                                                        console.log(Math.trunc(trunQty/promotions[j].articles.length));
-                                                        promotions[j].cumule = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        var trunc = Math.trunc(trunQty/promotions[j].articles.length);
-                                                        if(trunc >= 1)
-                                                        {
-                                                            console.log("CONSUMED");
-                                                            promotions[j].consumed = true;
-                                                            if(Boolean(promotions[j].cummulable))
-                                                            {
-                                                                if(promotions[j].max != null || promotions[j].max > 0 || typeof promotions[j].max == "undefined")
-                                                                {
-                                                                    if(trunc >= promotions[j].max)
-                                                                    {
-                                                                        promotions[j].cumule = promotions[j].max;
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        promotions[j].cumule = trunc;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    promotions[j].cumule = trunc;
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                promotions[j].cumule = 1;
-                                                            }
-
-                                                        }
-                                                        else
-                                                        {
-                                                            console.log("NO CHANCE !");
-                                                            promotions[j].consumed = false;
-                                                        }
-                                                        
-                                                    }
-                                                    else
-                                                    {
-                                                        console.log("NO CHANCE !");
-                                                        promotions[j].consumed = false;
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    console.log("NO CHANCE !");
-                                                    promotions[j].consumed = false;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                console.log(promotions);
-                                window.localStorage['promotions'] = JSON.stringify(promotions);
-                            }
-                            console.log("ALL THE PROMOTIONS ARE UP TO DATE");
-                        }
-                    }
-                });
-                window.localStorage['cart'] = JSON.stringify(currentBasket);
-    }
-
-
-    $scope.clicked = function(article){
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        var sbds = JSON.parse(window.localStorage['sbd'] || '[]');
-        var articles = $scope.articles;
-        for(var i = 0 ; i < articles.length ; i++)
-        {
-            if(articles[i].id == article.id)
-            {
-                articles[i].unit = 0;
-                articles[i].packet = 0;
-                articles[i].inCart = false;
-            }
-        }
-        for(var i = 0 ; i < cart.items.length || 0 ; i++)
-        {
-            if(cart.items[i].id === article.id)
-            {
-                cart.items.splice(i, 1);
-                window.localStorage['cart'] = JSON.stringify(cart);
-            }
-        }
-        console.log(cart);
-        cart = null;
-        if(article.groupeSBD != null)
-        {
-            console.log(article);
-            for(var i = 0 ; i < sbds.length ; i++)
-            {
-                if(article.groupeSBD == sbds[i].id)
-                {
-                    for(var j = 0 ; j < sbds[i].articles.length ; j++)
-                    {
-                        if(sbds[i].articles[j].id == article.id_db)
-                        {
-                            sbds[i].articles[j].qty = 0;
-                        }
-                    }
-                }
-            }
-        }
-        window.localStorage['sbd'] = JSON.stringify(sbds);
-        sbds = null;
-        refreshBrandRealTime();
-    };
 })
 
-.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, ViewController, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
     
 
     $scope.brandFives = [];
@@ -3927,57 +3129,25 @@ angular.module('starter.controllers', ['starter.services'])
     //REAL TIME PROCESS !!
     //ADDING ITEMS TO CART, REMOVING THEM, MODIFY QTYs, PROMOTIONS && SBDs
     $scope.change = function(article){
-        check(article);
+        ViewController.check(article);
     };
     
-    
-
-    
-    
-
-   
-    function refreshBrand(brandName){
+    function refreshBrand(brandName)
+    {
         $ionicLoading.show({
                 template: "chargement ..."
             });
-            
-        var testItems = [];
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
     
         Articles.getArticlesByMarque(brandName).then(
             function(articles){
 
-                //ADD BRANDS TO LOCAL STORAGE
-                Marques.addMarqueToLocalStorage(brandName, articles);
-                //INITIALIZE THE LIST OF ITEMS
                 $scope.articles = [];
-                //IMPLEMENTATION OF THE DATA STRUCTURE
-                for(var i = 0, len = articles.length ; i < len ; i++)
+
+                var _articles = ViewController.prepare(articles, brandName);
+
+                for(var i = 0 , len = _articles.length ; i < len ; i++)
                 {
-
-
-                    var article = articles[i];
-
-                    var cartResult = CartUtilities.existInCart(article);
-
-                    if(cartResult == null)
-                    {
-                        article = Articles.prepareForScope(article);
-                    }
-                    else
-                    {
-                        article = cartResult;
-                    }
-
-
-                    // SHOULD ADD AND SBD TREATMENT !!
-                    //
-                    //
-                    //////////////////////////////////
-
-                    $scope.articles.push(article);
-
-                    
+                    $scope.articles.push(_articles[i]);
                 }
 
             }, 
@@ -3987,41 +3157,13 @@ angular.module('starter.controllers', ['starter.services'])
             .finally(function(){
                 $ionicLoading.hide();
             });
+
     }
 
     
     function check(article)
     {
-
-                if(!Articles.outOfQuota(article))
-                {
-                    console.log("GOOD !");
-                    var toDrop = false;
-                    if(article.unit == 0 && article.packet == 0)
-                    {   
-                        toDrop = true;
-                        CartUtilities.dropFromCart(article);
-                    }
-                   
-                    // ADD IT TO CART OR UPDATE THE QTYs !!
-                   
-                    if(!toDrop)
-                    {
-                        CartUtilities.addOrModify(article); 
-                    }
-                }
-                else
-                {
-                    console.log("NOT GOOD !");
-                    CartUtilities.dropFromCart(article);
-                }
-
-                if(article.groupeSBD != null && typeof(article.groupeSBD) != "undefined")
-                {
-                    SBD.SBDTreatment(article);
-                }
-
-                Promotions.promotionTreatment(article); 
+        Articles.check(article);  
     }
     
     $scope.backward = function(){

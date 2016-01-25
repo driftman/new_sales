@@ -2522,12 +2522,39 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     })
   }
 })
-.factory("SBD", function(Articles, DB, $http, $q){
+.factory("SBD", function(DB, $http, $q){
   return  {
+    getNonConsumedSBDs : getNonConsumedSBDs,
     syncSBDFromAPI : syncSBDFromAPI,
     SBDTreatment : SBDTreatment,
     sbdConsumed : sbdConsumed
   };
+
+
+  function getNonConsumedSBDs()
+  {
+    var ids = [];
+    var sbds = JSON.parse(window.localStorage['sbd'] || "[]");
+    for(var i = 0, len = sbds.length ; i < len ; i++)
+    {
+      var sbd = sbds[i];
+      if(!sbd.consumed)
+      {
+        for(var j = 0, _len = sbd.articles.length ; j < _len ; j++)
+        {
+          var articleId = sbd.articles[j].id;
+          ids.push(articleId);
+        }
+      }
+    }
+    sbds = null;
+    return ids;
+  }
+
+  function getArticleQty(article)
+  {
+    return ( (article.packet*article.unitConversion) + article.unit );
+  }
 
   function sbdConsumed(id)
   {
@@ -2565,7 +2592,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           {
             //Now that the condition is true we should modiy the qty in the inner article of items's group
             //Set the qty of the item
-            var qty = Articles.getArticleQty(item);
+            var qty = getArticleQty(item);
             sbdArticle.qty = qty;
           }
           total+=sbdArticle.qty;
@@ -3940,8 +3967,89 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   }
 })
 
-.factory("Articles", function(DB, $q, $http, Marques){
+.factory("ViewController", function(Articles, SBD, Promotions, CartUtilities, Marques){
   return {
+    check : check,
+    prepare : prepare,
+    idsRemaining : idsRemaining
+  };
+
+
+  function idsRemaining()
+  {
+    var ids = [];
+    ids = ids.concat(Promotions.getNonConsumedPromotions());
+    ids = ids.concat(SBD.getNonConsumedSBDs());
+    return ids;
+  }
+
+  function prepare(articles, brandName)
+  {
+    //ADD BRANDS TO LOCAL STORAGE
+    if(typeof(brandName) != "undefined")
+    {
+      Marques.addMarqueToLocalStorage(brandName, articles);
+    }
+    //INITIALIZE THE LIST OF ITEMS
+    var output = [];
+    //IMPLEMENTATION OF THE DATA STRUCTURE
+    for(var i = 0, _len = articles.length ; i < _len ; i++)
+    {
+        var article = articles[i];
+
+        var cartResult = CartUtilities.existInCart(article);
+
+        if(cartResult == null)
+        {
+            article = Articles.prepareForScope(article);
+        }
+        else
+        {
+
+            article = cartResult;
+        }
+
+        output.push(article);
+    }
+    return output;
+  }
+
+  function check(article)
+  {
+    if(!Articles.outOfQuota(article))
+    {
+        var toDrop = false;
+        if(article.unit == 0 && article.packet == 0)
+        {   
+            toDrop = true;
+            CartUtilities.dropFromCart(article);
+        }
+       
+        // ADD IT TO CART OR UPDATE THE QTYs !!
+       
+        if(!toDrop)
+        {
+            CartUtilities.addOrModify(article); 
+        }
+    }
+    else
+    {
+        CartUtilities.dropFromCart(article);
+    }
+
+    if(article.groupeSBD != null && typeof(article.groupeSBD) != "undefined")
+    {
+        SBD.SBDTreatment(article);
+    }
+
+    Promotions.promotionTreatment(article); 
+  }
+
+})
+
+.factory("Articles", function(DB, $q, $http, Marques, Promotions, CartUtilities, DateUtilities, SBD){
+  return {
+    getArticlesInRange : getArticlesInRange,
     itemInScopeOutOfQuota : itemInScopeOutOfQuota,
     outOfQuota : outOfQuota,
     getArticleQty : getArticleQty,
@@ -3960,6 +4068,22 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     syncArticles : syncArticles,
     getHighest : getHighest
  };
+
+  function getArticlesInRange(range)
+  {
+    var date = DateUtilities.convertLongToYYYYMMDD(new Date());
+    var sql_query = "SELECT ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as 'prixVente', A.id AS 'id', A.id_db AS 'id_db', A.nomArticle AS 'nomArticle', A.unitConversion, A.uniteMesure, A.tva, Group_Concat(DISTINCT P.id_db) AS 'promotions', GSBD.id_db AS 'groupeSBD' FROM articles AS A LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.id_db IN ("+range.join(", ")+") GROUP BY A.id_db";
+    var bindings = [date];
+    return DB.query(sql_query, bindings).then(
+      function(success){
+        return DB.fetchAll(success);
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+
 
   function itemInScopeOutOfQuota(scopeDeepCopy)
   {
@@ -4188,6 +4312,8 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       });
 
   }
+
+  
 
   function getArticlesByMarque(marque){
     var deferred = $q.defer();
@@ -5143,6 +5269,39 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 .factory("Promotions", function(DB, $http, $q){
 
 
+  return {
+
+    getNonConsumedPromotions : getNonConsumedPromotions,
+    addPromotion : addPromotion,
+    promotionArticle : promotionArticle,
+    syncPromotions : syncPromotions,
+    getAllPromotions : getAllPromotions,
+    getClientPromotions : getClientPromotions,
+    deletePromotion : deletePromotion,
+    promotionTreatment : promotionTreatment,
+    promotionDiscountsWithPriorities : promotionDiscountsWithPriorities
+
+  };
+
+  function getNonConsumedPromotions()
+  {
+    var ids = [];
+    var promotions = JSON.parse(window.localStorage['promotions'] || "[]");
+    for(var i = 0, len = promotions.length ; i < len ; i++)
+    {
+      var promotion = promotions[i];
+      if(!promotion.consumed)
+      {
+        for(var j = 0, _len = promotion.articles.length ; j < _len ; j++)
+        {
+          var articleId = promotion.articles[j].id;
+          ids.push(articleId);
+        }
+      }
+    }
+    return ids;
+  }
+
   function promotionDiscountsWithPriorities($scope)
   {
     var cart = JSON.parse(window.localStorage['cart'] || '{}');
@@ -5637,18 +5796,6 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         return error;
       });
   }
-
-  return {
-    addPromotion :addPromotion,
-    promotionArticle :promotionArticle,
-    syncPromotions : syncPromotions,
-    getAllPromotions : getAllPromotions,
-    getClientPromotions :getClientPromotions,
-    deletePromotion :deletePromotion,
-    promotionTreatment : promotionTreatment,
-    promotionDiscountsWithPriorities : promotionDiscountsWithPriorities
-  };
-
 
 
 })

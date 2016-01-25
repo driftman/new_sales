@@ -1,57 +1,30 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts " >
-    <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
-       <div 
-       style="
-       position: relative;">
-      
-            <label style="
-            position: absolute;
-            left: 8px;
-            top: 1.5px;
-            margin: 8px;
-            margin-left: 30px;
-            font-size: 15px;
-            font-weight: 900;
-            "><input placeholder="Filtrer" ng-model="articleName" style="
-            max-width: 40%; 
-            border-radius: 5px;
-            font-weight: 900;
-            font-size: 13px;"> <b style="float: right; font-style: italic;">{{ marque }}</b> </label>
-            </div>
-
-    </div>
-    <ion-content 
-    style = "position: relative;" ng-class="{expanded:$scope.isExpanded}">
-          <div class="list" style="
-          height: 300px;
-          margin: 0;
-          margin-top: 44px;
-          padding: 0;">           
-            <div class="item" 
-            style="
-            margin: 0;
-            padding: 0;
-            min-height: 0;
-            border: none;
-            min-height: 0px;
-            text-align: left;
-            margin-top: 15px; 
-            background-color: #3F51B5; 
-            color: white;">
-              <div class="row" style="
-              margin: 0; 
-              margin-top: 30px;
-              margin: 0;
-              padding: 0;">
-                <div class="col col-50" 
+<ion-view view-title="C.A : {{ ca | number : 2 }} DHS">
+    <div class="bar bar-subheader bar-balanced" style="background-color: #717070; height: 20px;">
+       
+            <div class="row" style="
+                margin: 0;
+                padding: 0;
+                border: none;
+                min-height: 100%;
+                text-align: left;
+                margin-top: 15px; 
+                background-color: #3F51B5; 
+                color: white;
+                font-size: 10px;
+                margin: 0; 
+                margin-top: 30px;
+                margin: 0;
+                padding: 0;">
+                <div class="col" 
                 style="
                 border: none;
+                min-width: 55%;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                font-size: 14px; 
-                font-weight: 900; 
-                text-align: left;">désignation({{articles.length}})</div>
+                font-size: 11px; 
+                font-weight: 900;
+                text-align: left;">désignation({{ articles.length }})</div>
                 
                 <div class="col col-15" 
                 style="
@@ -60,9 +33,9 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11px; 
                 font-weight: 900; 
-                float: left;">unité</div>
+                float: left;">cs.</div>
                 <div class="col col-15" 
                 style="
                 border: none;
@@ -70,9 +43,9 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11px; 
                 font-weight: 900; 
-                float: left;">caisse</div>
+                float: left;">un.</div>
                 <div class="col col-15" 
                 style="
                 border: none;
@@ -80,7 +53,7 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11px; 
                 font-weight: 900; 
                 float: left;">total</div>
                 <div class="col" 
@@ -90,12 +63,18 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 14px; 
+                font-size: 11px;  
                 font-weight: 900; 
                 float: left;">quota</div>
               </div>
-            </div>
-            
+    </div>
+    <ion-content 
+    style = "position: relative;" ng-class="{expanded:$scope.isExpanded}">
+          <div class="list" style="
+          height: 300px;
+          margin: 0;
+          margin-top: 20px;
+          padding: 0;">
             <div class="item" 
             style="
             margin: 0;
@@ -106,13 +85,13 @@
             min-height: 0px;
             text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD' | orderBy: 'promotions' track by $index">
                 <div class="row" style="
+                background-color: {{ article | backgroundSBD }};
                 margin: 0;
                 padding: 0;
-                margin: 0;
-                background-color: {{ article | backgroundSBD }};"
-                >
-                   <div class="col col-50" style="
+                margin: 0;">
+                   <div class="col" style="
                   margin: 0;
+                  min-width: 55%;
                   padding: 0;
                   text-align: center;
                    overflow: hidden; border: none;">
@@ -123,7 +102,7 @@
                     margin-top: -3px;
                     margin-bottom: -3px;
                     font-size: 12.5px; 
-                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }}; 
+                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }} ; 
                     text-align: left; 
                     color: #060606;">{{ article.nomArticle }}</p>
                     <p 
@@ -133,29 +112,36 @@
                     margin-top: -5px;
                     font-size: 10.5px; 
                     font-weight: 900; 
-                    text-align: left;">PPQ: {{ article.past }}<span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
-                    font-size: 18px; color: #B71C1C;">&#8471</span></p>
+                    text-align: left;">PPQ: {{ article.past }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
+                    font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span></p></div>
+                <div class="col col-15" style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;"><input type="number" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD }}; color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input></div>
+                <div class="col col-15" style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;"><input type="number" value="0" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD }};color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input>
 
-                    </div>
-                
-                <div class="col col-15" style="
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;"><input ng-readonly="article.quotaVALUE == 0 &&  article.quotaQTY == 0" type="number" ng-change="confirm()" value="0" ng-model=" article.unit" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input>
                 </div>
-                <div class="col col-15" style="
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;"><input ng-readonly="article.quotaVALUE == 0 &&  article.quotaQTY == 0" type="number" ng-change="confirm()" ng-model="article.packet" value="0" style="font-weight: 900; color: green; width: 100%; text-align:center; background-color: {{ article | backgroundSBD }};"></input></div>
                 <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 900;
-                text-align: center;"><span ng-bind="(article.packet*article.unitConversion)+(article.unit)"></span>
-                <i ng-show="article.unit > 0 || article.packet > 0" class="icon ion-close-circled" ng-click="clicked(article)" style="color: red; float: right;"></i>
+                text-align: center;"><span style="font-size: 10px;" ng-bind="(article.packet*article.unitConversion)+(article.unit)"></span>
             </div>
                 <div class="col"
                 style="
@@ -167,11 +153,13 @@
             </div>
           </div>
             
-	</ion-content>
-    <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+    </ion-content>
+
+  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
-      <a ng-click="goBack()" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
-      <span ng-click="goCart()">{{ data.items | total : 'ttc' | promotion | number : 2 }} DHS</span>
+      <span ng-click="back()" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></span>
+      <span ng-click="goCart()">DHS</span>
     </div>
   </div>
+
 </ion-view>
