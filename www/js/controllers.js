@@ -46,7 +46,7 @@ angular.module('starter.controllers', ['starter.services'])
         {
             $state.go("app.profile2");
         }
-        else if(profile.fonction == 'prevendeur')
+        else if(profile.fonction == 'prevendeur' || 'vendeur')
         {
             $state.go("app.profile");
         }
@@ -250,13 +250,16 @@ angular.module('starter.controllers', ['starter.services'])
                 window.localStorage['profile'] = JSON.stringify(user);
                 updateIonicLoading('Connexion réussi !');
                 current_user = user;
+                console.debug(user);
                 $timeout(function(){
-                    if(user.fonction == "prevendeur")
+                    if(user.fonction == "prevendeur" || user.fonction == "vendeur")
                     {
+                        console.debug("NOT LIVREUR !");
                         $state.go("menu.entry");
                     }
                     else if(user.fonction == "livreur")
                     {
+                        console.debug("LIVREUR !");
                         $state.go("menu.entry2");
                     }
                 }, 2000);
@@ -268,12 +271,14 @@ angular.module('starter.controllers', ['starter.services'])
                 updateIonicLoading('Connexion réussi !');
                 current_user = user;
                 $timeout(function(){
-                    if(user.fonction == "vendeur")
+                    if(user.fonction == "prevendeur" || user.fonction == "vendeur")
                     {
+                        console.debug("NOT LIVREUR !");
                         $state.go("menu.entry");
                     }
                     else if(user.fonction == "livreur")
                     {
+                        console.debug("LIVREUR !");
                         $state.go("menu.entry2");
                     }
                 }, 2000);
@@ -331,11 +336,12 @@ angular.module('starter.controllers', ['starter.services'])
                                                     profile.fonction = account.fonction;
                                                     window.localStorage['profile'] = JSON.stringify(profile);
                                                     updateIonicLoading("Votre espace personnel a été créé avec succes !");
-                                                    if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "prevendeur")
+                                                    var fonction = JSON.parse(window.localStorage['profile'] || '{}').fonction || "";
+                                                    if(fonction == "prevendeur" || fonction == "vendeur")
                                                     {
                                                         $state.go("menu.entry");
                                                     }
-                                                    else if(JSON.parse(window.localStorage['profile'] || '{}').fonction == "livreur")
+                                                    else if(fonction == "livreur")
                                                     {
                                                         $state.go("menu.entry2");
                                                     }
@@ -481,7 +487,7 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, DumpDB, Surveys, ModePaiement, ca,  $timeout, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
+.controller('EntryCtrl', function($scope, $rootScope, DumpDB, Surveys, ModePaiement, ca,  $timeout, IonicPopUpUtilities, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
     
     $scope.ca = ca.ca;
     $scope.test = function(){
@@ -489,13 +495,45 @@ angular.module('starter.controllers', ['starter.services'])
     };
     $scope.infos = JSON.parse(window.localStorage['profile']);
     var infos = JSON.parse(window.localStorage['profile']);
+
+    var isVendeur = typeof(infos.fonction) != "undefined" && infos.fonction == "vendeur";
+
+    $scope.isVendeur = isVendeur;
+
+    $scope.prepareChargement = function()
+    {
+
+        var cart = JSON.parse(window.localStorage['cart'] || "{}");
+
+        if(!Object.keys(cart).length > 0)
+        {
+            cart.action = "chargement";
+
+            cart.items = [];
+
+            window.localStorage['cart'] =  JSON.stringify(cart);
+
+            $state.transitionTo("app.brands", { vendeur: true, chargement: true} );
+        }
+        else
+        {
+            if( cart.action == "chargement" )
+            {
+                $state.transitionTo("app.brands", { vendeur: true, chargement: true} );
+            }
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur", "Vous devez finir votre visite "));
+            }
+        }
+        
+    };
     $scope.synchronization = function(){
-        //SBD.syncSBDFromAPI();
+       
         $ionicLoading.show({
             template : "Synchronisation en cours ..."
         });
-        //Promotions.syncPromotions();
-        //ModePaiement.sync();
+
         SynchronisationV2.syncV2(infos.id_db).then(
             function(success){
                 console.log(success);
@@ -533,107 +571,7 @@ angular.module('starter.controllers', ['starter.services'])
                 code_marque: "ORALB",
                 name: "ORALB"
             });
-        /*Commandes.syncCommandes().then(
-            function(success){
-               Commandes.sendCommandeToAPI(success);
-               console.log(JSON.stringify(success));
-            }, 
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-*/
 
-
-        /*var array = [
-        
-        'update marque SET logo = "img/always.jpg" WHERE marqueArticle like "%ALWA%";',
-        'update marque SET logo = "img/PAMPERS.jpg" WHERE marqueArticle like "%PAMPERS%";',
-        'update marque SET logo = "img/ARIEL.jpg" WHERE marqueArticle like "%ARIE%";',
-        'update marque SET logo = "img/ACE.png" WHERE marqueArticle like "%ACE%";', 
-        'update marque SET logo = "img/KOLESTONE.jpg" WHERE marqueArticle like "%KOLESTO%";',
-        'update marque SET logo = "img/gillette.png" WHERE marqueArticle like "%GILLETT%";',
-        'update marque SET logo = "img/HS.jpg" WHERE marqueArticle like "%H&S%";',
-       ' update marque SET logo = "img/MRPROPRE.png" WHERE marqueArticle like "%MRPROPRE%"; ',
-        'update marque SET logo = "img/PANTENE.png" WHERE marqueArticle like "%PANT%";',
-        'update marque SET logo = "img/tide.jpg" WHERE marqueArticle like "%TID%"',
-        'update marque SET logo = "img/PANTENE.png" WHERE marqueArticle like "%PANT%"',
-        'update marque SET logo = "img/PRETPLUS.jpg" WHERE marqueArticle like "%PLUS%"',
-        'update marque SET logo = "img/FAIRY.jpg" WHERE marqueArticle like "%FAIR%"',
-        'update marque SET logo = "img/DOWNY.gif" WHERE marqueArticle like "%DOW%"',
-        'update marque SET logo = "img/DURACELL.png" WHERE marqueArticle like "%DURACELL%"'];
-
-        DumpDB.dump(array);
-
-        $ionicLoading.show({
-            template : "Synchronisation en cours ..."
-        });
-
-
-
-        $timeout(function(){
-            $ionicLoading.hide();
-            $ionicPopup.alert({
-             title: 'Terminé',
-             template: 'Synchronisation terminée !'
-           });
-        }, 8000);*/
-
-        //SBD.syncSBDFromAPI();
-       /* Promotions.syncPromotions();
-        Commandes.syncCommandes().then(
-            function(success){
-               Commandes.sendCommandeToAPI(success);
-               console.log(JSON.stringify(success));
-            }, 
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-*/
-        //Routes.syncRoutes(infos.id_db);
-        /*Missions.syncMissions(infos.id_db).then(
-            function(success){
-                console.log(success);
-            },
-            function(error){
-                console.log(error.message)
-            });*/
-
-       /* Clients.syncClients(infos.id_db);
-        Articles.syncArticles();
-        Marques.getAll().then(
-            function(success){
-                console.log(JSON.stringify(success));
-            },
-            function(error){
-                console.log(JSON.stringify(error));
-            });
-        ///////////////////////////////////////////
-        BrandFive.addBrandFive({
-            id_db: 1,
-            code_marque: "GILLETTE",
-            name: "GILLETTE"
-        });
-        BrandFive.addBrandFive({
-            id_db: 2,
-            code_marque: "DURACELL",
-            name: "DURACELL"
-        });
-        BrandFive.addBrandFive({
-            id_db: 4,
-            code_marque: "PANTENE",
-            name: "PANTENE"
-        });
-        BrandFive.addBrandFive({
-            id_db: 5,
-            code_marque: "ORALB",
-            name: "ORALB"
-        });
-        BrandFive.addBrandFive({
-            id_db: 3,
-            code_marque: "DURACELL",
-            name: "DURACELL"
-        });*/
-        /////////////////////////////////////////////
 
     };
 })
@@ -666,10 +604,21 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
     $scope.vente = typeof window.localStorage['cart'] == "undefined";
+    $scope.chargement = typeof window.localStorage['cart'] != "undefined" && JSON.parse(window.localStorage['cart']).action == "chargement" ? true : false;
+    
+
     $scope.checkPoint = function(){
         $state.go(checkPoint);
+        var isVendeur = JSON.parse(window.localStorage['profile']).fonction == "vendeur";
+        if(checkPoint == "app.brands" && isVendeur)
+        {
+            $state.go(checkPoint, { vendeur: true, chargement: false });
+        }
+        else
+        {
+            $state.go(checkPoint);
+        }
     };
-    console.log($scope.vente);
 
     // Set Motion
     ionicMaterialMotion.fadeSlideInRight();
@@ -805,8 +754,15 @@ angular.module('starter.controllers', ['starter.services'])
                 {
                     if(callSteps[i].active)
                     {
-                        $state.go(callSteps[i].name);
-                        console.log("Go to : "+callSteps[i].name)
+                        var isVendeur = JSON.parse(window.localStorage['profile']).fonction == "vendeur";
+                        if(callSteps[i].name == "app.brands" && isVendeur)
+                            {
+                                $state.go(callSteps[i].name, { vendeur: true, chargement: false });
+                            }
+                            else
+                            {
+                                $state.go(callSteps[i].name);
+                            }
                     }
                 }
             }, 5000);
@@ -1864,20 +1820,102 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandsCtrl', function($scope, $state, Commandes, IonicPopUpUtilities, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
+.controller('BrandsCtrl', function($scope, $timeout, $state, CallSteps, CartUtilities, $log, $ionicLoading, Chargement, Commandes, IonicPopUpUtilities, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
     
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.total = 0;
+
+    cartInitialization();
+
+    function cartInitialization()
+    {
+        CartUtilities.totalCart(true, false, true)
+        .then(function(success){
+            $scope.total = success;
+        });
+    }
+
+    // To know if the current objectif is to add stock to van or if the employee connected is
+    // from profile type "vendeur" to display only the items in stock or all !!
+
+    var isVendeur = $scope.isVendeur = $stateParams.vendeur == "true" ? true : false;
+    var forChargement = $scope.forChargement = $stateParams.chargement == "true" ? true : false;
+    var prelevement = $scope.prelevement = $stateParams.prelevement == "true" ? true : false;
+    var retour = $scope.retour = $stateParams.retour == "true" ? true : false;
+
+    if(forChargement)
+    {
+        $scope.title = "Demande de chargement";
+    }
+    else if(prelevement)
+    {
+        $scope.title = "Prélèvement stock client"
+    }
+    else if(retour)
+    {
+        $scope.title = "Retours client"
+    }
+    else
+    {
+        $scope.title = "Autres marques"
+    }
+
+    console.debug(retour);
     
-    // PROPER TO DATA !!
-    $scope.data = {};
-    $scope.data.items = JSON.parse(window.localStorage['cart']).items;
 
     //PROPER TO CALL STEPS !!
-    $scope.hasNext = position.hasNext;
-    $scope.hasPrevious = position.hasPrevious;
+    
+    if(prelevement || retour)
+    {
+       var _target = prelevement ? "app.prelevement" : "app.retour";
+       CallSteps.checkForSteps(_target)
+        .then(function(result){
+            $scope.hasNext = result.hasNext;
+            $scope.hasPrevious = result.hasPrevious;
+        });
+    }
+    else
+    {
+        $scope.hasNext = position.hasNext;
+        $scope.hasPrevious = position.hasPrevious;
+    }
+
+    
 
     // NEXT STEP !!
     $scope.next = function(){
-        if(position.hasNext)
+        next();
+    };
+    function next()
+    {
+        if(prelevement || retour)
+        {
+            var _target = prelevement ? "app.prelevement" : "app.retour";
+            CallSteps.checkForSteps(_target)
+            .then(function(result){
+                if(result.hasNext)
+                {
+                    if(result.nextStep.name != "app.brands")
+                    {
+                        console.debug(result.nextStep.name);
+                        $state.transitionTo(result.nextStep.name);
+                    }
+                    else
+                    {
+                        // WE ARE INT PRELEVEMENT SO WE SHOULD SET IT TO FALSE !
+                        // PRELEVEMENT IS NOT A PART FROM THE CALL STEPS !
+                        $state.transitionTo(result.nextStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false});
+                    }
+                }
+                else
+                {
+                    console.debug("WHAT TO DO ? !!");
+                }
+            });
+        }
+        else
+        {
+            if(position.hasNext)
             {
                 var marques = JSON.parse(window.localStorage['marques'] || "{}")
                 var canGo = typeof(marques.exclusion) == "undefined" ? false : marques.exclusion.canGo;
@@ -1890,17 +1928,132 @@ angular.module('starter.controllers', ['starter.services'])
                 }
                 else
                 {
-                    $state.go(position.nextStep.name);
+                    if(position.nextStep.name != "app.brands")
+                    {
+                        $state.transitionTo(position.nextStep.name);
+                    }
+                    else
+                    {
+                        $state.transitionTo(position.nextStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
+                    }
                 }
                 
             }
-    };
+            else
+            {
+                console.debug("WHAT TO DO ? !!");
+            }
+        }
+    }
     // PREVIOUS STEP !!
     $scope.previous = function(){
-        if(position.hasPrevious)
+        previous();
+    };
+    function previous()
+    {
+        if(prelevement || retour)
+        {
+            var _target = prelevement ? "app.prelevement" : "app.retour";
+            CallSteps.checkForSteps(_target)
+            .then(function(result){
+                if(result.hasPrevious)
+                {
+                    if(result.previousStep.name != "app.brands")
+                    {
+                        $state.transitionTo(result.previousStep.name);
+                    }
+                    else
+                    {
+                        $state.transitionTo(result.previousStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false});
+                    }
+                }
+                else
+                {
+                    console.debug("WHAT TO DO ? !!");
+                }
+                
+            });
+        }
+        else
+        {
+            if(position.hasPrevious && !forChargement)
             {
-                $state.go(position.previousStep.name);
+                if(position.previousStep.name != "app.brands")
+                {
+                    $state.transitionTo(position.previousStep.name);
+                }
+                else
+                {
+                    $state.transitionTo(position.previousStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false});
+                }
             }
+            else
+            {
+                console.debug("WHAT TO DO ? !!");
+            }
+        }
+    }
+
+    $scope.sendPrelevement = function()
+    {
+        console.debug("SEND PRELEVEMENT !!");
+        Chargement
+        .addPrelevementClient(1, JSON.parse(window.localStorage["prelevement"] || "{}").items)
+        .then(
+            function(success)
+            {
+                next();
+            });
+    };
+
+    //Send retours !!
+
+    $scope.sendRetour = function(){
+        next();
+    };
+
+    //Send the demand !!
+
+    $scope.sendDemande = function()
+    {
+
+        $ionicLoading.show({
+            template : "Enregistrement de votre demande ..."
+        });
+
+        Chargement.add().then(
+            function(success){
+                if(!(typeof(success.rowsAffected) == "undefined"))
+                {
+                    $ionicPopup.alert(IonicPopUpUtilities.alert("Succès", success.rowsAffected+" ligne(s) ajoutés"));
+                    window.localStorage.removeItem('cart');
+                    var keys = Object.keys(window.localStorage);
+                    for(var i = 0 ; i < keys.length ; i++)
+                    {
+                        if(keys[i] != "profile")
+                        {
+                            window.localStorage.removeItem(keys[i]);
+                        }
+                    }
+                    $state.transitionTo("app.profile");
+                }
+                else
+                {
+                    $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur", success.message));
+                    
+                }
+            }, 
+            function(error){
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur", error.message));
+             }).finally(function(){
+
+                $timeout(function(){
+
+                    $ionicLoading.hide();
+
+                }, 500);
+
+            });
     };
 
     // EXCLUSIONS FROM THE MEETING OF 21/01/2016  , Proposed by MONCEF in order to access to a predefined brand by conditions !!
@@ -1909,47 +2062,17 @@ angular.module('starter.controllers', ['starter.services'])
     var _gone = typeof(_marques.exclusion) == "undefined" || typeof(_marques.exclusion.gone) == "undefined"  ? false : _marques.exclusion.gone;
     var exclusion = _gone ? [] : [10];
 
+    $scope.infos = JSON.parse(window.localStorage['profile']);    
 
-    
-    $scope.ca = 0;
-    $scope.goCart = function(){
-        if(JSON.parse(window.localStorage['done']))
-        {
-            $state.go("app.remainings");
-        }
-        else
-        {
-            if(JSON.parse(window.localStorage['cart']).items.length > 0)
-            {
-                $state.go("app.cart");
-            }
-            else
-            {
-                $ionicPopup.alert({
-                    title: "Panier vide !",
-                    buttons: [
-                        {
-                            text: "OK",
-                            type: "button-assertive",
-                            cssClass: "assertive-survey"
-                        }
-                    ],
-                    template: '<span style="font-size: 12px; font-weight: 600;">Le panier doit au moins contenir un article.</span>'
-                });
-            }
-            
-        }
-    };
-
-
-    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.rows = [];
+    $scope.rows = [];
     
     var marques = JSON.parse(window.localStorage['marques'] || "{}");
 
     var canGoToExclusion = typeof(marques.exclusion) != "undefined" && marques.exclusion.canGo;
     
-    Articles.getMarques(exclusion).then(
+    Articles.getMarques(exclusion, isVendeur, forChargement).then(
         function(marques){
+            $log.debug(marques);
             var count = marques.length;
             var exclusionCount = 0;
             for(var i = 0 ; i < count - (count % 5) ; i+=5)
@@ -1997,11 +2120,11 @@ angular.module('starter.controllers', ['starter.services'])
 
         }, 
         function(error){
-            console.log(error);
+            $log.error(error);
         });
     
     $scope.goToBrand = function(marque){
-        $state.go('app.brand',{ name:  marque, mission: $stateParams.mission});
+        $state.go('app.brand', { name:  marque, vendeur: isVendeur, chargement: forChargement, prelevement: prelevement, retour: retour} );
     };
 })
 
@@ -2015,14 +2138,14 @@ angular.module('starter.controllers', ['starter.services'])
       $scope.ca = 0;
       $scope.client = {};
       $scope.routes = [];
-      $scope.infos = JSON.parse(window.localStorage['profile']);      $cordovaGeolocation
+      $scope.infos = JSON.parse(window.localStorage['profile']);      
+      $cordovaGeolocation
         .getCurrentPosition(posOptions)
         .then(function (position) {
             $scope.client.lat  = position.coords.latitude;
             $scope.client.lng = position.coords.longitude;
             console.log(position.coords);
         }, function(err) {
-          // error
           console.log(error.message);
         });
       Missions.getVendeurRoutes().then(
@@ -2058,14 +2181,349 @@ angular.module('starter.controllers', ['starter.services'])
       };
 })
 
-.controller('CartCtrl', function($state, $stateParams, $filter, IonicPopUpUtilities, PrinterService, Promotions, $timeout, $cordovaDatePicker,$cordovaFile, $scope, $ionicPopup, $cordovaPrinter,  ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+.controller('CartCtrl', function($log, $state, $stateParams, ViewController, CartUtilities, $filter, $ionicLoading, IonicPopUpUtilities, PrinterService, Promotions, $timeout, $cordovaDatePicker,$cordovaFile, $scope, $ionicPopup, $cordovaPrinter,  ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+    
+    $scope.choice = {
+        id: 0
+    };
+
+    $scope.currentDiscount = null;
+    $scope.choosenMethod = null;
+
+    // PAYMENT DATE !!
+    $scope.paymentDate = new Date();
+    // MODE PAIEMENTS METHODES !!
+    $scope.paymentMethods = [];
+
+    // MODE PAIEMENT !
+    ModePaiement.getAll().then(
+        function(success){
+            $scope.paymentMethods = success;
+        }, 
+        function(error){
+            $log.error(error);
+        });
+    // CHANGE LISTENER
+    $scope.paymentChange = function(method){
+        $scope.choosenMethod = method;
+        countDiscount($scope.choosenMethod, $scope.paymentDate);
+    };
+
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.totalTTC = 0;
+    $scope.totalHT = 0;
+
+    //Promotions conflicts !
+    $scope.groups = [];
+
+    // PROPER TO THE MODAL !
+    $scope.nextPopUpShow = true;
+    $scope.previousPopUpShow = false;
+
+    $scope.group = [];
+
+    $scope.currentIndex = 0;
+
+    
+    $scope.data = {};
+
+    $scope.data.items = [];
+
+    $scope.totalTTC = 0;
+
+    $scope.totalHT = 0;
+
+    $scope.checkOut = function(){
+        var missionObject = JSON.parse(window.localStorage['mission'] || "{}");
+
+        if(!missionObject.concluded)
+        {
+            if($scope.currentDiscount != null && $scope.choosenMethod != null)
+            {
+                var cartObject = JSON.parse(window.localStorage['cart'] || "{}");
+
+                var local = typeof(missionObject.id_mission) == "undefined";
+
+                $ionicLoading.show({
+                    template : "finalisation de la vente en cours ..."
+                });
+
+                Missions.checkOut(
+
+                    missionObject.id_mission, 
+                    //CartUtilities.getCartItems(), 
+                    angular.copy($scope.data.items),
+                    local, 
+                    angular.copy($scope.choosenMethod.id), 
+                    angular.copy($scope.paymentDate)
+
+                    ).then(
+                    function(success){
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Succès !", "La commande a bien été enregistrée"));
+                        missionObject.concluded = true;
+                        window.localStorage['mission'] = JSON.stringify(missionObject);
+                    }, 
+                    function(error){
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur !", "Erreur lors de l'enregistrement : \n "+error.message));
+                    }).
+                finally(function(){
+                    $timeout(function(){
+                        $ionicLoading.hide();
+                    }, 1000);
+                });
+            } 
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Etape manquante !", "Veuillez choisir une méthode de paiement"));
+            }
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Déjà enregistré !", "La commande a bien été enregistrée"));
+        }
+    };
+
+    function init()
+    {
+        $scope.data.items = [];
+
+        var items = CartUtilities.getCartItems();
+        var done = false;
+        CartUtilities.getCartItems()
+        .then(function(items){
+
+            for(var i = 0; i < items.length ; i++)
+            {
+                var item = items[i];
+
+                if(Object.prototype.toString.call(item) != "[object Array]")
+                {
+                    item.tva = item.tva - item.remise;
+
+                    if(item.prixVente != 0)
+                    {
+                        $scope.totalTTC+=item.tva;
+
+                        $scope.totalHT+=item.ht;
+                    }
+
+                    $scope.data.items.push(item);
+                }
+                else
+                {
+                    $scope.groups.push({conflicts: item, choosen: null});
+                }
+                if(i == items.length - 1)
+                {
+                    promptGiftsOrAddThem();
+                    /*done = true;
+                    var change = JSON.parse(window.localStorage["change"] || "true");
+                    console.debug(change);
+                    if(!done && !change)
+                    {
+                        console.debug("SHOULD DO THIS !");
+                       
+                        items = items.concat(JSON.parse(window.localStorage['gifts'] || '[]'));
+                    }
+                    else
+                    {
+                        console.debug("SHOULD NOT DO THIS !");
+                        
+                    } */    
+                }
+            }
+
+        });
+
+        function promptGiftsOrAddThem()
+        {
+            var change = JSON.parse(window.localStorage["change"] || "true");
+            var gifts = JSON.parse(window.localStorage['gifts'] || "[]");
+            if(!change && gifts.length > 0)
+            {
+                console.debug("Add them directly !");
+                for(var i = 0 ; i < gifts.length ; i++)
+                {
+                    $scope.data.items.push(gifts[i]);
+                }
+            }
+            else
+            {
+                if($scope.groups.length >= 1)
+                {
+                    showPopup();
+                    $scope.group = $scope.groups[$scope.currentIndex];
+                    if($scope.groups.length == 1)
+                    {
+                        $scope.nextPopUpShow = false;
+                    }
+                    
+                }
+            }
+            
+        }
+
+        var promotions = JSON.parse(window.localStorage['promotions'] || "[]");
+        for(var i = 0 ; i < promotions.length ; i++)
+        {
+            var promotion = promotions[i];
+            if(promotion.type == "PC")
+            {
+                console.debug($scope.totalHT);
+                console.debug(promotion.ca);
+                if(promotion.ca <= $scope.totalHT)
+                {
+                    promotion.consumed = true;
+                }
+                else
+                {
+                    promotion.consumed = false;
+                }
+            }
+        }
+        window.localStorage['promotions'] = JSON.stringify(promotions);
+    }
+
+    $scope.hello = function(group, index){
+        group.choosen = index;
+    };
+
+    /*
+    $scope.nextPopUpShow = true;
+    $scope.previousPopUpShow = false;
+    */
+
+
+    $scope.previousPopUp = function()
+    {
+        $scope.group = $scope.groups[--$scope.currentIndex];
+        $scope.nextPopUpShow = true;
+        if($scope.currentIndex == 0)
+        {
+            $scope.previousPopUpShow = false;
+        }
+    };
+    $scope.nextPopUp = function()
+    {   
+        
+        $scope.group = $scope.groups[++$scope.currentIndex];
+        $scope.previousPopUpShow = true;
+        if($scope.currentIndex == $scope.groups.length - 1)
+        {
+            $scope.nextPopUpShow = false;
+        }
+    };
+
+    $scope.checked = function(group, index)
+    {
+        if(group.choosen == index)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    function checkIfConflictRemaining()
+    {
+        var groups = angular.copy($scope.groups)
+        for(var i = 0 ; i < groups.length ; i++)
+        {
+            if(groups[i].choosen == null)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function addChoosenGifts()
+    {
+        var groups = angular.copy($scope.groups);
+        var savedGifts = [];
+        for(var i = 0 ; i < groups.length ; i++)
+        {
+            var group = groups[i];
+            var index =  group.choosen;
+            var _loopContinue = false;
+            for(var j = 0 ; j < group.conflicts.length ; j++)
+            {
+                if(j == index)
+                {
+                    var items = group.conflicts[j];
+                    savedGifts = savedGifts.concat(items);
+                    for(var k = 0 ; k < items.length ; k++)
+                    {
+                        var item = items[k];
+                        $scope.data.items.push(item);
+                    }
+                    _loopContinue = true;
+                    continue;
+                }
+            }
+            if(_loopContinue)
+            {
+                continue;
+            }
+        }
+        window.localStorage['gifts'] = JSON.stringify(savedGifts);
+        window.localStorage["change"] = "false";
+    }
+    $scope.msg = "title";
+
+    function showPopup()
+    {
+        var popUp = $ionicPopup.show({
+
+            scope: $scope,
+
+            templateUrl : "gratuites.html",
+
+            
+
+            buttons: [
+                {
+                    text: "TERMINER",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+                        e.preventDefault();
+                        if(checkIfConflictRemaining())
+                        {
+                            console.debug("mazal");
+                        }
+                        else
+                        {
+                            addChoosenGifts();
+                            popUp.close();
+                        }
+                    }
+                }
+            ],
+            title: 'Gratuités',
+            subTitle: '('+$scope.groups.length+')'
+        });
+        console.debug(popUp);
+    }
+
+    init();
+
     var promotionsSuccess = [];
     var replace = true;
+
+    $scope.change = function(article){
+
+        //Promotions and SBDs 
+        ViewController.check(article);
+        init();
+    };
     
 
     $scope.print = function(){
 
-        PrinterService.formatedContent( [angular.copy($scope.data.items), JSON.parse(window.localStorage['mission'] || '{}'), $scope.data.ht, $scope.data.ttc, $scope.currentDiscount ],"Pre-vendeur" )
+        PrinterService.formatedContent( [CartUtilities.getCartItems(), JSON.parse(window.localStorage['mission'] || '{}'), $scope.totalHT, $scope.totalTTC, 0.7 ],"Pre-vendeur" )
         .then(
             function(success){
                 console.log(success);
@@ -2080,7 +2538,7 @@ angular.module('starter.controllers', ['starter.services'])
                     }
                 );
             }).finally(function(){
-                //$ionicPopup.alert(IonicPopUpUtilities.alert("Impression terminée", "-"));
+                
             });
     };
 
@@ -2104,6 +2562,7 @@ angular.module('starter.controllers', ['starter.services'])
             $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur !", "Vous n'êtes pas autorisé à annuler une commande après l'impression. "));
         }
     }
+
     $scope.footerBar = true;
     window.addEventListener("native.keyboardshow", keyboardShowHandler);
     window.addEventListener("native.keyboardhide", keyboardHideHandler);
@@ -2115,9 +2574,10 @@ angular.module('starter.controllers', ['starter.services'])
     {
         $scope.footerBar = true;
     }
-    console.log(position);
+    
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
+
     $scope.next = function(){
         var cart = JSON.parse(window.localStorage['cart'] || '{}');
 
@@ -2143,7 +2603,7 @@ angular.module('starter.controllers', ['starter.services'])
                             $scope.pay();
                             if($scope.hasNext)
                             {
-                                $state.transitionTo(position.nextStep.name);
+                                $state.transitionTo(position.nextStep.name, { vendeur: true, chargement: false });
                             }
                             else
                             {
@@ -2167,123 +2627,12 @@ angular.module('starter.controllers', ['starter.services'])
     };
     $scope.previous = function(){
         if(position.hasPrevious)
-            {
-                $state.transitionTo(position.previousStep.name);
-            }
-    };
-    $scope.ca = ca.ca;
-    $scope.hasModes = false;
-    var cart = JSON.parse(window.localStorage['cart'] || '{}');
-    var canFinish = JSON.parse(window.localStorage['done'] || 'false');
-    $scope.infos = JSON.parse(window.localStorage['profile']);    $scope.canFinish = canFinish;
-    $scope.data = {};
-    $scope.data.items = [];
-    $scope.data.ttc = 0;
-    $scope.data.ht = 0;
-    $scope.currentDiscount = 0;
-    if(typeof cart.items != "undefined" && typeof(cart.items) != "undefined" && cart.items.length > 0)
-    {
-        var promotions = JSON.parse(window.localStorage['promotions']);
-        for(var i = 0 ; i < cart.items.length ; i++)
         {
-            var item = cart.items[i];
-            item.remises = [];
-            if(item.promotions != null && item.promotions.length > 0)
-            {
-                for(var j = 0 ; j < item.promotions.length ; j++)
-                {
-                    var idPromo = item.promotions[j];
-                    for(var k = 0 ; k < promotions.length ; k++)
-                    {
-                        var promotion = promotions[k];
-                        if(idPromo == promotion.id && promotion.consumed && promotion.remise != null && promotion.type != "PC")
-                        {
-                            item.remises.push({ remise: promotion.remise, priorite: promotion.priorite});
-                        }
-                    }
-                }
-            }
-
-            for(var j = 0 ; j < item.remises.length - 1 ; j++)
-            {
-                for(var k = j+1 ; k < item.remises.length ; k++)
-                {
-                    if(item.remises[k].priorite < item.remises[j].priorite)
-                    {
-                        var permut = item.remises[k];
-                        item.remises[k] = item.remises[j];
-                        item.remises[j] = permut;
-                    }
-                }
-            }
-            var remises = 0;
-            var prixInitial = (item.packet*item.unitConversion + item.unit) * item.prixVente;
-            var prixUnderDiscounts = prixInitial;
-            for(var j = 0 ; j < item.remises.length ; j++)
-            {
-                console.log(item.remises[j]);
-                prixUnderDiscounts-=item.remises[j].remise/100*prixUnderDiscounts;
-            }
-            item.remise = prixInitial - prixUnderDiscounts;
-            item.prixBRUT = prixInitial - item.remise;
-            $scope.data.ht += item.prixBRUT;
-            item.prixTVA = item.prixBRUT * item.tva/100;
-            item.prixTTC = item.prixBRUT + item.prixTVA;
-            $scope.data.ttc += item.prixTTC;
-            $scope.data.items.push(item);
+            $state.transitionTo(position.previousStep.name, { vendeur: true, chargement: false });
         }
-       promotionsSuccess = addGiftsToCart();
-       window.localStorage["cart"] = JSON.stringify(cart);
-    }
-    if(cart != null && typeof cart.mission != "undefined" && cart.mission != null)
-    {
-        Missions.getMission(cart.mission).then(
-        function(mission){
-            console.log(mission);
-            $scope.data.client = mission.client_id;
-        });
-    }
-    $scope.choice = {
-        id: 0,
-        details : []
     };
-
-    function getMaxDelayRemise(array)
-    {
-        var max = array[0].max;
-        console.log(array);
-        for(var j = array.length - 1 ; j >= 0 ; j--)
-        {
-            for(var k = 1 ;  k < j ; k++)
-            {
-                var first = array[k-1];
-                var second = array[k];
-                if(first.max > second.max)
-                {
-                    max = first.max;
-                }
-            }
-        }
-        return max;
-    }
-    $scope.modalities = false;
     
-    ModePaiement.getAll().then(
-    function(success){
-        console.log(success);
-        payments = success;
-        angular.forEach(success, function(payment){
-            payment.remises = JSON.parse(payment.remises);
-            console.log(payment);
-            $scope.paymentMethods.push(payment);
-        });
-    }, 
-    function(error){    
-        console.log(error);
-    });
-    $scope.paymentDate = new Date();
-    $scope.currentMethod;
-    $scope.currentDiscount = 0;
+    
     $scope.openDatePicker = function()
     {
         $cordovaDatePicker.show({
@@ -2301,438 +2650,38 @@ angular.module('starter.controllers', ['starter.services'])
 
         }).then(function(date){
             $scope.paymentDate = date;
-            countDiscount($scope.currentMethod.remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
+            countDiscount($scope.choosenMethod, date);
         });
     };
-    $scope.change = function(id)
+    function countDiscount(method, date)
     {
-        for(var i = 0 ; i < payments.length ; i++)
-        {
-            if(payments[i].id == id)
-            {
-
-                $scope.currentMethod = payments[i];
-                if(typeof(payments[i].remises) != "undefined" && payments[i].remises != null && payments[i].remises.length > 0)
-                    {
-                        countDiscount(payments[i].remises, ($scope.paymentDate.getTime() - new Date(new Date().setHours(0,0,0,0)).getTime())/(24*60*60*1000));
-                    }
-                    else
-                    {
-                        $scope.currentDiscount = 0.7;
-                    }
-            }
-            
-        }
-        $scope.details = [];
-    }
-    function countDiscount(discounts, difference)
-    {
-        console.log(discounts);
-        difference = difference < 0 ? -1*difference : difference;
-        $scope.currentDiscount = 0;
-        for(var i = 0 ; i < discounts.length ; i++)
-        {
-            if(difference >= discounts[i].min && difference < discounts[i].max)
-            {
-                $scope.currentDiscount = discounts[i].remise;
-                break;
-            }
-        }
-    }
-    var payments = [];
-    $scope.paymentMethods = [];
-    
-    function addGiftsToCart()
-    {
-        cleanCart();
-        var cart = JSON.parse(window.localStorage['cart']);
-        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-        var promotionsIds = [];
-        for(var i = 0 ; i < promotions.length ; i++)
-        {
-            var promotion = promotions[i];
-            if(promotion.consumed)
-            {
-                promotionsIds.push(promotion.id);
-                if(promotion.gratuites != null && promotion.gratuites.length > 0)
-                {
-                    console.log(i)
-                    var cumule = (promotion.cumule != null && typeof(promotion.cumule) != "undefined") ? promotion.cumule : 1;
-                    console.log(cumule);
-                    for(var j = 0 ; j < promotion.gratuites.length ; j++)
-                    {
-                        var gratuite = promotion.gratuites[j];
-                        var trueItem = {
-                            id : gratuite.id,
-                            id_db : gratuite.id,
-                            nomArticle : gratuite.designation,
-                            unit : gratuite.qty*cumule,
-                            packet : 0,
-                            prixVente : 0,
-                            promo : true,
-                            remise : 0
-                        };
-                        $scope.data.items.push(trueItem);
-                        window.localStorage['gratuites'] = JSON.stringify(promotions);
-                    }
-                }
-            }
-
-        }
-        console.log(promotionsIds);
-        return promotionsIds;
-    }
-    function cleanCart()
-    {
-        var cartItems = angular.copy($scope.data.items);
-        for(var i = cartItems.length - 1 ; i >= 0; i--)
-        {
-            var cartItem = cartItems[i];
-            if(cartItem.prixVente == 0)
-            {
-                $scope.data.items.splice(i, 1);
-            }
-        }
-    }
-    function refreshTotalBill()
-    {
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        $scope.totalBill = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
-        {
-            var noTva = (((cart.items[i].packet*cart.items[i].unitConversion)+(cart.items[i].unit))*(cart.items[i].prixVente));
-            if(cart.items[i].tva != null && cart.items[i].tva > 0)
-            {
-                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
-            }
-            else
-            {
-                $scope.totalBill+=noTva;
-            }
-            
-        }
-        cart = null;
-
-    }
-    refreshTotalBill();
-    var missionDB = true;
-    $scope.pay = function(){
-        var count = countAndCheckGPGS();
-        $scope.sbdShow = false;
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        var mission = JSON.parse(window.localStorage['mission'] || '{}');
-        mission.exitDate = Date.now();
-        mission.state = true;
-        if(cart.mission == null || typeof mission.id_mission == "undefined")
-        {
-            missionDB = false;
-            Missions.addLocalMission(mission).then(
-                function(success){
-                    var cart = JSON.parse(window.localStorage['cart'] || '{}');
-                    var mission = JSON.parse(window.localStorage['mission'] || '{}');
-                    cart.mission = success;
-                    mission.id_mission = success;
-                    window.localStorage['cart'] = JSON.stringify(cart);
-                    window.localStorage['mission'] = JSON.stringify(mission);
-                    addCommande(cart.mission, mission.client_id, count, promotionsSuccess, $scope.paymentDate.getTime(), $scope.currentDiscount, $scope.currentMethod.id);
-                }, 
-                function(error){
-                    console.log(error);
-                });
-        }
-        else
-        {
-            addCommande(cart.mission, mission.client_id,  count, promotionsSuccess, $scope.paymentDate.getTime(), $scope.currentDiscount, $scope.currentMethod.id);
-        }      
-        
-    };
-
-    function countAndCheckGPGS()
-    {
-        console.log("countAndCheckGPGS");
-        var sbds = JSON.parse(window.localStorage['sbd']);
-        var count = 0;
-        for(var i=0;i<sbds.length;i++)
-        {
-            var min = sbds[i].min;
-            var current = 0;
-            for(var j=0;j<sbds[i].articles.length;j++)
-            {
-                current+=sbds[i].articles[j].qty;
-            }
-            if(current>=min)
-            {
-                count+=1;
-            }
-        }
-        if(count > 0)
-        {
-            var profile = JSON.parse(window.localStorage['profile']);
-            var mission = JSON.parse(window.localStorage['mission']);
-            Accounts.addGoldenPoints(profile.id_db, count).then(
-                function(success){
-                    console.log(success);
-                    profile.golden_stores = profile.golden_stores + count;
-                }, 
-                function(error){
-                    console.log(error);
-                });
-            Clients.addGoldenStore(mission.client_id, count).then(
-                function(success){
-                    if(Boolean(success))
-                    {
-                        $ionicPopup.alert({
-                            title: "Bravo Mr. "+mission.nom+" "+mission.prenom+" !",
-                            buttons: [
-                                {
-                                    text: "OK",
-                                    type: "button-assertive",
-                                    cssClass: "assertive-survey"
-                                }
-                            ],
-                            template: '<span style="font-size: 12px; font-weight: 600;">Vous avez atteint votre objectif GOLDEN STORE !</span>'
-                        });
-                    }
-                    else
-                    {
-                        console.log("PAS ENCORE");
-                    }
-                }, 
-                function(error){
-                    console.log(error);
-                });
-        }
-        return count;
-    }
-
-    function addCommande(mission_id, client_id, sbds, promotions, paymentDate, currentDiscount, currentMethod)
-    {
-        console.log(promotions);
-        console.log(sbds);
-        var finalCart = JSON.parse(window.localStorage['cart'] || '[]');
-        var scopeItems = $scope.data.items;
-        for(var i = 0 ; i < scopeItems.length ; i++)
-        {
-            var scopeItem = scopeItems[i];
-            if(scopeItem.prixVente == 0)
-            {
-                finalCart.items.push(scopeItem);
-            }
-        }
-        var code_commande = "CM"+Date.now();
-        Commandes.addCommande(code_commande, mission_id, client_id, sbds, promotions, paymentDate, currentDiscount, currentMethod).then(
-            function(success){
-                console.log(success);
-                
-                if(success.insertId != null && typeof(success.insertId) != "undefined")
-                {
-                    var commande_id = success.insertId;
-                    var items = finalCart.items;
-                    if(typeof commande_id === "number")
-                    {
-
-                        angular.forEach(items, function(item){
-
-
-
-                            var ligneCommande = {
-                                nomArticle : item.nomArticle,
-                                prixVente : item.prixVente,
-                                packet : item.packet,
-                                unit : item.unit,
-                                id : item.id_db,
-                                isGift: item.prixVente == 0 ? 1 : 0,
-                                remise : item.remise > 0 ? item.remise : 0
-                            };
-                            console.log(ligneCommande)
-
-                            LigneCommandes.addLigneCommande(ligneCommande, commande_id).then(
-                                function(success){
-                                    console.log(success);
-                                },
-                                function(error){
-                                    console.log(error.message);
-                                });
-                        });
-
-                        console.log("ABOUT TO UPDATE MISSION WITH ID : "+mission_id+", AND INJECT COMMANDE : "+commande_id+" TO IT !");
-                        var m = JSON.parse(window.localStorage['mission']);
-                        if(missionDB)
-                        {
-                            console.log("THIS IS A MISSION FROM API");
-                            Missions.setMissionToSucceed(mission_id, commande_id, m.entryDate, Date.now()).then(
-                            function(success){
-                                console.log(success);
-                            }, 
-                            function(error){
-                                console.log(error);
-                            });
-                        }
-                        else
-                        {
-                            console.log("THIS IS A MISSION FROM PHONE");
-                            Missions.setMissionToSucceedLocal(mission_id, commande_id).then(
-                            function(success){
-                                console.log(success);
-                            }, 
-                            function(error){
-                                console.log(error);
-                            });
-                        }
-                    }
-                    $scope.canFinish = false
-                    var mission = JSON.parse(window.localStorage['mission']);
-                    mission.done = true;
-                    window.localStorage['mission'] = JSON.stringify(mission);
-                    if(!position.hasNext)
-                    {
-                        window.localStorage.removeItem('cart');
-                        window.localStorage.removeItem('sbd');
-                        window.localStorage.removeItem('promotions');
-                        window.localStorage.removeItem('marques');
-                        window.localStorage.removeItem('mission');
-                        window.localStorage.removeItem('done');
-                        window.localStorage.removeItem('callSteps');
-                        window.localStorage.removeItem('surveys');
-                        window.localStorage.removeItem('gratuites');
-                    }
-                }
-            }, 
-            function(error){
-                console.log(error);
+        ModePaiement.escompte(angular.copy(method), date)
+        .then(
+            function(discount){
+                $scope.currentDiscount = discount;
             });
-        $timeout(
-            function(){
-                if(position.hasNext)
-                {
-                   // $state.transitionTo(position.nextStep.name);
-                }
-                else
-                {
-                   // $state.transitionTo("app.profile");
-                }
-            }, 1000);
     }
 
-    $scope.check = function(){
-        check(angular.copy($scope.data.items));
-        addGiftsToCart();
-    };
-
-    function check(articles){
-                refreshTotalBill();
-                var start = Date.now();
-                //Getting the current items in cart to work with !
-                var currentBasket = JSON.parse(window.localStorage['cart'] || '{}');
-                // Same thing for the Shopper Based Design
-                var sbds = JSON.parse(window.localStorage['sbd']);
-                angular.forEach(articles, function(article)
-                {
-                    console.log(article)
-                        /******************** TAKING ON CONSIDERATION ONLY THE ONES WITH QTY gt 0 *******************/
-                    if((article.packet > 0 || article.unit > 0) && typeof article.promo == "undefined")
-                    {
-                        /******************** STARTING WITH THE SBD ********************/
-                        angular.forEach(sbds, function(sbd){
-                            if(article.groupeSBD != null && article.groupeSBD == sbd.id)
-                                {
-                                    if(sbd.articles != null && sbd.articles.length > 0)
-                                    {
-                                        angular.forEach(sbd.articles, function(innerArticle){
-                                            if(article.id_db == innerArticle.id)
-                                            {
-                                                innerArticle.qty = article.unit+(article.packet*article.unitConversion);        
-                                            }
-                                        });
-                                    }
-                                }
-                        });
-                       window.localStorage['sbd'] = JSON.stringify(sbds);
-                       /************************************************************/
-                       
-
-                       /*********************** IF THE CART IS EMPTY WE ADD DIRECTLY THE ARTICLE ***********************/
-                       if(currentBasket.items.length == 0)
-                        {
-                            article.inCart = true;
-                            currentBasket.items.push(article);
-                        }
-                        /*********************** WE'LL SEARCH FOR THE ARTICLE WITH THE SAME ID *************************/
-                        else
-                        {
-                            // FALSE BY DEFAULT !
-                            var found = false;
-                            angular.forEach(currentBasket.items, function(item){
-                                if(item.id_db == article.id_db)
-                                {
-                                    console.log("INCART");
-                                    // ARTICLE FOUND FOR THE CURRENT ITERATION
-                                    found = true;
-                                    if(article.packet > 0)
-                                    {
-                                        // THE DIFFERENCE BETWEEN THE CURRENT AND CART VERSION IS ADDED
-                                        console.log("Article Packet : "+article.packet);
-                                        item.packet=article.packet;
-                                    }
-                                    if(article.unit > 0)
-                                    {
-                                        console.log("Article Units : "+article.unit);
-                                        item.unit=article.unit;
-                                    }
-                                    console.log(item.unit);
-                                    console.log(article.unit);
-                                }
-                            });
-                            window.localStorage['cart'] = JSON.stringify(currentBasket);
-                            if(!found)
-                            {
-                                // NOT FOUND IN CART WE ADD THE ARTICLE TO CART
-                                article.inCart = true;
-                                // PUSHED TO CART
-                                currentBasket.items.push(article);
-                            }
-                                
-                        }
-
-                        /******************************** PROMOTIONS PART ************************************/
-                        var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-                        refreshTotalBill();
-                         for(var i = 0 ; i < promotions.length ; i++)
-                        {
-                            if(promotions[i].type == 'PC')
-                            {
-                                //console.log("Promotion Client FOR YOU !!");
-                                console.log(promotions[i]);
-                                console.log($scope.totalBill);
-                                if(promotions[i].ca <= $scope.totalBill)
-                                {
-                                    
-                                    promotions[i].consumed = true;
-                                   // console.log("CONSOMME");
-
-                                }
-                                else
-                                {
-                                    promotions[i].consumed = false;
-                                    console.log("NON CONSOMME");
-                                }
-                            }
-                        }
-                        window.localStorage['promotions'] = JSON.stringify(promotions);
-
-                        if(article.promotions != null)
-                        {
-                            Promotions.promotionTreatment(article);
-                        }
-                    }
-                });
-                window.localStorage['cart'] = JSON.stringify(currentBasket);
-                refreshTotalBill();
-    }
-
+    
+    
+    
 })
 
-.controller('SurveyCtrl', function($scope, $timeout,position, Surveys, $state, $ionicPopup){
+.controller('SurveyCtrl', function($scope, $timeout,position, CartUtilities, Surveys, $state, $ionicPopup){
+    
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.total = 0;
+
+    cartInitialization();
+
+    function cartInitialization()
+    {
+         CartUtilities.totalCart(true, false, true)
+        .then(function(total){
+            $scope.total = total;
+        });
+    }
+
     $scope.$parent.clearFabs();
     $scope.hasHeaderFabLeft = false;
     $scope.hasHeaderFabRight = false;
@@ -2741,10 +2690,9 @@ angular.module('starter.controllers', ['starter.services'])
             $scope.$parent.showHeader();
         }, 500);
     $scope.isExpanded = true;
-    /*$scope.$parent.setExpanded(false);
-    $scope.$parent.setHeaderFab(false);
-*/
+
     $scope.data = {};
+
     $scope.data.items = JSON.parse(window.localStorage['cart']).items;
     
     /*******************************PROPER TO CALL STEPS*********************************/
@@ -2779,7 +2727,7 @@ angular.module('starter.controllers', ['starter.services'])
          {
             if($scope.hasNext)
                 {
-                    $state.transitionTo(position.nextStep.name);
+                    $state.transitionTo(position.nextStep.name, { vendeur: true, chargement: false });
                 }
             else
             {
@@ -2803,7 +2751,7 @@ angular.module('starter.controllers', ['starter.services'])
                 if($scope.hasNext)
                 {
                     console.log("hasNext!");
-                    $state.transitionTo(position.nextStep.name);
+                    $state.transitionTo(position.nextStep.name, { vendeur: true, chargement: false });
                 }
                 else
                 {
@@ -2844,7 +2792,12 @@ angular.module('starter.controllers', ['starter.services'])
                 window.localStorage['surveys'] =  JSON.stringify({ done: true, surveys: surveys});
                 if($scope.hasNext)
                 {
-                    $state.transitionTo(position.nextStep.name);
+                    if(position.nextStep.name == "app.brands")
+                    {
+                        var profile = JSON.parse(window.localStorage['profile'] || "{}");
+                        var isVendeur = profile.fonction == "vendeur";
+                        $state.transitionTo(position.previousStep.name, { vendeur: isVendeur, chargement: false, prelevement: false });
+                    }
                 }
                 else
                 {
@@ -2867,7 +2820,17 @@ angular.module('starter.controllers', ['starter.services'])
         //$state.transitionTo(position.nextStep.name);
     };
     $scope.previous = function(){
-        $state.transitionTo(position.previousStep.name);
+        if(position.previousStep.name == "app.brands")
+        {
+            var profile = JSON.parse(window.localStorage['profile'] || "{}");
+            var isVendeur = profile.fonction == "vendeur";
+            $state.transitionTo(position.previousStep.name, { vendeur: isVendeur, chargement: false, prelevement: false });
+        }
+        else
+        {
+            $state.transitionTo(position.previousStep.name);
+        }
+        
     };
     /*******************************--------------------*********************************/
     $scope.surveys = [];
@@ -2898,8 +2861,33 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandCtrl', function($scope, $state, $ionicPopup, $stateParams, IonicPopUpUtilities, Articles, ViewController, $ionicLoading){
+.controller('BrandCtrl', function($scope, $log, $state, $ionicPopup, $stateParams, CartUtilities, IonicPopUpUtilities, Articles, ViewController, $ionicLoading){
    
+
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.total = 0;
+
+    cartInitialization();
+
+    function cartInitialization()
+    {
+        $scope.total = CartUtilities.totalCart(true, false, true);
+    }
+
+    var isVendeur = $scope.isVendeur = $stateParams.vendeur && $stateParams.vendeur == "true" ? true : false;
+
+    var prelevement = $scope.prelevement = $stateParams.prelevement == "true" ? true : false;
+
+    var forChargement = $scope.forChargement = $stateParams.chargement && $stateParams.chargement == "true" ? true : false;
+
+    var retour = $scope.retour = $stateParams.retour && $stateParams.retour == "true" ? true : false;
+
+    console.debug(retour);
+    
+    var brand = $scope.brand = typeof($stateParams.name) != "undefined" ? $stateParams.name: "NONE";
+
+    var vendeurId = JSON.parse(window.localStorage['profile'] || "{}").id_db;
+
     window.addEventListener("native.keyboardshow", keyboardShowHandler);
     window.addEventListener("native.keyboardhide", keyboardHideHandler);
     function keyboardShowHandler(e)
@@ -2910,84 +2898,90 @@ angular.module('starter.controllers', ['starter.services'])
     {
         $scope.footerBar = true;
     }
-    var brandName = $stateParams.name;
-
-    $scope.brandName = brandName;
     
     $ionicLoading.show({
                 template: "chargement ..."
             });
     
-    Articles.getArticlesByMarque(brandName).then(
-        function(articles){
-
-            $scope.articles = [];
-
-            var _articles = ViewController.prepare(articles, brandName);
-
-            for(var i = 0 , len = _articles.length ; i < len ; i++)
-            {
-                $scope.articles.push(_articles[i]);
-            }
-
-        }, 
-        function(error){
-            console.log(error);
-        })
-        .finally(function(){
-            $ionicLoading.hide();
-        });
-
-    $scope.change = function(article){
-        ViewController.check(article);
-    };
-    // As the brand has no role in the call steps and is directly linked to the brands steps we only have to
-    // associate it to the brands route
-
-    $scope.back = function(){
-        //Deep copy of the article in the scope !!
-        //To avoid the launch of the watchers !!
-        //&& to not point on them !!
-        var _articles = angular.copy($scope.articles);
-
-        if(!Articles.itemInScopeOutOfQuota(_articles))
-        {
-            $state.transitionTo("app.brands");
-        }
-        else
-        {
-            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
-        }
-        
-    };
-})
-
-.controller('ExclusionsCtrl', function($scope,$state){
-    $scope.ca = 0;
-    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-    $scope.infos = JSON.parse(window.localStorage['profile']);
-    function refreshTotalBill()
+   
+    if(true)
     {
-        var cart = JSON.parse(window.localStorage['cart'] || '{}');
-        $scope.totalBill = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
-        {
-            console.log(cart.items[i]);
-            var noTva = (((cart.items[i].packet*10)+(cart.items[i].unit))*(cart.items[i].prixVente));
-            if(cart.items[i].tva != null && cart.items[i].tva > 0)
+        // add the brand name + true if it is a vendeur profile + true if it is for chargement
+        // + the id of vendeur if it is the current profile !
+        Articles.getArticlesByMarque(brand, isVendeur, forChargement, vendeurId, retour).then(
+            function(articles){
+
+                $log.debug(articles);
+
+                $scope.articles = [];
+                console.debug(prelevement);
+
+                var _articles = ViewController.prepare(articles, brand, forChargement, prelevement, retour);
+
+                for(var i = 0 , len = _articles.length ; i < len ; i++)
+                {
+                    var _article = _articles[i];
+                    if(forChargement)
+                    {
+                        if(_article.demandeUnit > 0 || _article.demandeStock > 0)
+                        {
+                            if(!(_article.unit > 0 || _article.packet > 0))
+                            {
+                                _article.unit = _article.demandeUnit;
+                                _article.packet = _article.demandePacket;
+                                ViewController.check(_article, forChargement, isVendeur);
+                            }
+                        }
+                    }
+                    $scope.articles.push(_article);
+                }
+
+            }, 
+            function(error){
+                console.log(error);
+            })
+            .finally(function(){
+                $ionicLoading.hide();
+            });
+
+        $scope.change = function(article){
+
+            ViewController.check(article, forChargement, isVendeur, prelevement, retour);
+            console.debug(retour);
+            if(!prelevement && !forChargement && !retour)
             {
-                $scope.totalBill+=( (noTva * cart.items[i].tva / 100) + noTva );
+                cartInitialization();
             }
             else
             {
-                $scope.totalBill+=noTva;
+                console.debug("YES NO CART INITIALIZATION !");
             }
             
-        }
-        cart = null;
+        };
+        // As the brand has no role in the call steps and is directly linked to the brands steps we only have to
+        // associate it to the brands route
 
+        $scope.back = function(){
+            //Deep copy of the article in the scope !!
+            //To avoid the launch of the watchers !!
+            //&& to not point on them !!
+            var _articles = angular.copy($scope.articles);
+
+            if(!Articles.itemInScopeOutOfQuota(_articles, isVendeur, prelevement, retour))
+            {
+                $state.transitionTo("app.brands", { vendeur: isVendeur, chargement: forChargement, prelevement: prelevement, retour: retour });
+            }
+            else
+            {
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté !", "Veuillez modifier les quantités."));
+            }
+            
+        };
     }
-    refreshTotalBill();
+})
+
+.controller('ExclusionsCtrl', function($scope,$state){
+    
 })
 
 .controller('RemainingCtrl', function($scope, $state,ViewController, Articles, Promotions, SBD, position){
@@ -3025,7 +3019,7 @@ angular.module('starter.controllers', ['starter.services'])
     function initialize()
     {
         var ids = ViewController.idsRemaining();
-        
+
         Articles.getArticlesInRange(ids).then(
             function(articles){
                 $scope.articles = [];
@@ -3047,8 +3041,34 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandFiveCtrl', function($http, $filter, $scope, $ionicLoading, ViewController, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
-    
+.controller('BrandFiveCtrl', function($http, $filter, $log,  $scope, $cordovaVibration, $ionicLoading, ViewController, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+   
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.total = 0;
+
+    cartInitialization();
+
+    function cartInitialization()
+    {
+        CartUtilities.totalCart(true, false, true)
+        .then(
+            function(success){
+                console.log(success);
+                $scope.total = success;
+        });
+    }
+
+    //THE CALLER INFOS !! (PREVENDEUR - VENDEUR)
+    var infos = JSON.parse(window.localStorage['profile']);
+
+    $scope.infos = infos;
+
+    var isVendeur = typeof(infos.fonction) != "undefined" && infos.fonction == "vendeur";
+
+    // We normally have no chargement for prevendeur || vendeur .
+    var forChargement = false;
+
+    $scope.isVendeur = isVendeur;
 
     $scope.brandFives = [];
 
@@ -3079,23 +3099,30 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
-        if(position.hasNext && !CartUtilities.getOutOfQuota())
+        //$cordovaVibration.vibrate(100);
+        $log.debug(isVendeur);
+        if(position.hasNext && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
             {
-                $state.go(position.nextStep.name);
+
+                //$cordovaVibration.vibrate(100);
+                $state.go(position.nextStep.name, { vendeur: isVendeur, chargement: false });
             }
             else
             {
-                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
             }
     };
     $scope.previous = function(){
-        if(position.hasPrevious && !CartUtilities.getOutOfQuota())
+        //$cordovaVibration.vibrate(100);
+
+        if(position.hasPrevious && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
             {
-                $state.go(position.previousStep.name);
+                //$cordovaVibration.vibrate(100);
+                $state.go(position.previousStep.name, { vendeur: isVendeur, chargement: false });
             }
             else
             {
-                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
             }
     };
 
@@ -3123,13 +3150,13 @@ angular.module('starter.controllers', ['starter.services'])
     //THE SCOPE CONTAINING THE ITEMS !
     $scope.articles = [];
 
-    //THE CALLER INFOS !! (PREVENDEUR - VENDEUR)
-    $scope.infos = JSON.parse(window.localStorage['profile']);
+    
 
     //REAL TIME PROCESS !!
     //ADDING ITEMS TO CART, REMOVING THEM, MODIFY QTYs, PROMOTIONS && SBDs
-    $scope.change = function(article){
-        ViewController.check(article);
+    $scope.change = function(article) {
+        ViewController.check(article, forChargement, isVendeur);
+        cartInitialization();
     };
     
     function refreshBrand(brandName)
@@ -3138,7 +3165,7 @@ angular.module('starter.controllers', ['starter.services'])
                 template: "chargement ..."
             });
     
-        Articles.getArticlesByMarque(brandName).then(
+        Articles.getArticlesByMarque(brandName, isVendeur, forChargement, infos.id_db).then(
             function(articles){
 
                 $scope.articles = [];
@@ -3161,15 +3188,13 @@ angular.module('starter.controllers', ['starter.services'])
     }
 
     
-    function check(article)
-    {
-        Articles.check(article);  
-    }
     
     $scope.backward = function(){
+        //$cordovaVibration.vibrate(100);
 
-        if($scope.back && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
+        if($scope.back && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
         {
+            //
             if($scope.currentStep > 0)
             {
                 $scope.forw = true;
@@ -3192,12 +3217,15 @@ angular.module('starter.controllers', ['starter.services'])
         }
         else
         {
-            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
         }
     };
     $scope.forward = function(){
-        if($scope.forw && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
+        $log.debug(isVendeur);
+        //$cordovaVibration.vibrate(100);
+        if($scope.forw && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
             {
+                
                 if($scope.currentStep < $scope.brandFives.length)
                 {
                     $scope.back = true;
@@ -3219,7 +3247,7 @@ angular.module('starter.controllers', ['starter.services'])
             }
             else
         {
-            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de QUOTA !", "Veuillez modifier les quantités."));
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
         }
     };
 

@@ -1,19 +1,47 @@
 
+
+/*
+
+
+{
+  "alwan": 
+"caCustomisationDTO": {
+"duree": 54,
+"dureeIn": "month",
+"total": "TTC",
+"remise": true
+},
+"pieChartCustomisationDTO": {
+"duree": 93,
+"dureeIn": "day", "month"
+"type": "distinct", "visites"
+},
+"brandFiveCustomisationDTO": {
+"duree": 88,
+"dureeIn": "month", "day"
+"objectif": "client", "CA"
+"ca": false,
+"gp": true,
+"gs": true
+}
+}
+
+*/
 /*myapp
 
 myapp.config(function ($httpProvider) {
     $httpProvider.interceptors.push('httpRequestInterceptor');
 });
-
+455
 */
 var DB_CONFIG = { 
-    name : "new_sales160",
+    name : "new_sales455",
     tables : 
     [
       {
         name : "clients",
-        check_url : "http://192.168.100.140:8082/newsales/rest/vendor/roads/check",
-        synchronize_url : "http://192.168.100.140:8082/newsales/rest/roads/sync/",
+        check_url : "http://197.230.28.154:81/newsales/rest/vendor/roads/check",
+        synchronize_url : "http://197.230.28.154:81/newsales/rest/roads/sync/",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "id_db" , value : "integer unique not null" },
@@ -57,6 +85,18 @@ var DB_CONFIG = {
       },
 
       {
+        name: "chargement_vendeur",
+        columns : [
+          { name : "id", value : "integer primary key autoincrement" },
+          { name : "item_id", value : "integer not null" },
+          { name : "packet", value : "integer" },
+          { name : "unit", value : "integer" },
+          { name : "vendeur_id", value : "integer not null" },
+          { name : "date", value : "date not null"}
+        ]
+      },
+
+      {
         name: "quota_vendeur",
         columns: [
           { name : "id", value : "integer primary key" },
@@ -71,13 +111,14 @@ var DB_CONFIG = {
 
 
       {
-        name: "stock_livreur",
+        name: "stock",
         columns : [
           { name : "id" , value : "integer primary key autoincrement" },
           { name : "packet", value : "long not null" },
           { name : "unit", value : "long not null"},
           { name : "item", value : "long not null"},
-          { name : "livreur_id", value : "long not null"},
+          { name : "employee_id", value : "long not null"},
+          { name : "client_id", value : "long not null"},
           { name : "FOREIGN KEY(item)", value : "REFERENCES articles(id_db)"}
                   ]
       },
@@ -361,7 +402,20 @@ var DB_CONFIG = {
           { name : "conditionning_unit", value : "text"},
           { name : "melange", value : "boolean"}
                   ]
-      },
+        },
+
+        {
+          name : "promotion_palier",
+          columns : [
+            { name : "id" , value : "integer primary key autoincrement" },
+            { name : "id_promotion" , value : "integer not null" },
+            { name : "montant", value: "double" },
+            { name : "remise", value: "double" },
+            { name : "qte", value: "integer" },
+            { name : "cummulable", value: "integer" },
+            { name : "max", value: "integer" }
+                    ]
+        },
 
 
        {
@@ -408,7 +462,7 @@ var DB_CONFIG = {
           { name : "promotion_gratuite_id" , value : "integer" },
           { name : "article_id" , value : "integer" },
           { name : "qte", value : "integer" },
-          { name : "groupe", value : "text"},
+          { name : "groupe", value : "integer"},
           { name : "FOREIGN KEY(promotion_gratuite_id)", value : "REFERENCES promotion_gratuite(id)"},
           { name : "FOREIGN KEY(article_id)", value : "REFERENCES articles(id_db)"}
                   ]
@@ -487,19 +541,34 @@ var DB_CONFIG = {
 angular.module('starter.services', ['ngCordova'])
 
 .filter('backgroundSBD', function(Articles, SBD){
-  return function(input){
+  return function(input, isVendeur, prelevement, retour){
+    prelevement = (typeof(prelevement) != "undefined") && (prelevement == true);
 
-    if(input.quotaQTY > 0 || input.quotaVALUE > 0)
+    if(!prelevement && !retour)
     {
-      if(Articles.outOfQuota(input))
+      if(input.quotaQTY > 0 || input.quotaVALUE > 0)
       {
-        return "#DAA9A9";
+        if(Articles.outOfQuota(input) || ( isVendeur && Articles.outOfStock(input) ) )
+        {
+          return "#FFCDD2";
+        }
+        else
+        {
+          if(input.groupeSBD != null && !SBD.sbdConsumed(input.groupeSBD))
+          {
+            return '#90CAF9';
+          }
+          else
+          {
+            return 'transparent';
+          }
+        }
       }
       else
       {
-        if(input.groupeSBD != null && !SBD.sbdConsumed(input.groupeSBD))
+        if(typeof(input.groupeSBD) != "undefined" && input.groupeSBD != null && input.groupeSBD != "" && !SBD.sbdConsumed(input.groupeSBD))
         {
-          return '#42A5F5';
+          return '#90CAF9';
         }
         else
         {
@@ -509,14 +578,7 @@ angular.module('starter.services', ['ngCordova'])
     }
     else
     {
-      if(input.groupeSBD != null && !SBD.sbdConsumed(input.groupeSBD))
-      {
-        return '#42A5F5';
-      }
-      else
-      {
-        return 'transparent';
-      }
+      return 'transparent';
     }
 
   };
@@ -536,33 +598,7 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
-.filter('day', function(){
-  return function(input){
-    switch(input)
-    {
-      case 1:
-        return "lundi";
-        break;
-      case 2:
-        return "mardi";
-        break;
-      case 3:
-        return "mercredi";
-        break;
-      case 4:
-        return "jeudi";
-        break;
-      case 5:
-        return "vendredi";
-        break;
-      case 6:
-        return "samedi";
-        break;
-      default:
-        break;
-    }
-  };
-})
+
 
 .filter('fontWeightSBD', function(){
   return function(input){
@@ -583,20 +619,10 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
-.filter('totalBrandFive', function(){
-  return function(brands){
-    var total = 0;
-    angular.forEach(brands, function(brand){
-      total+=brand.somme;
-    });
-    return total;
-  };
-})
-
 .filter('promotionConsumed', function(){
   return function(promotions){
 
-    if(promotions != null && typeof(promotions) != "undefined")
+    if(typeof(promotions) != "undefined" && promotions != null && promotions.length > 0 )
     {
 
       var promotionsMemory = JSON.parse(window.localStorage['promotions'] || '[]');
@@ -677,320 +703,8 @@ angular.module('starter.services', ['ngCordova'])
   };
 })
 
-.filter('filterTTCWithRemise', function(){
-  return function(item){
-    var qty = (item.packet*item.unitConversion) + item.unit;
-    var prixHT = item.prixVente * qty;
-    var prixTTC = prixHT + prixHT*(item.tva/100);
-    if(item.remise != null && item.remise > 0)
-    {
-      var remiseTTC =  prixTTC - prixTTC*(item.remise/100);
-      return remiseTTC;
-    }
-    return prixTTC;
-  };
-})
 
 
-.filter('clientNotNull', function(){
-  return function(input){
-    for(var i = 0; i < input.length ; i++)
-    {
-      if(input[i].client === null)
-      {
-        input.pop(i);
-      }
-    }
-    return input;
-  };
-})
-
-
-.filter('orderLivreur', function(){
-  return function(items)
-  { 
-    var output = [];
-    var outOfStock = [], gifts = [], regular = [];
-    for(var i = 0 ; i < items.length - 1 ; i++)
-    {
-      var item = items[i];
-      var itemStock = (item.packetStock*item.unitConversion) + item.unitStock;
-      var itemCurrentQty = (item.packet*item.unitConversion) + item.unit;
-      if(!Boolean(item.isGift) && itemStock < itemCurrentQty)
-      {
-        outOfStock.push(item);
-      }
-      else if(Boolean(item.isGift))
-      {
-        gifts.push(item);
-      }
-      else
-      {
-        regular.push(item);
-      }
-    }
-    output = output.concat(regular);
-    output = output.concat(gifts);
-    output = output.concat(outOfStock);
-    return output;
-
-  };
-})
-
-.filter('promotionFilter', function(){
-  return function(input){
-    if(input === "PMTF")
-    {
-      return "Promotion Montant Total Fix";
-    }
-    else if(input === "PMTP")
-    {
-      return "Promotion Montant Total Pourcentage";
-    }
-    else if(input === "PPF")
-    {
-      return "Promotion Palier Fix";
-    }
-    else if(input === "PPV")
-    {
-      return "Promotion Palier Variable";
-    }
-    else if(input === "PC")
-    {
-      return "Promotion Client";
-    }
-    else
-    {
-      return "Promotion";
-    }
-  };
-})
-
-.filter('totalClientFacture', function(){
-  return function(lignes){
-    console.log(lignes);
-    var total = 0;
-    for(var i = 0, len = lignes.length ; i < len ; i++)
-    {
-      var ligne = lignes[i];
-      total+=ligne.total;
-    }
-    return total;
-  };
-})
-
-.filter('total', function(){
-  return function(items, param, isLivreur){
-    var total = 0;
-    if(isLivreur)
-    {
-      angular.forEach(JSON.parse(window.localStorage['cart']).items, function(item){
-        var totalStock = (item.packetStock * item.unitConversion) + item.unitStock;
-        var totalItem = (item.packet * item.unitConversion) + item.unit;
-        if(!Boolean(item.isGift) && !(totalItem > totalStock))
-        {
-          var qty = (item.packet*item.unitConversion) + item.unit;
-          var prixHT = item.prixVente * qty;
-          var prixTTC = prixHT + prixHT*(20/100);
-          if(item.remise != null && item.remise > 0)
-          {
-            var remiseTTC =  prixTTC - prixTTC*(item.remise/100);
-            var remiseHT = prixHT - prixHT*(item.remise/100);
-            if(param == "ht")
-            {
-              total+=remiseTTC;
-            }
-            else
-            {
-              total+=remiseTTC;
-            }
-            
-          }
-          else
-          {
-            if(param == "ht")
-            {
-              total+=prixHT;
-            }
-            else
-            {
-              total+=prixTTC;
-            }
-          }
-        }
-      });
-    }
-    else
-    {
-      angular.forEach(JSON.parse(window.localStorage['cart']).items, function(item){
-        if(item.prixVente != 0)
-        {
-          //console.log(item)
-          var qty = (item.packet*item.unitConversion) + item.unit;
-          var prixHT = item.prixVente * qty;
-          var prixTTC = prixHT + prixHT*(20/100);
-          if(param == "ht")
-          {
-            total+=prixHT;
-          }
-          else
-          {
-            total+=prixTTC;
-          }
-          //console.log("qty: "+qty+" prixHT: "+prixHT+" prixTTC: "+prixTTC);
-          /*if(item.remise != null && item.remise > 0)
-          {
-            var remiseTTC =  prixTTC - item.remise;
-            var remiseHT = prixHT - item.remise;
-            console.log("remiseTTC: "+remiseTTC+" remiseHT: "+remiseHT);
-            if(param == "ht")
-            {
-              total+=remiseTTC;
-            }
-            else
-            {
-              total+=remiseTTC;
-            }
-            
-          }
-          else
-          {
-            if(param == "ht")
-            {
-              total+=prixHT;
-            }
-            else
-            {
-              total+=prixTTC;
-            }
-          }*/
-        }
-
-      });
-    }
-    return total;
-  };
-})
-
-.filter('promotion', function()
-{
-  return function(total){
-    var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
-    var amountToReduce = 0;
-    for(var i = 0 ; i < promotions.length ; i++)
-    {
-      var promotion = promotions[i];
-      if(promotion.consumed && promotion.type == "PC" && promotion.remise != null && typeof(promotion.remise) != "undefined")
-      {
-        amountToReduce+=(total*promtion.remise/100);
-      }
-    }
-    return total - amountToReduce;
-  };
-
-})
-
-.filter('stock', function(){
-  return function(item, items)
-  {
-    console.log(item)
-    console.log(items)
-    var totalStock = (item.packetStock * item.unitConversion) + item.unitStock;
-    var totalItem = (item.packet * item.unitConversion) + item.unit;
-    if(!Boolean(item.isGift))
-    {
-      console.log("ELLIGIBLE !");
-      totalStock-=totalItem;
-      var cart = JSON.parse(window.localStorage['cart'] || '{}');
-      var cartItems = cart.items;
-      for(var i = 0 ; i < items.length ; i++)
-      {
-        var scoopItem = items[i];
-        if(scoopItem.id_db == item.id_db && Boolean(item.isGift))
-        {
-          scoopItem.packetStock -= item.packet;
-          scoopItem.unitStock -= item.unit;
-        }
-      }
-      for(var i = 0 ;  i < cartItems.length ; i++)
-      {
-        var cartItem = cartItems[i];
-        if(cartItem.id_db == item.id_db && Boolean(item.isGift))
-        {
-          cartItem.packetStock-=item.packet;
-          cartItem.unitStock-=item.unit;    
-        }
-      }
-      window.localStorage['cart'] = JSON.stringify(cart);
-      return totalStock;
-    }
-    else
-    {
-      return totalStock-totalItem;
-    }
-  };
-})
-
-.filter('remaining', function(){
-  return function(value, param){
-    var finalArticles = [];
-    if(param == "sbd")
-    {
-      finalArticles = [];
-      for(var i = 0 ; i < value.length ; i++)
-      {
-        if(value[i].groupeSBD != null)
-        {
-          finalArticles.push(value[i]);
-        }
-      }
-      return finalArticles;
-    }
-    else if(param == "promotion")
-    {
-      finalArticles = [];
-      for(var i = 0 ; i < value.length ; i++)
-      {
-        if(value[i].promotions != null && value[i].promotions.length > 0)
-        {
-          finalArticles.push(value[i]);
-        }
-      }
-      return finalArticles;
-    }
-    else
-    {
-      return value;
-    }
-  };
-})
-
-.filter('redFilter', function(){
-  return function(item){
-    if(item.stock < ( (item.packet * item.unitConversion) + item.unit) )
-    { 
-      return "#FFAEAE;"
-    }
-    else
-    {
-      return 'transparent;';
-    }
-  };
-})
-
-
-.filter('image', function(){
-  return function(input){
-    if(input == null)
-    {
-      return;
-    }
-    else
-    {
-      return input;
-    }
-  }
-})
 .filter('flag', function(){
   return function(state){
     switch(state)
@@ -1010,24 +724,7 @@ angular.module('starter.services', ['ngCordova'])
     }
   };
 })
-.filter('ht', function(){
-  return function(lignesCommande){
-    var ht = 0;
-    angular.forEach(lignesCommande, function(ligne){
-      ht+=(ligne.pu_ht * ligne.qte);
-    });
-    return ht;
-  };
-})
-.filter('ttc', function(){
-  return function(lignesCommande){
-    var ttc = 0;
-    angular.forEach(lignesCommande, function(ligne){
-      ttc+=(ligne.pu_ttc * ligne.qte);
-    });
-    return ttc;
-  };
-})
+
 .factory('DB', function($q){
   var db = null;
 
@@ -1118,7 +815,7 @@ angular.module('starter.services', ['ngCordova'])
   function sync(id){
     var deferred = $q.defer();
     var requests = [];
-    $http.get("http://192.168.100.140:8082/newsales/rest/livreurs/"+id+"/stocks").then(
+    $http.get("http://197.230.28.154:81/newsales/rest/livreurs/"+id+"/stocks").then(
       function(success){
         console.log(success);
         if(typeof(success.data.content) != "undefined")
@@ -1168,6 +865,7 @@ angular.module('starter.services', ['ngCordova'])
             var profile = JSON.parse(window.localStorage['profile'] || '{}');
             if (typeof(profile.token) != "undefined") {
                 config.headers['Authorization'] = 'Basic ' +profile.token;
+                //config.headers['Authorization'] = 'Basic ampqampqOmxpdnJldXI=';
             }
             //console.log(config)
             return config;
@@ -1184,7 +882,7 @@ angular.module('starter.services', ['ngCordova'])
   function sync()
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/planTarifaire/AllPlanTarifaire",
+      url: "http://197.230.28.154:81/newsales/rest/planTarifaire/AllPlanTarifaire",
       method: "GET"
     };
     return $http(request);
@@ -1288,13 +986,13 @@ angular.module('starter.services', ['ngCordova'])
     var activite = JSON.parse(window.localStorage['profile']).activite;
     var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/activities/"+activite+"/questionnaire/mobile",
+      url: "http://197.230.28.154:81/newsales/rest/activities/"+activite+"/questionnaire/mobile",
       method: "GET"
     };
     var config = {
       timeout: 5000
     };
-    $http.get("http://192.168.100.140:8082/newsales/rest/activities/1/questionnaire/mobile").then(
+    $http.get("http://197.230.28.154:81/newsales/rest/activities/1/questionnaire/mobile").then(
       function(success){  
         console.log(success);
         var surveys = success.data.content || [];
@@ -1409,44 +1107,259 @@ angular.module('starter.services', ['ngCordova'])
         };
         return object;
   }
+
   
 })
 
-.factory("CartUtilities", function(Promotions){
+.factory("CartUtilities", function(Promotions, $log, $q){
   return {
     existInCart : existInCart,
     getOutOfQuota : getOutOfQuota,
     dropFromCart : dropFromCart,
     addToCart : addToCart,
     addOrModify : addOrModify,
+    getCartItems : getCartItems,
+    getGiftsFromObject : getGiftsFromObject,
+    prepareGift : prepareGift,
+    totalCart : totalCart
 
   };
 
-  function existInCart(article)
+  function totalCart(ttc, ht, promotions)
   {
-    var cart = JSON.parse(window.localStorage['cart'] || "{}");
-    for(var i = 0, len = cart.items.length ; i < len ; i++)
-    {
-      var cartItem = cart.items[i];
+    var deferred = $q.defer();
 
-      if(article.id_db == cartItem.id_db)
+    var total = 0;
+    getCartItems().then(function(items){
+
+      angular.forEach(items, function(item, index){
+        // WE ARE NOT COUNTING THE GIFTS !
+        if(item.prixVente > 0)
+        {
+          if(ttc && promotions)
+          {
+            var addon = item.tva - item.remise;
+            total+=addon;
+            console.debug(total);
+          }
+          else if(ttc)
+          {
+            total+=item.tva;
+          }
+          else
+          {
+            total+=item.ht;
+          }
+          
+        }
+        if(index == items.length - 1)
+        {
+          deferred.resolve(total);
+          
+        }
+      });
+    })
+    
+    return deferred.promise;
+    //return total;
+  }
+
+  function getCartItems()
+  {
+    var deferred = $q.defer();
+
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    var items = cart.items || [];
+    var output = [];
+    var input = {};
+    for(var i = 0 , len = items.length ; i < len ; i++)
+    {
+      var item = items[i];
+      if(typeof item == "object")
       {
-        return cartItem;
+        if(typeof(item.promotions) != "undefined" && item.promotions != null && item.promotions.length > 0)
+        {
+          var object = Promotions.cartTreatment(item, input);
+          input = object.gifts;
+          output.push(object.item);
+        }
+        else
+        {
+          item.promotions = [];
+          var object = Promotions.cartTreatment(item, input);
+          output.push(object.item);
+        }
       }
     }
-    return null;
+    console.debug({
+      items : output,
+      gifts : input
+    });
+    var gifts = getGiftsFromObject(input);
+    var gifts = gifts.map(
+      function(a)
+      {
+        return prepareGift(a);
+      });
+    output = output.concat(gifts);
+    deferred.resolve(output);
+    return deferred.promise;
+  }
+
+  function prepareGift(article)
+  {
+    if(Object.prototype.toString.call(article) == "[object Array]")
+    {
+      for(var i = 0 ; i < article.length ; i++)
+      {
+        var subs = article[i];
+        for(var j = 0 ; j < subs.length ; j++)
+        {
+          var sub = subs[j];
+          sub = prepareArticleToBeGift(sub);
+        }
+        if(i == article.length - 1)
+        {
+          return article;
+        }
+      }
+    }
+    else
+    {
+      return prepareArticleToBeGift(article);
+    }
+  }
+
+  function prepareArticleToBeGift(article)
+  {
+
+    article.prixVente = 0;
+    article.nomArticle = article.designation;
+    article.unit = article.qty;
+    article.packet = 0;
+    return article;
+  }
+
+  function getGiftsFromObject(object)
+  {
+    var output = [];
+    var conflicts;
+    for(var key in object)
+    {
+      var gifts = object[key];
+      if(gifts.length > 1)
+      {
+        conflicts = {};
+        for(var i = 0 ; i < gifts.length ; i++)
+        {
+          var gift = gifts[i];
+          conflicts[gift.group] = typeof conflicts[gift.group] != "undefined" ? conflicts[gift.group].concat([gift]) : [gift];
+        }
+        console.debug(conflicts);
+        var conflictKeys = Object.keys(conflicts);
+        if(conflictKeys.length > 1)
+        {
+          var conflictArray = [];
+          for(var conflictKey in conflictKeys)
+          {
+            conflictArray.push(conflicts[conflictKey]);
+          }
+          output.push(conflictArray);
+        }
+        else
+        {
+          output = output.concat(gifts);
+        }
+      } 
+      else
+      {
+        output = output.concat(gifts);
+      }
+    }
+    console.debug(output);
+    return output;
+  }
+
+  function existInCart(article, forChargement, prelevement, retour)
+  {
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
+
+    forChargement = typeof(forChargement) != "undefined" && forChargement == true;
+
+    retour = typeof(retour) != "undefined" && retour == true;
+
+    console.debug(forChargement);
+
+    var _key;
+    if(prelevement || retour)
+    {
+      if(prelevement)
+      {
+        _key = "prelevement";
+      }
+      else
+      {
+        _key = "retour";
+      }
+    }
+    else
+    {
+      _key = "cart";
+    }
+
+    var cart = JSON.parse(window.localStorage[_key] || "{}");
+
+    if(typeof cart.items != "undefined")
+    {
+      for(var i = 0, len = cart.items.length ; i < len ; i++)
+      {
+        var cartItem = cart.items[i];
+
+        if(article.id_db == cartItem.id_db)
+        {
+          return cartItem;
+        }
+      }
+      return null;
+    }
+    else
+    {
+      return null;
+    }
 
   }
 
 
-  function addOrModify(article)
+  function addOrModify(article, chargement, prelevement, retour)
   {
-    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
 
-    if(cart.items.length == 0)
+    retour = typeof(retour) != "undefined" && retour == true;
+
+    chargement = typeof(chargement) != "undefined" && chargement == true;
+
+    var _key;
+    if(prelevement || retour)
     {
-      console.log("EMPTY CART !");
-      addToCart(article);
+      if(prelevement)
+      {
+        _key = "prelevement";
+      }
+      else
+      {
+        _key = "retour";
+      }
+    }
+    else
+    {
+      _key = "cart";
+    }
+
+    var cart = JSON.parse(window.localStorage[_key] || "{}");
+
+    if(typeof cart.items == "undefined" || cart.items.length == 0)
+    {
+      addToCart(article, chargement, prelevement, retour);
     }
     else
     {
@@ -1473,7 +1386,7 @@ angular.module('starter.services', ['ngCordova'])
         cart.items.push(article);
       }
 
-      window.localStorage['cart'] =  JSON.stringify(cart);
+      window.localStorage[_key] =  JSON.stringify(cart);
 
       cart = null;
 
@@ -1481,22 +1394,66 @@ angular.module('starter.services', ['ngCordova'])
 
   }
 
-  function addToCart(article)
+  function addToCart(article, chargement, prelevement, retour)
   {
-    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
 
+    retour = typeof(retour) != "undefined" && retour == true;
+
+    chargement = typeof(chargement) != "undefined" && chargement == true;
+
+    var _key;
+
+    if(prelevement || retour)
+    {
+      if(prelevement)
+      {
+        _key = "prelevement";
+      }
+      else
+      {
+        _key = "retour";
+      }
+    }
+    else
+    {
+      _key = "cart";
+    }
+
+    var cart = JSON.parse(window.localStorage[_key] || "{}");
+    if(typeof cart.items == "undefined")
+    {
+      cart.items = [];
+    }
     console.log(article);
     cart.items.push(article);
 
-    window.localStorage['cart'] =  JSON.stringify(cart);
+    window.localStorage[_key] =  JSON.stringify(cart);
 
     cart = null;
   }
 
-  function dropFromCart(article)
+  function dropFromCart(article, chargement, prelevement, retour)
   {
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
+    var _key;
+    if(prelevement || retour)
+    {
+      if(prelevement)
+      {
+        _key = "prelevement";
+      }
+      else
+      {
+        _key = "retour";
+      }
+    }
+    else
+    {
+      _key = "cart";
+    }
 
-    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    var cart = JSON.parse(window.localStorage[_key] || "{}");
 
     for(var i = cart.items.length - 1 ; i >= 0 ; i--)
     {
@@ -1508,7 +1465,7 @@ angular.module('starter.services', ['ngCordova'])
       }
     }
 
-    window.localStorage['cart'] =  JSON.stringify(cart);
+    window.localStorage[_key] =  JSON.stringify(cart);
 
     cart = null;
 
@@ -1562,6 +1519,253 @@ angular.module('starter.services', ['ngCordova'])
 
 })
 
+.factory("Chargement", function($q, $http, $log, DB, DateUtilities){
+  return {
+
+    addPrelevementClient : addPrelevementClient,
+
+    syncInput : syncInput,
+
+    syncOutput : syncOutput,
+
+    add : add,
+
+    convertLineObjectToOption : convertLineObjectToOption,
+
+    convertLineObjectsToOptions : convertLineObjectsToOptions,
+
+    convertApiLineObjectToOption : convertLineObjectToOption,
+
+    convertApiLineObjectsToOptions : convertLineObjectsToOptions
+
+  };
+
+  function addPrelevementClient(client_id, lines)
+  {
+    var deferred = $q.defer();
+
+    var options = convertLineObjectsToOptions(lines, true);
+    deferred.resolve(options);
+
+    return deferred.promise;
+  }
+
+  function syncInput(vendeurId)
+  {
+
+    var deferred = $q.defer(vendeurId);
+
+    var request = {
+      url: "http://197.230.28.154:81/newsales/rest/vendors/"+vendeurId+"/stocks",
+      method: "GET"
+    };
+
+    $http(request).then(
+      function(success){
+        $log.debug(success);
+        if(typeof(success.data.content) != "undefined" && success.data.content != null )
+        {
+          $log.debug(success.data.content);
+
+          if(typeof(success.data.content.stockArticleDto) != "undefined" && success.data.content.stockArticleDto != null && success.data.content.stockArticleDto.length > 0)
+          {
+            var requests = [];
+            var lines = success.data.content.stockArticleDto;
+            lines = convertApiLineObjectsToOptions(lines);
+            if(lines.length > 0)
+            {
+              requests.push("DELETE FROM stock;");
+              requests.push("INSERT INTO stock (item, packet, unit, employee_id) VALUES "+lines.join(", ")+";");
+            }
+            deferred.resolve(requests);
+            return deferred.promise;
+          }
+          else
+          {
+            deferred.resolve([]);
+            return deferred.promise;
+          }
+        }
+        else
+        {
+          deferred.resolve([]);
+          return deferred.promise;
+        }
+      }, 
+      function(error){
+        deferred.resolve([]);
+      });
+    deferred.resolve([]);
+    return deferred.promise;
+
+  }
+
+  function syncOutput(vendeurID)
+  {
+
+    var deferred = $q.defer();
+
+    DB.query("SELECT item_id as itemID, packet as packet, unit as unite FROM chargement_vendeur WHERE vendeur_id = "+vendeurID+";").then(
+      function(success){
+
+        var demands = DB.fetchAll(success);
+
+        if(!demands.length > 0)
+        {
+          deferred.resolve([]);
+        }
+        else
+        {
+          var request = {
+            method: "POST",
+            url: "http://197.230.28.154:81/newsales/rest/orders/"+vendeurID+"/add-commande",
+            data: {
+              lcsDto: demands
+            }
+          };
+
+          $http(request).then(
+            function(success){
+              deferred.resolve(["DELETE FROM chargement_vendeur WHERE vendeur_id = "+vendeurID+";"]);
+            }, 
+            function(error){
+              deferred.resolve([]);
+            });
+        }
+
+      }, 
+      function(error){
+        $log.error(error);
+        deferred.resolve([]);
+      })
+
+    return deferred.promise;
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function convertApiLineObjectToOption(line, id)
+  {
+    return "("+line.articleID+", "+line.stockPrincipal+", "+line.stockSecondaire+", "+id+")";
+  }
+
+  function convertApiLineObjectsToOptions(lines)
+  {
+    var output = [];
+
+    var profile = JSON.parse(window.localStorage['profile'] || "{}");
+
+    var vendeurId = profile.id_db || 0;
+
+    for(var i = 0, len = lines.length ; i < len ; i++)
+    {
+      var line = lines[i];
+      output.push(convertApiLineObjectToOption(line, vendeurId));
+    }
+    return output;
+  }
+
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function convertLineObjectToOption(line, id, date)
+  {
+    return "("+line.id_db+", "+line.packet+", "+line.unit+", "+id+", '"+date+"')";
+  }
+
+
+  
+
+  function convertLineObjectsToOptions(lines, prelevement)
+  {
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
+
+    var output = [];
+
+    var ids = [];
+
+    var date = DateUtilities.convertLongToYYYYMMDD(new Date());
+
+    var profile = JSON.parse(window.localStorage['profile'] || "{}");
+
+    var vendeurId = profile.id_db || 0;
+
+    if(typeof(lines) != "undefined" && lines.length > 0)
+    {
+      for(var i = 0, len = lines.length ; i < len ; i++)
+      {
+        var line = lines[i];
+
+        ids.push(line.id_db);
+
+        output.push(convertLineObjectToOption(line, (prelevement ? 0 : vendeurId), date));
+      }
+      return { ids: ids, output: output };
+    }
+    else
+    {
+      return { ids: [], output: [] };
+    }
+  }
+
+  function executeQueries(queries)
+  {
+    var deferred = $q.defer();
+
+    for(var i = 0 ; i < queries.length ; i++)
+    {
+      var sql_query = queries[i];
+
+      console.debug(sql_query);
+
+      DB.query(sql_query).then(
+      function(success){
+        console.error(success);
+        deferred.resolve(success);
+      }, 
+      function(error){
+        console.error(error);
+        deferred.reject(error);
+      });
+    }
+
+    return deferred.promise;
+  }
+
+
+  function add()
+  {
+    var deferred = $q.defer();
+    var cart = JSON.parse(window.localStorage['cart'] || "{}");
+    if(typeof cart.items == "undefined" || !cart.items.length > 0)
+    {
+      deferred.reject({ message : "Aucune ligne à ajouter "});
+      return deferred.promise;
+    }
+    else
+    {
+      var profile = JSON.parse(window.localStorage['profile'] || "{}");
+
+      var input = convertLineObjectsToOptions(cart.items);
+
+      var ids = input.ids;
+
+      options = input.output;
+
+      var requests = [];
+
+      requests.push("DELETE FROM chargement_vendeur WHERE vendeur_id = "+profile.id_db+" AND item_id IN ("+ids.join(", ")+");");
+
+      requests.push("INSERT INTO chargement_vendeur(item_id, packet, unit, vendeur_id, date) VALUES "+options.join(", ")+";");
+
+      console.error(requests);
+
+      return executeQueries(requests);
+    }
+  }
+})
+
 .factory("DateUtilities", function(){
 
   return {
@@ -1594,11 +1798,11 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
 
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/itemQuotas/getItemQuotas",
+      url: "http://197.230.28.154:81/newsales/rest/itemQuotas/getItemQuotas",
       method: "GET"
     };
 
-    $http.get("http://192.168.100.140:8082/newsales/rest/itemQuotas/getItemQuotas").then(
+    $http.get("http://197.230.28.154:81/newsales/rest/itemQuotas/getItemQuotas").then(
       function(success){
         var requests = [];
         var addons = [];
@@ -1638,8 +1842,42 @@ angular.module('starter.services', ['ngCordova'])
   return {
     getAll : getAll,
     sync : sync,
-    addToDB : addToDB
+    addToDB : addToDB,
+    escompte : escompte
   };
+
+  function escompte(paymentMethod, date)
+  {
+    console.debug(paymentMethod);
+
+    var deferred = $q.defer();
+
+    var finalDate = date.getTime() - new Date().getTime();
+
+    // IF THE VALUE IS NEGATIVE WE SHOULD SET IT TO 0
+    var days = finalDate <= 0 ? 0 : finalDate / 24*60*60*1000;
+
+    paymentMethod.remises = JSON.parse(paymentMethod.remises || "[]");
+    if( typeof(paymentMethod.remises) != "undefined" && paymentMethod.remises != null && paymentMethod.remises.length > 0)
+    {
+      for(var i = 0 ; i < paymentMethod.remises.length ; i++)
+      {
+        var remise = paymentMethod.remises[i];
+        if(days >= remise.min && days < remise.max)
+        {
+          deferred.resolve(remise.remise);
+          return deferred.promise;
+        }
+      }
+    }
+    else
+    {
+      deferred.resolve(0.7);
+      return deferred.promise;
+    }
+    deferred.resolve(0);
+    return deferred.promise;
+  }
 
   function getAll()
   {
@@ -1707,9 +1945,9 @@ angular.module('starter.services', ['ngCordova'])
     var deferred = $q.defer();
     var request = {
       method: "GET",
-      url: "http://192.168.100.140:8082/newsales/rest/payements"
+      url: "http://197.230.28.154:81/newsales/rest/payements"
     };
-    $http.get("http://192.168.100.140:8082/newsales/rest/payements").then(
+    $http.get("http://197.230.28.154:81/newsales/rest/payements").then(
       function(success){
         deferred.resolve(success.data);
       },
@@ -1720,7 +1958,7 @@ angular.module('starter.services', ['ngCordova'])
   }
 })
 
-.factory("SynchronisationV2", function(DB, $q, $http, PlanTarifaire, UpdateFactory, Quotas, Surveys, Promotions, StockLivreur, Missions, Clients, Routes, CallSteps, ModePaiement, SBD){
+.factory("SynchronisationV2", function(DB, $q, $http, $log, Chargement, PlanTarifaire, UpdateFactory, Quotas, Surveys, Promotions, StockLivreur, Missions, Clients, Routes, CallSteps, ModePaiement, SBD){
 
   return {
     // PRIVATE TO VENDEUR
@@ -1775,7 +2013,7 @@ angular.module('starter.services', ['ngCordova'])
         }
         var request = {
         data: data,
-        url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+idLivreur+"/sync",
+        url: "http://197.230.28.154:81/newsales/rest/livreurs/"+idLivreur+"/sync",
         method: "PUT"
         };
         $http(request).then(
@@ -2087,7 +2325,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://192.168.100.140:8082/newsales/rest/orders/add",
+        url: "http://197.230.28.154:81/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
@@ -2113,7 +2351,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         {
           var request = {
           method: "POST",
-          url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+idLivreur+"/sync/missions",
+          url: "http://197.230.28.154:81/newsales/rest/livreurs/"+idLivreur+"/sync/missions",
           data: finalVisits
           };
           $http(request).then(
@@ -2180,8 +2418,11 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           requests = requests.concat(success[5]);
           requests = requests.concat(success[7]);
           requests = requests.concat(success[8]);
+          requests = requests.concat(success[9]);
+          requests = requests.concat(success[10]);
+          //requests = requests.concat(["INSERT INTO stock(item, packet, unit, employee_id) VALUES (1, 10, 200, 1), (2, 10, 200, 1), (3, 10, 200, 1),(35, 10, 200, 1), (36, 10, 200, 1), (37, 10, 200, 1), (38, 10, 200, 1), (39, 10, 200, 1)"]);
 
-          console.log(object);
+
           gatherSyncData(object, vendeurId).then(
           function(success){ 
             console.log(success);
@@ -2364,24 +2605,39 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function gatherSyncData(syncData, vendeurId)
   {
       var request = {
-        url: "http://192.168.100.140:8082/newsales/rest/vendors/"+vendeurId+"/mobile/synchronisation",
+        url: "http://197.230.28.154:81/newsales/rest/vendors/"+vendeurId+"/mobile/synchronisation",
         method: "POST",
         data: syncData
       };
+      $log.debug(request);
       return $http(request);
   }
   function combineOutputAndInput(vendeurId)
   {
+    $log.debug("Hello")
     var inputData = gatherSyncOutputData(vendeurId);
+
     var outputData = syncCommandes(vendeurId);
+
     var surveys = Surveys.addSurveysToDB();
+
     var methodePaiements = ModePaiement.addToDB();
+
     var promotions = Promotions.syncPromotions();
+
     var callSteps = CallSteps.sync();
+
     var sbds = SBD.syncSBDFromAPI();
+
     var quotas = Quotas.sync(vendeurId);
+
     var planTarifaire = PlanTarifaire.addToDB();
-    return $q.all(new Array(inputData, outputData, surveys, methodePaiements, promotions, callSteps, sbds, quotas, planTarifaire));
+
+    var stockVendeurInput = Chargement.syncInput(vendeurId);
+
+    var stockVendeurOutput = Chargement.syncOutput(vendeurId);
+
+    return $q.all(new Array(inputData, outputData, surveys, methodePaiements, promotions, callSteps, sbds, quotas, planTarifaire, stockVendeurInput, stockVendeurOutput));
   }
   function maxOfEach(idVendeur)
   {
@@ -2617,7 +2873,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
     var deferred = $q.defer();
     var request = {
-      url: 'http://192.168.100.140:8082/newsales/rest/classes/getAllClasseVerboseDTOs',
+      url: 'http://197.230.28.154:81/newsales/rest/classes/getAllClasseVerboseDTOs',
       method: 'GET'
     };
     $http(request).then(
@@ -2793,6 +3049,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                     promotion.inclusions = promotion.inclusions != null ? JSON.parse("["+promotion.inclusions+"]" || "[]") : [];
                     promotion.exclusions = promotion.exclusions != null ? JSON.parse("["+promotion.exclusions+"]" || "[]") : [];
                     promotion.gratuites = promotion.gratuites != null ? JSON.parse(promotion.gratuites || "[]") : [];
+                    promotion.promotion_palier = JSON.parse(promotion.promotion_palier || "[]");
                     promotion.consumed = (promotion.type == "PR") ? true : false;
                     console.log(promotion);
                 });
@@ -3003,7 +3260,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     console.log("we are in ");
     var deferred = $q.defer();
     // DO IT !!!!!!!!!!!!!! "+JSON.parse(window.localStorage["profile"]).activite+"
-    $http.get("http://192.168.100.140:8082/newsales/rest/screens/activities/1/mobile")
+    $http.get("http://197.230.28.154:81/newsales/rest/screens/activities/1/mobile")
     .then(
       function(success){
         console.log(success);
@@ -3051,8 +3308,14 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   function checkForSteps(state_name)
   {
+    console.log("HEEEERE");
     var deferred = $q.defer();
-    var callSteps = JSON.parse(window.localStorage['callSteps']);
+    var callSteps = JSON.parse(window.localStorage['callSteps'] || '[]');
+    if(!callSteps.length > 0)
+    {
+      deferred.resolve({});
+      return deferred.promise;
+    }
     // TO GET INFORMATIONS ABOUT THE LAST STEP !
     var lastStep = { rank: callSteps[0].rank, name: callSteps[0].name, title:  callSteps[0].title };
     // TO GET INFORMATIONS ABOUT THE FIRST STEP !
@@ -3166,7 +3429,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getHighestInApi(_idLivreur)
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
+      url: "http://197.230.28.154:81/newsales/rest/livreurs/"+_idLivreur+"/missions/check",
       method: "GET"
     };
     return $http(request);
@@ -3175,7 +3438,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getAllFromApi(_idLivreur)
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions",
+      url: "http://197.230.28.154:81/newsales/rest/livreurs/"+_idLivreur+"/missions",
       method: "GET"
     };
     return $http(request);
@@ -3185,7 +3448,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getFromAPointApi(_idLivreur, point)
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
+      url: "http://197.230.28.154:81/newsales/rest/livreurs/"+_idLivreur+"/missions/from/"+point,
       method: "GET"
     };
     return $http(request);
@@ -3320,13 +3583,48 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 })
 
-.factory("LigneCommandes", function(DB){
+.factory("LigneCommandes", function(DB, $q){
   return {
     getLigneCommande : getLigneCommande,
     addLigneCommande : addLigneCommande,
     addLigneCommandeLivreur :addLigneCommandeLivreur,
-    pastPurchacedQuantity : pastPurchacedQuantity
+    pastPurchacedQuantity : pastPurchacedQuantity,
+    convertLines : convertLines,
+    convertLine : convertLine,
+    addLinesToDB : addLinesToDB
   };
+
+  function convertLines(commande_id, lines)
+  {
+    var options = [];
+    for(var i = 0, len = lines.length ; i < len ; i++)
+    {
+      var line = lines[i];
+      options.push(convertLine(commande_id, line));
+    }
+    return options;
+  }
+
+  function convertLine(commande_id, line)
+  {
+    return "("+commande_id+", "+(line.id_db || line.id)+", "+line.unit+", "+line.packet+", "+(line.prixVente == 0 ? 1 : 0)+", "+(line.remise || 0)+", "+(line.ht || 0)+")";
+  }
+
+  function addLinesToDB(commande_id, lines)
+  {
+    var deferred = $q.defer();
+
+    var sql_query = "INSERT INTO ligneCommandes(id_commande, id_article, unit, packet, isGift, remise, pu_ht) VALUES "+convertLines(commande_id, lines)+";";
+    return DB.query(sql_query).then(
+      function(success){
+        deferred.resolve(success);
+      }, 
+      function(error){
+        deferred.reject(error);
+      });
+
+    return deferred.promise;
+  }
 
   function addLigneCommande(ligneCommande, _idCommande)
   {
@@ -3406,7 +3704,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       commandesToAPI.push(commandes[i]);
     }
     var request = {
-        url: "http://192.168.100.140:8082/newsales/newsales/rest/orders/add",
+        url: "http://197.230.28.154:81/newsales/newsales/rest/orders/add",
         method: "POST",
         data: commandesToAPI
       };
@@ -3440,11 +3738,17 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       });
   }
 
-  function addCommande(code_commande, id_mission, id_client, sbds, promotions, paymentDate, discount, paymentId){
+  function addCommande(id_mission, lines){
+
+    var missionObject = JSON.parse(window.localStorage['mission'] || "{}");
+
     var sql_query = "INSERT INTO commandes(code_commande, id_mission, id_client, sbd, promotions, paymentDate, remise, paymentId) values(?,?,?,?,?,?,?,?);";
-    var bindings = [code_commande, id_mission, id_client, sbds, promotions.join(","), paymentDate, discount, paymentId];
+    
+    var bindings = ["", id_mission, missionObject.client_id, "", "", "", "", ""];
+    
     return DB.query(sql_query, bindings).then(
       function(success){
+
         return success;
       }, 
       function(error){
@@ -3661,7 +3965,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   {
     var req = {
       method : "PUT",
-      url : "http://192.168.100.140:8082/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
+      url : "http://197.230.28.154:81/newsales/rest/users/login?login="+account.username+"&password="+account.password+"&mobile=1"
     };
     return $http(req);
   }
@@ -3818,13 +4122,13 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           innerId = data.id_db;
           console.log("1179 :"+innerId);
         }
-      $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_id+"/clients/check").then(
+      $http.get("http://197.230.28.154:81/newsales/rest/vendors/"+_id+"/clients/check").then(
         function(data, status, headers){
           var outerId = data.data;
           if(innerId < outerId)
           {
             console.log("some updates are waiting ...");
-            $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
+            $http.get("http://197.230.28.154:81/newsales/rest/vendors/"+_id+"/clients/from/"+innerId).then(
               function(data, status, headers){
                 angular.forEach(data.data, function(client){
                   var object = {};
@@ -3946,7 +4250,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     var deferred = $q.defer();
     var req = {
       method :"GET",
-      url : "http://192.168.100.140:8082/newsales/rest/brandfive"
+      url : "http://197.230.28.154:81/newsales/rest/brandfive"
     };
     return $http(req).then(
       function(brandFive, status, headers){
@@ -3983,12 +4287,21 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     return ids;
   }
 
-  function prepare(articles, brandName)
+  function prepare(articles, brandName, forChargement, prelevement, retour)
   {
+    forChargement = typeof(forChargement) != "undefined" && forChargement == true;
+
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
+
+    retour = typeof(retour) != "undefined" && retour == true;
+
     //ADD BRANDS TO LOCAL STORAGE
-    if(typeof(brandName) != "undefined")
+    if(!forChargement && !prelevement && !retour)
     {
-      Marques.addMarqueToLocalStorage(brandName, articles);
+      if(typeof(brandName) != "undefined")
+      {
+        Marques.addMarqueToLocalStorage(brandName, articles);
+      }
     }
     //INITIALIZE THE LIST OF ITEMS
     var output = [];
@@ -3996,8 +4309,9 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     for(var i = 0, _len = articles.length ; i < _len ; i++)
     {
         var article = articles[i];
+        console.debug(prelevement);
 
-        var cartResult = CartUtilities.existInCart(article);
+        var cartResult = CartUtilities.existInCart(article, forChargement, prelevement, retour);
 
         if(cartResult == null)
         {
@@ -4005,8 +4319,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         }
         else
         {
-
-            article = cartResult;
+          article = cartResult;
         }
 
         output.push(article);
@@ -4014,46 +4327,89 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     return output;
   }
 
-  function check(article)
+  function check(article, forChargement, isVendeur, prelevement, retour)
   {
-    if(!Articles.outOfQuota(article))
+
+    prelevement = ( (typeof(prelevement) != "undefined") && ( prelevement == true ) ) ? true : false;
+
+    retour = ( (typeof(retour) != "undefined") && ( retour == true ) ) ? true : false;
+
+    forChargement = ( (typeof(forChargement) != "undefined") && ( forChargement == true ) ) ? true : false;
+
+    isVendeur = ( (typeof(isVendeur) != "undefined") && (isVendeur == true) ) ? true : false;
+
+    console.debug(retour);
+
+    var condition = isVendeur ? ( Articles.outOfStock(article) || Articles.outOfQuota(article) ) : Articles.outOfQuota(article);
+
+
+    if(!prelevement && !retour)
     {
-        var toDrop = false;
-        if(article.unit == 0 && article.packet == 0)
-        {   
-            toDrop = true;
-            CartUtilities.dropFromCart(article);
-        }
-       
-        // ADD IT TO CART OR UPDATE THE QTYs !!
-       
-        if(!toDrop)
-        {
-            CartUtilities.addOrModify(article); 
-        }
+      if(!condition) 
+      {
+          var toDrop = false;
+          if(article.unit == 0 && article.packet == 0)
+          {   
+              toDrop = true;
+              CartUtilities.dropFromCart(article, forChargement, prelevement, retour);
+          }
+         
+          // ADD IT TO CART OR UPDATE THE QTYs !!
+         
+          if(!toDrop)
+          {
+              CartUtilities.addOrModify(article, forChargement, prelevement, retour); 
+          }
+      }
+      else
+      {
+          CartUtilities.dropFromCart(article, forChargement, prelevement, retour);
+      }
     }
     else
     {
-        CartUtilities.dropFromCart(article);
+      var toDrop = false;
+      if(article.unit == 0 && article.packet == 0)
+      {   
+          toDrop = true;
+          CartUtilities.dropFromCart(article, forChargement, prelevement, retour);
+      }
+     
+      // ADD IT TO CART OR UPDATE THE QTYs !!
+     
+      if(!toDrop)
+      {
+        CartUtilities.addOrModify(article, forChargement, prelevement, retour); 
+      }
     }
 
-    if(article.groupeSBD != null && typeof(article.groupeSBD) != "undefined")
+    if(!forChargement && !prelevement && !retour)
     {
-        SBD.SBDTreatment(article);
-    }
+      Promotions.promotionTreatment(article); 
 
-    Promotions.promotionTreatment(article); 
+      if(article.groupeSBD != null && typeof(article.groupeSBD) != "undefined")
+      {
+        SBD.SBDTreatment(article);
+      }
+    }
+    
+
+    
   }
 
 })
 
-.factory("Articles", function(DB, $q, $http, Marques, Promotions, CartUtilities, DateUtilities, SBD){
+.factory("Articles", function(DB, $q, $http, $log, Marques, Promotions, CartUtilities, DateUtilities, SBD){
   return {
     getArticlesInRange : getArticlesInRange,
     itemInScopeOutOfQuota : itemInScopeOutOfQuota,
     outOfQuota : outOfQuota,
+    outOfStock : outOfStock,
+    getHT : getHT,
+    getTTC : getTTC,
     getArticleQty : getArticleQty,
     prepareForScope : prepareForScope,
+    prepareGift : prepareGift,
     add : add,
     addAll : addAll,
     getArticlesByMarque : getArticlesByMarque,
@@ -4085,14 +4441,34 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 
 
-  function itemInScopeOutOfQuota(scopeDeepCopy)
+  function itemInScopeOutOfQuota(scopeDeepCopy, isVendeur, prelevement, retour)
   {
-    for(var i = 0, len = scopeDeepCopy.length ; i < len ; i++)
+    isVendeur = typeof(isVendeur) != "undefined" && isVendeur == true;
+
+    prelevement = typeof(prelevement) != "undefined" && prelevement == true;
+
+    retour = typeof(retour) != "undefined" && retour == true;
+
+    if(!prelevement && !retour)
     {
-      var article = scopeDeepCopy[i];
-      if(outOfQuota(article))
+      for(var i = 0, len = scopeDeepCopy.length ; i < len ; i++)
       {
-        return true;
+        var article = scopeDeepCopy[i];
+        if(isVendeur)
+        {
+          if(outOfQuota(article) || outOfStock(article))
+          {
+            return true;
+          }
+        } 
+        else
+        {
+          //ONLY QUOTA !!
+          if(outOfQuota(article))
+          {
+            return true;
+          }
+        }
       }
     }
     return false;
@@ -4111,26 +4487,81 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     return Math.round(article.packet + (article.unit / article.unitConversion));
   }
 
+  function outOfStock(article)
+  {
+    if(article.unit > 0 || article.packet > 0)
+    {
+      if(article.unitStock > 0 || article.packetStock > 0)
+      {
+        if(article.uniteMesure == "CS")
+        {
+          return totalCs(article) > article.stock;
+        }
+        else
+        {
+          var totalUnit = article.unit + article.packet * article.unitConversion;
+          return totalUnit > article.stock;
+        }
+      }
+      else
+      {
+        return false;
+      }
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   function outOfQuota(article)
   {
     var outOfQuota = false;
     if(article.quotaQTY > 0 || article.quotaVALUE > 0)
     {
-      if(convertQuotaValueToCs(article) < totalCs(article))
-      {
-        outOfQuota = true;
-        return outOfQuota;
-      }
+      return convertQuotaValueToCs(article) < totalCs(article);
     }
     else
     {
-      return outOfQuota;
+      return false;
     }
   }
 
+
   function getArticleQty(article)
   {
-    return ( (article.packet*article.unitConversion) + article.unit );
+    if(article.uniteMesure == "CS")
+    {
+      return Math.trunc((article.unit / article.unitConversion) + article.packet);
+    }
+    else
+    {
+      return (article.packet*article.unitConversion) + article.unit ;
+    }
+  }
+
+  function getHT(article)
+  {
+    var qty = getArticleQty(article);
+    return qty.article.prixVente;
+  }
+
+  function getTTC(article)
+  {
+    if(typeof(article.tva) != "undefined" && article.tva != null && article.tva > 0)
+    {
+      return getHT(article) * (article.tva/100);
+    }
+    else
+    {
+      return null;
+    }
+  }
+  function prepareGift(article)
+  {
+    article.prixVente = 0;
+    article.nomArticle = article.designation;
+    return article;
   }
   function prepareForScope(article)
   {
@@ -4139,6 +4570,26 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     article.unit = 0;
 
     article.done = article.groupeSBD == null ? true : false;
+
+    console.log("preparing ..");
+
+    if( article.unitStock > 0 || article.packetStock > 0 )
+    {
+      if(article.uniteMesure == "CS")
+      {
+        article.stock = article.packetStock + Math.trunc ( (article.unitStock / article.unitConversion) );
+        console.log(article.stock);
+      }
+      else
+      {
+        article.stock = article.unitStock + ( article.packetStock*article.unitConversion );
+        console.log(article.stock);
+      }
+    }
+    else
+    {
+      article.stock = 0;
+    }
 
     if(article.promotions != null)
     {
@@ -4164,7 +4615,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function syncAllArticles()
   {
     var params = {
-      url: "http://192.168.100.140:8082/newsales/rest/items",
+      url: "http://197.230.28.154:81/newsales/rest/items",
       method: "GET"
     };
     $http(params).then(
@@ -4195,7 +4646,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
           console.log("BASE DE DONNEE NON VIDE  !!");
           highestIDDB = success.id_db;
           var request = {
-            url: "http://192.168.100.140:8082/newsales/rest/items/sync",
+            url: "http://197.230.28.154:81/newsales/rest/items/sync",
             method: 'GET'
           };
 
@@ -4225,7 +4676,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function syncArticlesFrom(_id)
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/items/from/"+_id,
+      url: "http://197.230.28.154:81/newsales/rest/items/from/"+_id,
       method: 'GET'
     };
     $http(request).then(
@@ -4273,13 +4724,29 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     });
   }
 
-  function getMarques(exclusion)
+  function getMarques(exclusion, isVendeur, forChargement)
   {
-    if(typeof(exclusion) == "undefined")
+    forChargement = ( typeof(forChargement) != "undefined" && forChargement ) ? true : false;
+
+    isVendeur = ( typeof(isVendeur) != "undefined" && isVendeur ) ? true : false;
+
+    exclusion = typeof(exclusion) == "undefined" ? [] : exclusion;
+
+    var sql_query;
+
+    // All the current conditions are setted 0-0 1-0 1-1
+
+    // Except 0-1
+
+    if( (!isVendeur && !forChargement) || (isVendeur && forChargement) )
     {
-      exclusion = [];
+      sql_query = "SELECT * FROM marque WHERE id NOT IN ("+exclusion.join(", ")+");";
     }
-    return DB.query("SELECT * FROM marque WHERE id NOT IN ("+exclusion.join(", ")+")").then(
+    if(isVendeur && !forChargement)
+    {
+      sql_query = "SELECT * FROM marque WHERE id NOT IN ("+exclusion.join(", ")+");";
+    }
+    return DB.query(sql_query).then(
       function(marques){
         return DB.fetchAll(marques);
       }, 
@@ -4315,33 +4782,56 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   
 
-  function getArticlesByMarque(marque){
-    var deferred = $q.defer();
-    if(typeof window.localStorage['marques'] != "undefined" && typeof JSON.parse(window.localStorage['marques'])[marque] != "undefined" && typeof JSON.parse(window.localStorage['marques'])[marque].length > 0)
+  function getArticlesByMarque(marque, isVendeur, forChargement, vendeurId){
+
+    vendeurId = typeof(vendeurId) != "undefined" ? vendeurId : 0;
+
+    isVendeur = isVendeur ? isVendeur : false;
+
+    forChargement = forChargement ? forChargement : false;
+
+    var todayDate = DateUtilities.convertLongToYYYYMMDD(new Date());
+
+    var bindings = [];
+
+    var sql_query = "";
+
+    
+    if(!forChargement && typeof window.localStorage['marques'] != "undefined" && typeof JSON.parse(window.localStorage['marques'])[marque] != "undefined" && typeof JSON.parse(window.localStorage['marques'])[marque].length > 0)
     {
+      var deferred = $q.defer();
       var marques = JSON.parse(window.localStorage['marques']);
-      console.log("FROM CACHE");
       deferred.resolve(marques[marque]);
+      return deferred.promise;
+    }
+    else if(isVendeur && forChargement)
+    {
+      console.debug("Heeeere !!");
+      sql_query = 'SELECT length(Group_Concat(ifnull(GSBD.id_db, "")) ||","||Group_Concat(ifnull(P.id_db, ""))) as length, ifnull(CV.unit, 0) as demandeUnit, ifnull(CV.packet, 0) as demandePacket, ifnull(ST.unit, 0) as unitStock, ifnull(ST.packet, 0) as packetStock, ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as "prixVente", A.id AS "id", A.id_db AS "id_db", A.nomArticle AS "nomArticle", A.unitConversion, A.uniteMesure, A.tva, ifnull(Group_Concat(DISTINCT P.id_db), "") AS "promotions", ifnull(GSBD.id_db, "") AS "groupeSBD" FROM articles AS A LEFT JOIN chargement_vendeur as CV ON CV.item_id = A.id_db AND CV.vendeur_id = ? LEFT JOIN stock AS ST ON ST.item = A.id_db AND ST.employee_id = ? LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db ORDER BY length(groupeSBD) DESC;';
+      bindings = [vendeurId, vendeurId, todayDate, marque];
+    }
+    else if(isVendeur)
+    {
+      //"GET ALL ALSO WITH QUOTA !!"
+      console.log("vendeur with quota");
+      sql_query = 'SELECT length(Group_Concat(ifnull(GSBD.id_db, "")) ||","||Group_Concat(ifnull(P.id_db, ""))) as length, ifnull(ST.unit, 0) as unitStock, ifnull(ST.packet, 0) as packetStock, ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as "prixVente", A.id AS "id", A.id_db AS "id_db", A.nomArticle AS "nomArticle", A.unitConversion, A.uniteMesure, A.tva, ifnull(Group_Concat(DISTINCT P.id_db), "") AS "promotions", ifnull(GSBD.id_db, "") AS "groupeSBD" FROM articles AS A LEFT JOIN stock AS ST ON ST.item = A.id_db AND ST.employee_id = ? LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db ORDER BY length(groupeSBD) DESC;';
+      bindings = [vendeurId, todayDate, marque];
     }
     else
     {
-      var todayDate = new Date();
-      var yyyy = (todayDate.getFullYear()).toString();
-      var mm = (todayDate.getMonth()+1).toString();
-      var dd = (todayDate.getDate()).toString();
-      var todayDate = yyyy+"-"+(mm[1]?mm:"0"+mm[0])+"-"+(dd[1]?dd:"0"+dd[0]);
-
-      var sql_query = "SELECT ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as 'prixVente', A.id AS 'id', A.id_db AS 'id_db', A.nomArticle AS 'nomArticle', A.unitConversion, A.uniteMesure, A.tva, Group_Concat(DISTINCT P.id_db) AS 'promotions', GSBD.id_db AS 'groupeSBD' FROM articles AS A LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db";
-      var bindings = [todayDate, marque];
-      return DB.query(sql_query, bindings).then(
-        function(articles){
-          return DB.fetchAll(articles);
-        }, 
-        function(error){
-          return error;
-        });
+      sql_query = 'SELECT length(Group_Concat(ifnull(GSBD.id_db, "")) ||","||Group_Concat(ifnull(P.id_db, ""))) as length, ifnull(QV.qty, 0) as quotaQTY, ifnull(QV.value, 0) as quotaVALUE , ifnull(PT.prixArticle, A.prixVente) as "prixVente", A.id AS "id", A.id_db AS "id_db", A.nomArticle AS "nomArticle", A.unitConversion, A.uniteMesure, A.tva, ifnull(Group_Concat(DISTINCT P.id_db), "") AS "promotions", ifnull(GSBD.id_db, "") AS "groupeSBD" FROM articles AS A LEFT JOIN quota_vendeur AS QV ON QV.itemId = A.id_db LEFT JOIN plan_tarifaire AS PT ON PT.itemId = A.id_db AND ? BETWEEN PT.startDate AND PT.endDate LEFT JOIN promotion_article AS PA ON PA.article_id = A.id_db LEFT JOIN promotions AS P ON P.id_db = PA.promotion_id LEFT JOIN article_sbd AS ASBD ON ASBD.id_article = A.id_db LEFT JOIN groupes_sbd AS GSBD ON GSBD.id_db = ASBD.id_groupe_sbd WHERE A.marqueArticle = ? GROUP BY A.id_db ORDER BY length(groupeSBD) DESC;';
+      bindings = [todayDate, marque];
     }
-    return deferred.promise;
+
+    return DB.query(sql_query, bindings).then(
+      function(articles){
+        $log.debug(articles);
+        return DB.fetchAll(articles);
+      }, 
+      function(error){
+        $log.error(error);
+        return error;
+      });
 
   }
 
@@ -4425,7 +4915,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
     var marques = JSON.parse(window.localStorage['marques'] || '{}');
 
-    if(articles.length > 0 && typeof marques[brandName] == 'undefined')
+    if(typeof marques[brandName] == 'undefined')
     {
         marques[brandName] = articles;
         window.localStorage['marques'] = JSON.stringify(marques);
@@ -4520,7 +5010,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 })
 
-.factory("Missions", function(DB, $q, $http, PrinterService){
+.factory("Missions", function(DB, $q, $http, $log, DateUtilities, PrinterService, LigneCommandes){
   return {
     getAllMissions : getAllMissions,
     getMission : getMission,
@@ -4549,10 +5039,101 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     getNonSyncedLivredMissions : getNonSyncedLivredMissions,
     setMissionLivredInAPI : setMissionLivredInAPI,
     setMissionToSynced : setMissionToSynced,
-    missionFinishForLivreur : missionFinishForLivreur
+    missionFinishForLivreur : missionFinishForLivreur,
+    checkOut : checkOut
 
 
   };
+
+  function addLocalMission(mission)
+  {
+    var todayDate = DateUtilities.convertLongToYYYYMMDD(new Date());
+    var sql_query = "INSERT INTO missions(client_id, route_id, date_start, state, finished, problem, synced, local) values(?,?,?,?,?,?,?,?)";
+    var bindings = [mission.client_id, mission.route_id, todayDate, 1, 0, 0, 0, 1];
+    return DB.query(sql_query, bindings).then(
+      function(mission){
+        return mission;
+      }, 
+      function(error){
+        return error;
+      });
+  }
+
+  function updateIdCommandeForMission(idMission, idCommande, isLocal)
+  {
+    DB.query("UPDATE missions set commande_id = "+idCommande+",state = "+1+" WHERE id = "+idMission+";").then(
+      function(success){
+        $log.debug(success);
+      }, 
+      function(error){
+        $log.error(error);
+      });
+  }
+
+  function checkOut(missionId, lines, isLocal, paymentId, paymentDate)
+  {
+    console.log(missionId);
+
+    console.log(lines);
+
+    console.log(isLocal);
+
+    var deferred = $q.defer();
+
+    var todayDate = DateUtilities.convertLongToYYYYMMDD(new Date());
+
+    var missionObject = JSON.parse(window.localStorage['mission'] || "{}");
+
+    if(isLocal)
+    {
+      console.log("isLocal");
+      var sql_query = "INSERT INTO missions(client_id, route_id, date_start, state, finished, problem, synced, local) values(?,?,?,?,?,?,?,?)";
+      var bindings = [missionObject.client_id, missionObject.route_id, todayDate, 1, 0, 0, 0, 1];
+      DB.query(sql_query, bindings).then(
+        function(mission){
+          if(mission.insertId)
+          {
+            var id_mission = mission.insertId;
+            deferred.resolve(addCommande(id_mission, lines, true, paymentId, paymentDate));
+          }
+        }, 
+        function(error){
+          deferred.reject(error);
+        });
+    }
+    else
+    {
+      console.log("isNotLocal");
+      deferred.resolve(addCommande(missionId, lines, false, paymentId, paymentDate));
+    }
+    return deferred.promise;
+  }
+
+  function addCommande(id_mission, lines, isLocal, paymentId, paymentDate)
+  {
+    var deferred = $q.defer();
+    var missionObject = JSON.parse(window.localStorage['mission'] || "{}");
+    DB.query( 
+      "INSERT INTO commandes(code_commande, id_mission, id_client, sbd, promotions, paymentDate, remise, paymentId) values(?,?,?,?,?,?,?,?);",
+       [("CE"+new Date().getTime()), id_mission, missionObject.client_id, "", "", paymentDate.getTime(), "", paymentId]).then(
+    function(commande){
+      if(commande.insertId)
+      {
+        var commande_id = commande.insertId;
+        // Updating the id of the commande !!
+        // Get the commande from the mission !!
+
+        updateIdCommandeForMission(id_mission, commande_id, isLocal);
+
+        deferred.resolve(LigneCommandes.addLinesToDB(commande_id, lines));
+      }
+    }, 
+    function(error){
+      deferred.reject(error);
+    });
+
+    return deferred.promise;
+  }
 
   function missionFinishForLivreur(array)
   {
@@ -4624,7 +5205,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function setMissionLivredInAPI(id)
   {
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/livreurs/sync/"+id,
+      url: "http://197.230.28.154:81/newsales/rest/livreurs/sync/"+id,
       method: "GET"
     };
 
@@ -4937,23 +5518,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   }
   
 
-  function addLocalMission(mission)
-  {
-    var todayDate = new Date();
-    var yyyy = (todayDate.getFullYear()).toString();
-    var mm = (todayDate.getMonth()+1).toString();
-    var dd = (todayDate.getDate()).toString();
-    var todayDate = yyyy+"-"+(mm[1]?mm:"0"+mm[0])+"-"+(dd[1]?dd:"0"+dd[0]);
-    var sql_query = "INSERT INTO missions(client_id, route_id, date_start, state, finished, problem, synced, local) values(?,?,?,?,?,?,?,?)";
-    var bindings = [mission.client_id, mission.route_id, todayDate, 1, 0, 0, 0, 1];
-    return DB.query(sql_query, bindings).then(
-      function(mission){
-        return mission.insertId;
-      }, 
-      function(error){
-        return error;
-      });
-  }
+
 
   function syncMissions(_idVendeur)
   {
@@ -4969,7 +5534,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
         {
           innerId = mission.id_db;
         }
-        $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
+        $http.get("http://197.230.28.154:81/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/check").then(
           function(mission, status, headers){
             console.log(mission);
             outerId = mission.data;
@@ -4979,7 +5544,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
             {
               console.log("Some updates remaining ...");
               var finalMissions = [];
-              $http.get("http://192.168.100.140:8082/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
+              $http.get("http://197.230.28.154:81/newsales/rest/vendors/"+_idVendeur+"/mobile/missions/from/"+innerId).then(
                 function(missions, status, headers){
                   deferred.resolve(missions.data);
                   var newMissions = [];
@@ -5097,17 +5662,17 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       var maxDB;
       var maxAPI;
       var routes = {
-        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/",
+        url : "http://197.230.28.154:81/newsales/rest/vendors/mobile/"+idVendeur+"/roads/",
         method : "GET"
       };
       var routesCheck = {
-        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+idVendeur+"/roads/check",
+        url : "http://197.230.28.154:81/newsales/rest/vendors/mobile/"+idVendeur+"/roads/check",
         method : "GET"
       };
       function fromStartPoint(id, _id)
       {
         return {
-        url : "http://192.168.100.140:8082/newsales/rest/vendors/mobile/"+id+"/roads/from/"+_id,
+        url : "http://197.230.28.154:81/newsales/rest/vendors/mobile/"+id+"/roads/from/"+_id,
         method : "GET"
         };
       }
@@ -5266,11 +5831,12 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
 
 
-.factory("Promotions", function(DB, $http, $q){
+.factory("Promotions", function(DB, $http, $q, $log){
 
 
   return {
 
+    cartTreatment : cartTreatment,
     getNonConsumedPromotions : getNonConsumedPromotions,
     addPromotion : addPromotion,
     promotionArticle : promotionArticle,
@@ -5279,9 +5845,181 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     getClientPromotions : getClientPromotions,
     deletePromotion : deletePromotion,
     promotionTreatment : promotionTreatment,
-    promotionDiscountsWithPriorities : promotionDiscountsWithPriorities
+    getTVA : getTVA,
+    getHT : getHT,
+    getArticleQty : getArticleQty
 
   };
+  function getHT(article)
+  {
+    var qty = getArticleQty(article);
+    return qty * article.prixVente;
+  }
+
+  function getTVA(article)
+  {
+    if(typeof(article.tva) != "undefined" && article.tva != null && article.tva > 0)
+    {
+      
+      return getHT(article)  + (getHT(article) * 0.20);
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+  function getArticleQty(article)
+  {
+    if(article.uniteMesure == "CS")
+    {
+      
+      return (article.unit / article.unitConversion) + article.packet;
+    }
+    else
+    {
+      
+      return (article.packet*article.unitConversion) + article.unit ;
+    }
+  }
+
+  function promotionMT(promotion)
+  {
+
+  }
+
+  function cartTreatment(article, object)
+  {
+    var promotions = JSON.parse(window.localStorage['promotions'] || "[]");
+
+    var promotionsIds = article.promotions;
+
+    var discounts = [];
+
+    for(var i = 0, len = promotionsIds.length ; i < len ; i++)
+    {
+      var promotionId = promotionsIds[i];
+
+      for(var j = 0, _len = promotions.length ; j < _len ; j++)
+      {
+        var promotion = promotions[j];
+
+        if(promotion.id == promotionId && promotion.consumed)
+        {
+          if(promotion.gratuites.length > 0)
+          {
+            // TO HAVE UNIQUE GIFTS !!
+            object[promotion.id] = promotion.gratuites.map(function(a){
+              var gratuite = a; 
+              //Adapting gifts for cumullable promotions
+              if(promotion.type == "PP" || promotion.type == "PR")
+              {
+                gratuite.qty = (promotion.cumule != null && promotion.cumule > 0) ?  gratuite.qty * promotion.cumule : gratuite.qty;
+              }
+              else
+              {
+                if(promotion.promotion_palier.length > 0 && promotion.qte != null && promotion.qte > 0)
+                {
+                  gratuite.qty = promotion.qte;
+                }
+                else
+                {
+                  gratuite.qty = gratuite.qty * promotion.cumule;
+                }
+              }
+              return gratuite;
+            });
+          }
+          else if(typeof(promotion.remise) != "undefined" && promotion.remise != null && promotion.remise > 0)
+          {
+            var cumule = promotion.cumule > 0 ? promotion.cumule : 1;
+            var remise = promotion.remise * cumule;
+            var discount = {
+              discount: remise,
+              priority: promotion.priorite
+            };
+            discounts.push(discount);
+          }
+        }
+      }
+    }
+    article = getFinalDiscount(article, discounts);
+    console.log(article);
+
+    var output = {
+      item: article,
+      gifts: object
+    };
+
+
+    return output;
+  }
+
+  function getFinalDiscount(article, discounts)
+  {
+    console.log(discounts);
+
+    var sortedDiscounts = sortDiscounts(discounts);
+
+    var ht = getHT(article);
+
+    var tva = getTVA(article) == null ? 0 : getTVA(article);
+
+    article.ht = ht;
+
+    article.tva = tva;
+
+    var end = ht;
+
+    console.log(discounts);
+
+    if(discounts.length > 0)
+    {
+      console.log("have discounts !!");
+      
+      for(var i = 0, len = sortedDiscounts.length ; i < len ; i++)
+      {
+        var discountObject = sortedDiscounts[i];
+        console.log(end);
+        end-=end*(discountObject.discount/100);
+        console.log(end);
+      }
+
+      article.remise = article.ht - end;
+    }
+    else
+    {
+      console.log("do not have discounts !!");
+      article.remise = 0;
+    }
+
+    console.log(article);
+
+    return article;
+
+    
+  }
+
+  function sortDiscounts(discounts)
+  {
+    discounts = discounts.sort(function(a, b){
+      if(a.priority > b.priority)
+      {
+        return 1;
+      }
+      else if(a.priority < b.priority)
+      {
+        return -1;
+      }
+      else
+      {
+        return 0;
+      }
+
+    });
+
+    return discounts;
+  }
 
   function getNonConsumedPromotions()
   {
@@ -5302,72 +6040,26 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     return ids;
   }
 
-  function promotionDiscountsWithPriorities($scope)
+  function getArticleQty(article)
   {
-    var cart = JSON.parse(window.localStorage['cart'] || '{}');
-
-    if(typeof cart.items != "undefined" && typeof(cart.items) != "undefined" && cart.items.length > 0)
+    if(article.uniteMesure == "CS")
     {
-        var promotions = JSON.parse(window.localStorage['promotions']);
-        var TTC = 0;
-        var HT = 0;
-        for(var i = 0 ; i < cart.items.length ; i++)
-        {
-            var item = cart.items[i];
-            item.remises = [];
-            if(item.promotions != null && item.promotions.length > 0)
-            {
-                for(var j = 0 ; j < item.promotions.length ; j++)
-                {
-                    var idPromo = item.promotions[j];
-                    for(var k = 0 ; k < promotions.length ; k++)
-                    {
-                        var promotion = promotions[k];
-                        if(idPromo == promotion.id && promotion.consumed && promotion.remise != null && promotion.type != "PC")
-                        {
-                            item.remises.push({ remise: promotion.remise, priorite: promotion.priorite});
-                        }
-                    }
-                }
-            }
-
-            for(var j = 0 ; j < item.remises.length - 1 ; j++)
-            {
-                for(var k = j+1 ; k < item.remises.length ; k++)
-                {
-                    if(item.remises[k].priorite < item.remises[j].priorite)
-                    {
-                        var permut = item.remises[k];
-                        item.remises[k] = item.remises[j];
-                        item.remises[j] = permut;
-                    }
-                }
-            }
-            var remises = 0;
-            var prixInitial = (item.packet*item.unitConversion + item.unit) * item.prixVente;
-            var prixUnderDiscounts = prixInitial;
-            for(var j = 0 ; j < item.remises.length ; j++)
-            {
-                console.log(item.remises[j]);
-                prixUnderDiscounts-=item.remises[j].remise/100*prixUnderDiscounts;
-            }
-            item.remise = prixInitial - prixUnderDiscounts;
-            item.prixBRUT = prixInitial - item.remise;
-            HT += item.prixBRUT;
-            item.prixTVA = item.prixBRUT * item.tva/100;
-            item.prixTTC = item.prixBRUT + item.prixTVA;
-            TTC += item.prixTTC;
-            //$scope.data.items.push(item);
-        }
-        window.localStorage["cart"] = JSON.stringify(cart);
-        var object = { ht: HT, ttc: TTC };
-        return object;
+      
+      return (article.unit / article.unitConversion) + article.packet;
+    }
+    else
+    {
+      
+      return (article.packet*article.unitConversion) + article.unit ;
     }
   }
+
+
   function promotionTreatment(article, livreur)
   {
     if(article.promotions != null)
       {
+        console.debug(article.promotions);
           
           var promotions = JSON.parse(window.localStorage['promotions'] || '[]');
           var cart = JSON.parse(window.localStorage['cart'] || '{}');
@@ -5377,8 +6069,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
               {
                   if(promotions[j].id == article.promotions[i])
                   {
-                      console.log('GOTCHA !!');
-                      console.log(promotions[j]);
+                      
                       // Count the qty of all articles that are inclueded in this promotion
                       var count = 0;
                       // Count ca of the articles
@@ -5387,15 +6078,16 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                       var total = 0;
                       // saving all items in an array for PromotionPaliter promotion && especially for the non cummulable case
                       var items = [];
+
+
                       // Looping into all the articles in this promotion
-                      for(var k = 0 ; k < promotions[j].articles.length ; k++)
+                      for(var l = 0 ; l < cart.items.length ; l++)
                       {
                           //Now looping in all articles in CART
-                          console.log("THIS IS THE CART");
-                          console.log(cart);
-                          for(var l = 0 ; l < cart.items.length ; l++)
+                          
+                          for(var k = 0 ; k < promotions[j].articles.length ; k++)
                           {
-                              if(livreur)
+                              if(false)
                               {
                                 var item = cart.items[l];
                                 var valid = ( item.stock - ( (item.packet * item.unitConversion) + item.unit) ) >= 0;
@@ -5404,67 +6096,217 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                   continue;
                                 }
                               }
-                              var qty= ((cart.items[l].packet*cart.items[l].unitConversion) + cart.items[l].unit);
-                              var csQty = cart.items[l].packet + Math.trunc(cart.items[l].unit/cart.items[l].unitConversion);
-                              var amount= ((cart.items[l].packet*cart.items[l].unitConversion + cart.items[l].unit)*cart.items[l].prixVente);
+
+                              
+
                               if(cart.items[l].id_db == promotions[j].articles[k].id)
                               {
-                                  var finalQTY = promotions[j].articles[k].conditionning_unit == "Un" ? qty : csQty;
+                                  var qty= (cart.items[l].packet*cart.items[l].unitConversion) + cart.items[l].unit;
+
+                                  var csQty = cart.items[l].packet + ( cart.items[l].unit / cart.items[l].unitConversion);
+
+                                  var articleQty = getArticleQty(cart.items[l]);
+
+                                  var amount = 0;
+
+                                  var finalQTY;
+
+                                  // WORK WITH PROMOTION MEASURING UNIT !
+                                  if(typeof(promotions[j].articles[k].conditionning_unit) != "undefined" && promotions[j].articles[k].conditionning_unit != null && promotions[j].articles[k].conditionning_unit != "")
+                                  {
+                                    // WORK WITH PROMOTION MEASURING UNIT !
+                                     if(promotions[j].articles[k].conditionning_unit == "Un")
+                                    {
+                                        //TAKE UNIT QTY !
+                                        finalQTY =  qty;
+
+                                        if(cart.items[l].uniteMesure == "CS")
+                                        {
+
+                                          amount = (finalQTY / cart.items[l].unitConversion) * cart.items[l].prixVente;
+                                        }
+                                        else
+                                        {
+
+                                          amount = finalQTY * cart.items[l].prixVente;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //TAKE BOX QTY !
+                                        finalQTY = csQty;
+                                        if(cart.items[l].uniteMesure == "CS")
+                                        {
+                                          amount = finalQTY * cart.items[l].prixVente;
+                                        }
+                                        else
+                                        {
+                                          amount = (finalQTY * cart.items[l].unitConversion) * cart.items[l].prixVente;
+                                        }
+                                    }
+                                  }
+
+                                  // WORK WITH ITEMS MEASURING UNIT !
+                                  else
+                                  {
+                                    // TAKE QTY OF PRIME MEASURING UNIT OF THE ITEM !
+                                    finalQTY = articleQty;
+                                    amount = finalQTY *  cart.items[l].prixVente;
+                                  }
+
                                   count+=finalQTY;
                                   ca+=amount;
                                   var itemObject = { id: cart.items[l].id_db, qty: finalQTY };
-                                  console.log(itemObject);
                                   items.push(itemObject);
+                                  total+=amount;
                               }
-                              total+=amount;
+                              else
+                              {
+                                continue;
+                              }
+                              
+                              // HERE WE WILL SET SOME CONDITIONS TO IMPROVE PERFORMANCES !
+
+                              // IF THE PROMOTION IS PMT WE SHOULD TEST THE %AX POSSIBLE VALUE TO ACHIEVE !!
+
+                              // LIKE THAT WE CAN AVOID HEAVY ITERATIONS OVER THE PROMOTION ITEMS !!
+
+
+                              ////////////////////////// PMT OPTIMIZATIONS !
+
+                              if(promotions[j].type == "PMT" && ca >= promotions[j].ca)
+                              {
+                                if(promotions[j].promotion_palier.length > 0)
+                                {
+                                  var maxPP = 0;
+                                  var infinite = false;
+                                  for(var t = 0 ; t < promotions[j].promotion_palier.length ; t++)
+                                  {
+                                    var pp = promotions[j].promotion_palier[t];
+
+                                    if(pp.montant > promotions[j].promotion_palier[maxPP].montant)
+                                    {
+                                      maxPP = t;
+                                    }
+                                    // SEARCH FOR AN INIFINTITE CUMMULATION !!
+                                    if(pp.cummulable == 1 && pp.max == 0)
+                                    { 
+                                      // FOUND !!
+                                      // WE CAN EXIT FROM NOW !!
+                                      infinite = true;
+                                      break;
+                                    }
+
+                                  }
+                                  if(infinite)
+                                  {
+                                    continue;
+                                  }
+                                  else
+                                  {
+                                    if(ca >= promotions[j].promotion_palier[maxPP].montant)
+                                    {
+                                      // NOW CAN STOP THE ITERATION !!
+                                      
+                                      var currentCumule = Math.trunc(ca / promotions[j].promotion_palier[maxPP].montant);
+                                      // IS CUMMULABLE
+                                      if(promotions[j].promotion_palier[maxPP].cummulable == 1)
+                                      {
+                                        if(promotions[j].promotion_palier[maxPP].max > 0)
+                                        {
+                                          promotions[j].cumule = currentCumule >= promotions[j].promotion_palier[maxPP].max ? promotions[j].promotion_palier[maxPP].max : currentCumule;
+                                        }
+                                        else
+                                        {
+                                          promotions[j].cumule = currentCumule;
+                                        }
+                                      }
+                                      // IS NOT CUMMULABLE
+                                      else
+                                      {
+                                        promotions[j].cumule = 1;
+                                      }
+                                      if(promotions[j].promotion_palier[maxPP].remise > 0)
+                                      {
+                                        promotions[j].remise = promotions[j].promotion_palier[maxPP].remise;
+                                      }
+                                      if(promotions[j].promotion_palier[maxPP].qte > 0)
+                                      {
+                                        promotions[j].qte = promotions[j].promotion_palier[maxPP].qte;
+                                      }
+                                      break;
+                                    }
+                                  }
+                                  
+                                  
+                                }
+                                else
+                                {
+                                  if(promotions[j].cummulable == 1)
+                                  {
+
+                                    if(promotions[j].max != null && promotions[j].max != 0)
+                                    {
+
+
+                                      var canExit = promotions[j].max * promotions[j].ca <= ca;
+
+                                      if(canExit)
+                                      {
+                                        var currentCumule = Math.trunc(ca / promotions[j].ca);
+                                        promotions[j].cumule = currentCumule >= promotions[j].max ? promotions[j].max : currentCumule;
+                                        break;
+                                      }
+                                      else
+                                      {
+                                        continue;
+                                      }
+                                      
+                                    }
+                                  }
+                                  else
+                                  {
+                                    break;
+                                  }
+                                }
+                              }
+                              /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                           }
+
                       }
+                      // END OF LOOOOOOOOOOOOOOOOOP !!
                       if(promotions[j].type == "PR")
                       {
-                        console.log("Promotion REMISE");
                         promotions[j].consumed = true;
                       }
                       if(promotions[j].type == "PMT")
                       {
-                          console.log("Promotion MT");
+                          
                           if(ca>=promotions[j].ca)
                           {
-                              console.log(ca + " | " + promotions[j].ca);
                               promotions[j].consumed = true;
-                              console.log(promotions[j].consumed);
-                              console.log(promotions[j].id);
-                              window.localStorage['promotions'] = JSON.stringify(promotions);
+                               window.localStorage['change'] = "true";
+                              promotions[j].currentTotal = ca;
                           }
                           else
                           {
                               promotions[j].consumed = false;
-                              console.log("NO GIFT !");
-                              window.localStorage['promotions'] = JSON.stringify(promotions);
+                               window.localStorage['change'] = "true";
+                              promotions[j].currentTotal = 0;
                           }
                       }
                       if(promotions[j].type == "PP")
                       {
-                          console.log("Promotion PP");
-                          console.log("WE ARE HERE !");
-                          console.log(items);
                           if(Boolean(promotions[j].melange))
                           {
-                              console.log("MELANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
-                              console.log(items);
                               
                               if(Boolean(promotions[j].cummulable))
                               {
-                                  console.log("MELANGE CUMMULABLE HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERE");
-                                  console.log("MIN :");
-                                  console.log(promotions[j].qte);
-                                  console.log("CURRENT :");
-                                  console.log(count);
                                   if(promotions[j].qte <= count)
                                   {
                                       promotions[j].consumed = true;
-                                      console.log("I THINK YOU ARE NOT FAR FROM THIS PROMOTION'S GIFTS !");
+                                       window.localStorage['change'] = "true";
                                       var repetitions = Math.trunc(count / promotions[j].qte);
-                                      console.log(repetitions);
                                       if(promotions[j].max == null || promotions[j].max == 0 || typeof(promotions[j].max) ==  "undefined")
                                       {
                                           promotions[j].cumule = repetitions;
@@ -5484,11 +6326,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                   else
                                   {
                                       promotions[j].consumed = false;
-                                      console.log("FAR AWAY BUDDY !");
-                                      console.log("MIN :");
-                                      console.log(promotions[j].qte);
-                                      console.log("CURRENT :");
-                                      console.log(count);
+                                       window.localStorage['change'] = "true";
                                   }
                               }
                               else
@@ -5496,19 +6334,19 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                   if(promotions[j].qte <= count)
                                   {
                                       promotions[j].consumed = true;
+                                       window.localStorage['change'] = "true";
                                       promotions[j].cumule = 1;
                                   }
                                   else
                                   {
                                       promotions[j].consumed = false;
+                                       window.localStorage['change'] = "true";
                                       promotions[j].cumule = 0;
                                   }
                               }
                           }
                           else
                           {
-                              console.log(promotions[j]);
-                              console.log(" NO MELANGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
                               var finalRepetitions = 0;
                               var consumed = false;
                               if(promotions[j].articles.length == items.length)
@@ -5536,8 +6374,6 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                       var consommable = false;
                                       for(var n = 0; n < items.length; n++)
                                       {
-
-                                          console.log(items[n].qty);
                                           trunQty+=items[n].qty;
                                           if(items[n].qty >= 2)
                                           {
@@ -5556,7 +6392,14 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                           }
                                           else
                                           {
-                                            promotions[j].cumule = promotions[j].max;
+                                            if(minForCumule >= promotions[j].max)
+                                            {
+                                              promotions[j].cumule = promotions[j].max;
+                                            }
+                                            else
+                                            {
+                                              promotions[j].cumule = minForCumule;
+                                            }
                                           }
                                       }
                                       else
@@ -5564,26 +6407,26 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                                         promotions[j].cumule = 1;
                                       }
                                       promotions[j].consumed = true;
+                                      window.localStorage['change'] = "true";
                                       
                                   }
                                   else
                                   {
                                       promotions[j].consumed = false;
+                                      window.localStorage['change'] = "true";
                                   }
                               }
                               else
                               {
-                                  console.log("NOT LUCKY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                                   promotions[j].consumed = false;
+                                  window.localStorage['change'] = "true";
                               }
                           }
                       }
                   }
               }
-              console.log(promotions);
               window.localStorage['promotions'] = JSON.stringify(promotions);
           }
-          console.log("ALL THE PROMOTIONS ARE UP TO DATE");
       }
   }
   
@@ -5598,7 +6441,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
   function getClientPromotions(client_id){
     var id = "id";
     var qty = "qty";
-    var sql_query = 'SELECT PG.priorite, P.id_db AS "id", P.type, P.qte, P.melange, Group_Concat(DISTINCT PC.client_id) as clients, P.conditionning_unit AS "cu", P.max_steps AS "max", P.cummulable, P.ca, P.starts_at AS "starts", P.ends_at AS "ends", P.activated as "activated", Group_Concat(DISTINCT PI.promotion_secondary) AS "inclusions", Group_Concat(DISTINCT PE.promotion_secondary) AS "exclusions", "[" || Group_Concat(DISTINCT "{""id"":" || PA.article_id ||", ""qty"":" || ifnull(PA.qty, 0) || ", ""conditionning_unit"": """ || PA.conditionning_unit ||  """}") || "]" AS "articles" , "[" || Group_Concat(DISTINCT "{""id"":" || GA.article_id ||", ""qty"":" || ifnull(GA.qte, 0) || ", ""designation"":""" || A.nomArticle || """}") || "]" AS "gratuites", PG.remise AS "remise" FROM promotions AS P LEFT JOIN promotion_client AS PC ON PC.promotion_id = P.id_db LEFT JOIN clients AS C ON C.id_db = PC.client_id LEFT JOIN promotion_article AS PA ON PA.promotion_id = P.id_db LEFT JOIN promotion_inclusion AS PI ON PI.promotion_primary = P.id_db LEFT JOIN promotion_exclusion AS PE ON PE.promotion_primary = P.id_db  LEFT JOIN promotion_gratuite AS PG ON PG.promotion_id = P.id_db LEFT  JOIN gratuite_article AS GA ON GA.promotion_gratuite_id = PG.id LEFT JOIN articles AS A ON A.id_db = GA.article_id WHERE (P.type == "PC" AND PC.client_id = ?) OR (P.type != "PC") GROUP BY P.id_db;';
+    var sql_query = 'SELECT ifnull("[" || Group_Concat(DISTINCT "{ ""montant"":" ||ifnull(PP.montant, 0)||", ""remise"": " || ifnull(PP.remise, 0)|| ", ""qte"" :" || ifnull(PP.qte, 0) || ", ""cummulable"": " || PP.cummulable ||", ""max"" : " || ifnull(PP.max, 0)  ||" }") || "]", "[]") AS promotion_palier, PG.priorite, P.id_db AS "id", P.type, P.qte, P.melange, Group_Concat(DISTINCT PC.client_id) as clients, P.conditionning_unit AS "cu", P.max_steps AS "max", P.cummulable, P.ca, P.starts_at AS "starts", P.ends_at AS "ends", P.activated as "activated", Group_Concat(DISTINCT PI.promotion_secondary) AS "inclusions", Group_Concat(DISTINCT PE.promotion_secondary) AS "exclusions", "[" || Group_Concat(DISTINCT "{""id"":" || PA.article_id ||", ""qty"":" || ifnull(PA.qty, 0) || ", ""conditionning_unit"": """ || ifnull(PA.conditionning_unit, "") ||  """}") || "]" AS "articles" , "[" || Group_Concat(DISTINCT "{""id"":" || GA.article_id ||", ""qty"":" || ifnull(GA.qte, 0) || ", ""group"": " || ifnull(GA.groupe, 0) || ", ""designation"":""" || A.nomArticle || """}") || "]" AS "gratuites", PG.remise AS "remise" FROM promotions AS P LEFT JOIN promotion_palier as PP ON PP.id_promotion = P.id_db LEFT JOIN promotion_client AS PC ON PC.promotion_id = P.id_db LEFT JOIN clients AS C ON C.id_db = PC.client_id LEFT JOIN promotion_article AS PA ON PA.promotion_id = P.id_db LEFT JOIN promotion_inclusion AS PI ON PI.promotion_primary = P.id_db LEFT JOIN promotion_exclusion AS PE ON PE.promotion_primary = P.id_db  LEFT JOIN promotion_gratuite AS PG ON PG.promotion_id = P.id_db LEFT  JOIN gratuite_article AS GA ON GA.promotion_gratuite_id = PG.id LEFT JOIN articles AS A ON A.id_db = GA.article_id WHERE (P.type == "PC" AND PC.client_id = ?) OR (P.type != "PC") GROUP BY P.id_db;';
     var bindings = [client_id];
     return DB.query(sql_query, bindings)
     .then(
@@ -5629,7 +6472,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
     var JSONCONTENT = [{"id":1,"priorite":null,"qte":null,"montant":null,"max_steps":null,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":3,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":1,"quantite":10,"uconditionement":"Un"},{"itemId":2,"quantite":12,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":2,"priorite":null,"qte":null,"montant":1000.0,"max_steps":3,"cummulable":true,"type":"PMT","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":true,"article_gratuits":[[{"itemId":35,"quantite":1,"uconditionement":"Un"}],[{"itemId":36,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":3,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":4,"priorite":null,"qte":null,"montant":20000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32786],"promoPaliers":[]},{"id":5,"priorite":null,"qte":null,"montant":1000.0,"max_steps":null,"cummulable":false,"type":"PMT","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":6,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32785,32786],"promoPaliers":[]},{"id":10,"priorite":null,"qte":null,"montant":10000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32787],"promoPaliers":[]},{"id":15,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":18,"priorite":null,"qte":null,"montant":30000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":5.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32784,32783],"promoPaliers":[]},{"id":19,"priorite":null,"qte":null,"montant":15000.0,"max_steps":0,"cummulable":false,"type":"PC","pourcentage":2.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[],"include":[],"exlude":[],"client":[32783],"promoPaliers":[]},{"id":20,"priorite":null,"qte":null,"montant":null,"max_steps":0,"cummulable":false,"type":"PR","pourcentage":3.0,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":false,"coupons":false,"article_gratuits":[],"article_en_promo":[{"itemId":509,"quantite":null,"uconditionement":null}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":21,"priorite":null,"qte":null,"montant":null,"max_steps":3,"cummulable":true,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":null,"coupons":false,"article_gratuits":[[{"itemId":511,"quantite":2,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":509,"quantite":6,"uconditionement":"Un"},{"itemId":510,"quantite":4,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]},{"id":25,"priorite":null,"qte":12,"montant":null,"max_steps":null,"cummulable":false,"type":"PP","pourcentage":null,"starts_at":"2016-01-01","ends_at":"2016-01-31","activated":true,"conditionning_unit":null,"melange":true,"coupons":true,"article_gratuits":[[{"itemId":2,"quantite":1,"uconditionement":"Un"}],[{"itemId":3,"quantite":2,"uconditionement":"Un"}],[{"itemId":35,"quantite":1,"uconditionement":"Un"}]],"article_en_promo":[{"itemId":746,"quantite":null,"uconditionement":"Un"},{"itemId":1,"quantite":null,"uconditionement":"Un"}],"include":[],"exlude":[],"client":[],"promoPaliers":[]}];
     var deferred = $q.defer();
     var request = {
-      url: "http://192.168.100.140:8082/newsales/rest/promotions/AllPromoParMois",
+      url: "http://192.168.100.36:8082/newsales/rest/promotions/AllPromoParMois",
       method: "GET"
     };
     var count = 0;
@@ -5661,25 +6504,42 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
                         console.log(JSON.stringify(error));
                       });
                   }
+                  if(promotion.promoPaliers != null && promotion.promoPaliers.length > 0)
+                  {
+                    var addons = [];
+                    for(var j = 0 ; j < promotion.promoPaliers.length ; j++)
+                    {
+                      var pp = promotion.promoPaliers[j];
+                      addons.push("("+promotion.id+", "+pp.montant+", "+pp.remise+", "+pp.quantite+", "+(pp.cummulable ? 1 : 0)+", "+pp.nbCumulable+")");
+                    }
+                    console.log(addons);
+                    DB.query("INSERT INTO promotion_palier (id_promotion, montant, remise, qte, cummulable, max) VALUES "+addons.join(", ")+";")
+                    .then(
+                      function(success){
+                        console.debug(success);
+                      }, 
+                      function(error){
+                        console.debug(error);
+                      });
+                  }
 
 
                   promotionGratuite(promotion.id, promotion.pourcentage, promotion.priorite == null ? 0 : promotion.priorite).then(
                       function(success){
-                        console.log(JSON.stringify(success));
-
+                        $log.debug(success);
                         for(var j = 0 ; j < promotion.article_gratuits.length ; j++)
                         {
                           var articles = promotion.article_gratuits[j];
-                          console.log(articles);
+                          $log.debug(articles);
                           for(var k = 0 ; k < articles.length ; k++)
                           {
                             var article = articles[k];
-                            promotionGratuiteArticle(success.insertId, article.itemId, article.quantite).then(
+                            promotionGratuiteArticle(success.insertId, article.itemId, article.quantite, j).then(
                             function(success){
-                              console.log(success);
+                              $log.debug(success);
                             },
                             function(error){
-                              console.log(error);
+                              $log.error(error);
                             });
                           }
                         }
@@ -5756,16 +6616,17 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
       }); 
   }
 
-  function promotionGratuiteArticle(promotionGratuiteId, articleId, qty)
+  function promotionGratuiteArticle(promotionGratuiteId, articleId, qty, giftGroup)
   {
-    var sql_query = "INSERT INTO gratuite_article(promotion_gratuite_id, article_id, qte) VALUES(?,?,?);";
-    var bindings = [promotionGratuiteId, articleId, qty];
+    var sql_query = "INSERT INTO gratuite_article(promotion_gratuite_id, article_id, qte, groupe) VALUES(?,?,?,?);";
+    var bindings = [promotionGratuiteId, articleId, qty, giftGroup];
     return DB.query(sql_query, bindings).then(
       function(success){
-        console.log(JSON.stringify(success));
+        console.debug(success);
         return success;
       }, 
       function(error){
+        console.error(error);
         return error;
       }); 
   }
@@ -5830,7 +6691,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   function sync(){
     var deferred = $q.defer();
-    $http.get("http://192.168.100.140:8082/newsales/rest/clients/road/1/sync")
+    $http.get("http://197.230.28.154:81/newsales/rest/clients/road/1/sync")
     .then(
       
       function(data, status, headers){
@@ -5848,7 +6709,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
             console.log("YOUR CURRENT DATABASE IS NOT UP TO DATE !");
             console.log((idAPI-idDB)+" routes are waitiing to be pushed in your local DB");
             console.log("HERE IS THE ROUTES !!");
-            $http.get("http://192.168.100.140:8082/newsales/rest/clients/road/1/sync/"+idDB).then(
+            $http.get("http://197.230.28.154:81/newsales/rest/clients/road/1/sync/"+idDB).then(
               function(data, status, headers){
                 var clients = data.data;
                 angular.forEach(clients, function(client){
@@ -5900,7 +6761,7 @@ function addCommandeLivreur(id_commande, code_commande, id_mission, id_client){
 
   function highestIDInDB()
   {
-    $http.get("http://192.168.100.140:8082/newsales/rest/roads/check")
+    $http.get("http://197.230.28.154:81/newsales/rest/roads/check")
     .success(function(data, status, headers){
       console.log("THE HIGHEST ID IN DB IS : "+data.id);
     })

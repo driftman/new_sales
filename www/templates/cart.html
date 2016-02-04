@@ -7,7 +7,7 @@
               padding: 0;">
                 <div class="col" 
                 style="
-                min-width: 27%;
+                min-width: 35%;
                 border: none;
                 margin: 0;
                 padding: 0;
@@ -24,7 +24,7 @@
                 border: none;
                 font-size: 11px; 
                 font-weight: 900; 
-                float: left;">unité</div>
+                float: left;">cs.</div>
                 <div class="col col-15" 
                 style="
                 border: none;
@@ -34,7 +34,8 @@
                 border: none;
                 font-size: 11px; 
                 font-weight: 900; 
-                float: left;">caisse</div>
+                float: left;">un.</div>
+                
                 <div class="col" 
                 style="
                 border: none;
@@ -45,16 +46,7 @@
                 font-size: 11px;
                 font-weight: 900; 
                 float: left;">p.u</div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px;
-                font-weight: 900; 
-                float: left;">tva</div>
+                
                 <div class="col" 
                 style="
                 border: none;
@@ -98,7 +90,7 @@
                 padding: 0;
                 margin: 0;">
                    <div class="col" style="
-                   min-width: 23%;
+                   min-width: 35%;
                   margin: 0;
                   padding: 0;
                   text-align: center;
@@ -110,43 +102,38 @@
                     text-align: left; 
                     margin: 0;
                     color: #060606;">{{ item.nomArticle }}</p></div>
-                <div class="col col-15" style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                font-weight: 400;
-                text-align: center;"><input type="number" ng-readonly="true" style="font-weight: 600; font-size: 11px;color: black; width: 100%; text-align:center;" ng-model="item.unit" ng-change="check()"></input>
-            </div>
+                
             <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 900;
-                text-align: center;"><input type="number" ng-readonly="true" style="font-weight: 600; font-size: 11px;color: black; width: 100%; text-align:center;" ng-model="item.packet" ng-change="check()"></input>
+                text-align: center;"><!--<input type="number" ng-readonly="true" style="font-weight: 600; font-size: 11px;color: black; width: 100%; text-align:center;" ng-model="" ng-change="change(item)"></input>-->
+                <span style="font-weight: 900; font-size: 10px;color: black; width: 100%; text-align:center;">{{ item.packet }}</span>
+            </div>
+            <div class="col col-15" style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                font-weight: 400;
+                text-align: center;"><!--<input type="number" ng-readonly="true" style="font-weight: 600; font-size: 11px;color: black; width: 100%; text-align:center;" ng-model="item.unit" ng-change="change(item)"></input>-->
+                <span style="font-weight: 900; font-size: 10px;color: black; width: 100%; text-align:center;">{{ item.unit }}</span>
             </div>
                 <div class="col col-15" style="
-                font-weight: 600;
-                font-size: 8.5px;
+                font-weight: 900;
+                font-size: 9px;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;">{{ item.prixVente | number : 2 }}
                 </div>
                 <div class="col col-15" style="
-                font-weight: 600;
-                font-size: 8.5px;
+                font-weight: 900;
+                font-size: 9px;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">{{ item.prixTVA | number:2}}
-                </div>
-                <div class="col col-15" style="
-                font-weight: 600;
-                font-size: 8.5px;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;">{{ item.remise | number : 2}}
+                border: none;">{{ (item.remise  || 0)| number : 2}}
                 </div>
                 <div class="col"
                 style="
@@ -154,7 +141,8 @@
                 font-size: 8.5px;
                 padding: 0;
                 text-align: center;
-                border: none;"><span style="color: green; font-weight: 600; font-size: 8.5px;">{{ item.prixTTC | number:2 }}</span></div>
+                border: none;"><span style="color: green; font-weight: 900; font-size: 9px;">
+                {{ item.tva - item.remise || 0 | number:2 }}</span></div>
                 </div>
             </div>
 
@@ -195,7 +183,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ data.ht | number : 2 }} DHS</div>
+                background-color: #B71C1C;">{{ totalHT | number : 2 }} DHS</div>
               </div>
             </div>
             <div class="item" 
@@ -235,7 +223,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ '- '+currentDiscount+' %' }}</div>
+                background-color: #B71C1C;">{{ '- '+(currentDiscount || 0)+' %' }}</div>
               </div>
             </div>
             <div class="item" 
@@ -275,7 +263,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ data.ttc - currentDiscount/100*data.ttc | number : 2 }} DHS </div>
+                background-color: #B71C1C;">{{ totalTTC - (totalTTC*currentDiscount/100) | number : 2 }} DHS </div>
               </div>
             </div>
           </div>
@@ -291,7 +279,7 @@
             font-weight: 600;
             text-align: center;" >Modalités de paiement</h5>
             <ion-list>
-              <ion-radio style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="change(payment.id)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
+              <ion-radio style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="paymentChange(payment)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
             </ion-list>
         </div>
 
@@ -313,13 +301,14 @@
 </ion-view>
 <div ng-show="footerBar" class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
-      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <a ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
 
-      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+      <a ng-click="next()" ng-if="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
 
-      <a ng-click="next()" ng-show="!hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-checkmark-round"></i></a>
+      <a ng-click="checkOut()" ng-if="!hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-checkmark-round"></i></a>
 
-      <a ng-click="print()"><i style="float: right; font-size: 30px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-printer"></i><!-- Total : {{totalBill | promotion | number : 2}} DHS --></a>
+      <a ng-click="print()"><i style="float: right; font-size: 30px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-printer"></i>
+      </a>
 
       <a ng-click="cancel()"><i style="float: right; font-size: 35px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-android-close"></i></a>
       
@@ -333,6 +322,27 @@
 
     </div>-->
 </div>
+
+<script id="gratuites.html" type="text/ng-template">
+    
+    <div class="list" style="max-length: 500px;"> 
+
+        <div class="item" style="position: relative;">
+            <a ng-if="previousPopUpShow" style="color: #B71C1C; float: left; font-weight: 900; font-size: 30px;" class="icon ion-android-arrow-back" ng-click="previousPopUp()"></a>
+            <a ng-if="nextPopUpShow" style="color: #B71C1C; float: right; font-weight: 900; font-size: 30px;" class="icon ion-android-arrow-forward" ng-click="nextPopUp()"></a> 
+        </div>
+
+        <div ng-repeat="sub in group.conflicts track by $index" style="position: relative; padding: 0; margin-bottom: 15px; border-bottom: 1px solid #B71C1C;"ng-click="hello(group, $index)">
+            <i ng-if="checked(group, $index)" style="color: #B71C1C; position: absolute; top: -18px; right: 0px;" class="icon ion-checkmark-round"></i>
+            
+            <div ng-repeat="item in sub" style="  font-size: 11px; min-height: 30px;">
+                <span style="float: left; font-weight: 600; ">{{ item.designation }}</span>
+                <span style="float: right;">{{ item.unit + ' un.'}}</span>
+
+            </div>
+        </div>
+    </div>
+</script>
 
    
 

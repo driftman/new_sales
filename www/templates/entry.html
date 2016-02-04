@@ -73,8 +73,20 @@
 				  </div>
 				</div>
 			</div>
-			<div class="col col-50" style="border: none;">
-				<div class="card" ng-click="synchronization()" style="box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
+			<div ng-if="isVendeur" class="col col-50" style="border: none;">
+				<div class="card" ng-click="prepareChargement()" style="box-shadow: 0 5px 5px 0 rgba(80, 90, 239, 0.54); background-color: rgb(97, 117, 250); min-height: 130px; max-height: 200px; margin: 0;">
+				  <div class="item item-text-wrap">
+				    <h3 style="    color: rgba(255,255,255,1);
+    font-size: 14px;
+    font-weight: 600;">Demande de chargement</h3>
+				    <i class="icon ion-android-cart" style="font-size: 55px;
+				    color: rgba(255,255,255,1);
+				    float: right;"></i>
+				  </div>
+				</div>
+			</div>
+			<div ng-if="!isVendeur" class="col col-50" style="border: none;">
+				<div class="card" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
 				  <div class="item item-text-wrap">
 				    <h3 style="    color: rgba(255,255,255,1);
     font-size: 14px;
@@ -86,7 +98,22 @@
 				</div>
 			</div>
 		</div>
+		
+		<div class="row" ng-if="isVendeur">
+			<div class="col col-50" style="border: none;">
+				<div class="card" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
+				  <div class="item item-text-wrap">
+				    <h3 style="    color: rgba(255,255,255,1);
+    font-size: 14px;
+    font-weight: 600;">Synchronization</h3>
+				    <i class="icon ion-android-upload" style="font-size: 55px;
+				    color: rgba(255,255,255,1);
+				    float: right;"></i>
+				  </div>
+				</div>
+			</div>
 		</div>
+		
     	<!-- <div class="list" style="margin-top: 30px;">
     		<div class="item entry">
     			<button ui-sref="app.profile" class="button button-block button-assertive icon-left ion-ios-pulse-strong button-entry">

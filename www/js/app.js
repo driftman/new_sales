@@ -9,7 +9,7 @@ angular.module('starter',
 
 .run(function($ionicPlatform, $cordovaSQLite, $timeout, $rootScope, DB, $state) {
         
-        /*$rootScope.$on('$stateChangeStart', 
+        $rootScope.$on('$stateChangeStart', 
         function(event, toState, toParams, fromState, fromParams)
         { 
             
@@ -23,7 +23,21 @@ angular.module('starter',
                 event.preventDefault();
                 $state.transitionTo("menu.login");
             }
-        });*/
+            if(toState.name == "app.prelevement")
+            {
+                event.preventDefault();
+                var profile = JSON.parse(window.localStorage["profile"] || "{}");
+                var _vendeur = typeof(profile.fonction) != "undefined" && profile.fonction == "vendeur";
+                $state.transitionTo("app.brands", { vendeur: _vendeur, chargement: false, prelevement: true});
+            }
+            if(toState.name == "app.retour")
+            {
+                event.preventDefault();
+                var profile = JSON.parse(window.localStorage["profile"] || "{}");
+                var _vendeur = typeof(profile.fonction) != "undefined" && profile.fonction == "vendeur";
+                $state.transitionTo("app.brands", { vendeur: _vendeur, chargement: false, prelevement: false, retour: true});
+            }
+        });
 
     
         $ionicPlatform.ready(function(){
@@ -35,8 +49,8 @@ angular.module('starter',
             }
           
         });
+        
         DB.init();
-         
          
           
 })
@@ -230,7 +244,7 @@ angular.module('starter',
     })
 
     .state('app.brands', {
-        url : "/brands",
+        url : "/brands/:vendeur/:chargement/:prelevement/:retour",
         views : {
             'menuContent': {
                 templateUrl: 'templates/brands.html',
@@ -297,7 +311,7 @@ angular.module('starter',
     })
 
     .state('app.brand', {
-        url : "/brands/:mission/:name",
+        url : "/brand/:name/:vendeur/:chargement/:prelevement/:retour",
         views : {
             'menuContent': {
                 templateUrl: 'templates/brand.html',
@@ -308,7 +322,14 @@ angular.module('starter',
             }
         }
     })
-
+    // WORKAROUNDS NO MORE !
+    .state('app.prelevement', {
+        
+    })
+    .state('app.retour', {
+        
+    })
+    /////////////////////////
     
     .state('app.profile', {
         url: '/profile',
