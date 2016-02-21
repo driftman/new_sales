@@ -464,8 +464,10 @@ h3 .title-promotion {
 .regular-radio:active, .regular-radio:checked:active {
     box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px 1px 3px rgba(0,0,0,0.1);
 }
-.assertive-survey {
-    background-color: black;
+.popup-buttons .button {
+    
+    font-size: 10.5px;
+    font-weight: 100;
 }
 .bar .title{
     font-size: 13px;
@@ -484,3 +486,20 @@ h3 .title-promotion {
 input[type='radio']:active, input[type='radio']:checked:active  {
     background-color: #B71C1C;
 }*/
+.chargement {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.rapport {
+    margin-top: 40px;
+    margin-bottom: 0px;
+    margin-right: 0px;
+    margin-left: 0px;
+}
+.tab-item {
+    font-weight: 100 !important; 
+}
+.datemission {
+    margin: 0 auto;
+    font-weight: 900;
+}

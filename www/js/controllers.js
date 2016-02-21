@@ -487,7 +487,241 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('EntryCtrl', function($scope, $rootScope, DumpDB, Surveys, ModePaiement, ca,  $timeout, IonicPopUpUtilities, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
+.controller('ChargementReportsCtrl', function($scope, $state, Chargement){
+    $scope.menu = function()
+    {
+        $state.transitionTo("menu.entry");
+    };
+
+    var profile = JSON.parse(window.localStorage["profile"] || "{}");
+    $scope.lignes = [];
+    $scope.chargement = {};
+    Chargement.getLastDetailedChargements(profile.id_db)
+    .then(
+        function(input){
+
+            var lignes  = input.output;
+            $scope.chargement.id = input.chargement_id;
+            $scope.chargement.date = input.date;
+            
+            angular.forEach(lignes, function(ligne){
+                $scope.lignes.push(ligne);
+            });
+        }, 
+        function(error){
+            console.debug(error);
+        });
+})
+
+.controller('StockReportsCtrl', function($scope, $state, $timeout, $ionicPopup, $ionicLoading, CartUtilities, Chargement, Stock, ViewController){
+
+    var profile = JSON.parse(window.localStorage["profile"] || "{}");
+    
+    // TWO WAY DATA BINDING
+    $scope.stock = [];
+    var isVendeur = $scope.isVendeur = profile.fonction == "vendeur" ? true : false;
+    //
+
+    ////////////////// ACTIONS
+    $scope.change = function(article){
+        change(article);
+    };
+
+    $scope.discard = function(){
+        window.localStorage.removeItem("dechargement")
+
+    };
+    $scope.confirm = function(){
+
+        var myPopup = $ionicPopup.alert({
+            title: "Etes-vous sûr de vouloir valider ?",
+            buttons: [
+                {
+                    text: "oui",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+                        e.preventDefault();
+                        action();
+                        myPopup.close();
+                    }
+                },
+                {
+                    text: "non",
+                    onTap: function(e){
+
+                    },
+                    type: "button-assertive",
+                    cssClass: "assertive-survey"
+                }
+            ],
+            template: '<span style="font-size: 12px; font-weight: 600;">Les modifications aûront un impact sur votre stock mobile.</span>'
+        });
+
+    };
+
+    function action()
+    {
+        $ionicLoading.show({ template : "Validation de votre demande en cours ... "});
+        var cart = JSON.parse(window.localStorage["dechargement"] || "{}");
+        var items = typeof(cart.items) != "undefined" ? cart.items : [];
+        var scopeItems = angular.copy($scope.stock);
+
+        Stock.recoverItemsWithNoValues(scopeItems)
+        .then(
+            function(success){
+                console.debug(success);
+
+                ///////////////////////////////////////////////////////
+                if(items.length > 0)
+                {
+                    Chargement.dechargement(profile.id_db, items).then(
+                    function(success){
+                        console.debug(success);
+                        CartUtilities.clearVisit().then(function(){
+                            
+                            
+                        });
+                    },
+                    function(error){
+                        console.debug(error);
+                    }).
+                    finally(function(){
+
+                        $timeout(function(){
+
+                            init();
+                            $ionicLoading.hide();
+
+                        }
+                        , 1500);
+                    });
+                }
+                else
+                {
+                    // DELETE ALL NON SYNCED DECHARGEMENTS !
+                    //console.debug("ERROR");
+                    Chargement.clearNonSyncedDechargements()
+                    .then(
+                        function(success){
+                            init();
+                        },
+                        function(error){
+                            console.debug("ERROR WHILE CLEARING ! ");
+                            init();
+                        }).finally(function(){
+
+                            $timeout(
+                                function(){
+
+                                    init();
+
+                                    $ionicLoading.hide();
+                                }
+                            , 1500);
+                        }); 
+                }
+                    ///////////////////////////////////////////////////////
+            },
+            function(error){
+                console.debug(error)
+            });
+
+
+
+        
+
+    }
+
+    /////////////////CANCELING DECHARGEMENT !
+
+    $scope.discard = function(){
+        discard();
+    };
+
+    function discard()
+    {
+        window.localStorage.removeItem("dechargement");
+        $state.transitionTo("menu.entry");
+    }
+
+    /////////////////////////////////////////
+
+
+    // SERVICES !!
+    // INITIALIZERS !!
+
+    init();
+
+    function change(article)
+    {
+        ViewController.check(article, false, isVendeur, false, false, true);
+    }
+
+    function init()
+    {
+        window.localStorage.removeItem("dechargement");
+
+        $scope.stock = [];
+
+        Stock.get(profile.id_db).then(
+        function(success){
+            console.debug(success);
+            success = ViewController.prepare(success, null, false, false, false, true);
+            console.debug(success);
+            angular.forEach(success, function(ligne, index){
+
+                var packet = Math.trunc(ligne.totalStock / ligne.unitConversion);
+                var unit = ligne.totalStock % ligne.unitConversion;
+
+                ligne.csUn = packet+", "+unit;
+
+                if(ligne.packet > 0 || ligne.unit > 0)
+                {
+                    change(ligne);
+                }
+
+                $scope.stock.push(ligne);
+            });
+        }, 
+        function(error){
+            console.debug(error);
+        });
+    }    
+    
+
+    
+})
+
+.controller('VentesReportsCtrl', function($scope, $state, Ventes){
+    var profile = JSON.parse(window.localStorage["profile"] || "{}");
+    $scope.missions = [];
+    $scope.total = 0;
+    Ventes.get(profile.id_db)
+    .then(
+        function(commandes){
+            console.debug(commandes);
+            angular.forEach(commandes, function(commande){
+                var date = new Date(commande.date);
+                commande.day = date.getDate();
+                commande.month = date.getMonth()+1;
+                commande.promotions = JSON.parse("["+commande.promotions+"]");
+                commande.sbds = JSON.parse("["+commande.sbds+"]");
+                
+                commande.promotions = commande.promotions.length;
+                commande.sbds = commande.sbds.length;
+                $scope.total+=commande.totalTTC;
+
+                $scope.missions.push(commande);
+            });
+        },
+        function(error){
+            console.debug(error);
+        });
+
+})
+
+.controller('EntryCtrl', function($scope, $rootScope, Retours, Chargement, EntryPoint, DumpDB, Surveys, ModePaiement, ca,  $timeout, IonicPopUpUtilities, $ionicPopup, CallSteps, $ionicLoading, $state, Routes, BrandFive, SBD, Commandes, Missions, Clients, Articles, Promotions, Marques, SynchronisationV2){
     
     $scope.ca = ca.ca;
     $scope.test = function(){
@@ -500,9 +734,8 @@ angular.module('starter.controllers', ['starter.services'])
 
     $scope.isVendeur = isVendeur;
 
-    $scope.prepareChargement = function()
+    function charger()
     {
-
         var cart = JSON.parse(window.localStorage['cart'] || "{}");
 
         if(!Object.keys(cart).length > 0)
@@ -513,28 +746,124 @@ angular.module('starter.controllers', ['starter.services'])
 
             window.localStorage['cart'] =  JSON.stringify(cart);
 
-            $state.transitionTo("app.brands", { vendeur: true, chargement: true} );
+            $state.transitionTo("app.brands", { vendeur: true, chargement: true, prelevement: false, retour: false });
         }
         else
         {
             if( cart.action == "chargement" )
             {
-                $state.transitionTo("app.brands", { vendeur: true, chargement: true} );
+                $state.transitionTo("app.brands", { vendeur: true, chargement: true, prelevement: false, retour: false} );
             }
             else
             {
                 $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur", "Vous devez finir votre visite "));
             }
         }
+    }
+
+    function rapport()
+    {
+
+    }
+
+    $scope.prepareChargement = function()
+    {
+        var profile = JSON.parse(window.localStorage["profile"] || "{}");
+
+        Chargement.searchForWaiting(profile.id_db)
+        .then(
+            function(success){
+                console.debug(success);
+                if(success.rows.length > 0)
+                {
+                    var myPopUp = $ionicPopup.alert({
+
+                        title: "Demande de chargement en cours ...",
+                        buttons: [
+                            {
+                                text: "OK",
+                                type: "button-assertive",
+                                cssClass: "assertive-survey",
+                                onTap: function(e){
+                                }
+                            }
+                        ],
+                        template: '<span style="font-size: 12px; font-weight: 600;">La demande précédemment envoyée est en attente de validation.</span>'
+                    
+                    });
+                }
+                else
+                {
+                    var myPopUp = $ionicPopup.alert({
+
+                        title: "Veuillez choisir une option ",
+                        buttons: [
+                            {
+                                text: "charger",
+                                type: "button-assertive",
+                                cssClass: "assertive-survey",
+                                onTap: function(e){
+                                    e.preventDefault();
+                                    charger();
+                                    myPopUp.close();
+                                }
+                            },
+                            {
+                                text: "stock/rapports",
+                                type: "button-assertive",
+                                cssClass: "assertive-survey",
+                                onTap: function(e){
+                                    e.preventDefault();
+                                    myPopUp.close();
+                                    $state.transitionTo("reports.chargements");
+                                }
+                            }
+                        ],
+                        template: '<span style="font-size: 12px; font-weight: 600;"> <b style="font-weight: 900;">Charger</b>: Ajout d\'une nouvelle demande de chargement. <br> <b style="font-weight: 900;">Rapport</b>: rapport du dernier chargement. </span>'
+                    
+                    });
+                }
+            }, 
+            function(error){
+                console.debug("Une erreur est survenue !");
+            });
+        
+
+        
         
     };
     $scope.synchronization = function(){
-       
+
         $ionicLoading.show({
             template : "Synchronisation en cours ..."
         });
+        /*Retours.sync().then(
 
-        SynchronisationV2.syncV2(infos.id_db).then(
+            function(success){
+                console.debug(success);
+            }, 
+            function(error){
+                console.debug(error);
+            }).finally(function(){
+                $timeout(function(){
+                    $ionicLoading.hide();
+                }, 1000);
+            });*/
+       
+        
+
+        /*Promotions.syncPromotions()
+        .then(
+        function(success){
+            console.debug(success);
+        },
+        function(error){
+            console.debug(error);
+        }).finally(function(){
+            $ionicLoading.hide();
+        });*/
+
+        /*SynchronisationV2.syncCommandes(1).then(
             function(success){
                 console.log(success);
             }, 
@@ -545,13 +874,27 @@ angular.module('starter.controllers', ['starter.services'])
                 $timeout(function(){
                     $ionicLoading.hide();
                 }, 1000);
+            });*/
+
+        SynchronisationV2.syncV2(38).then(
+            function(success){
+
+                console.log(success);
+            }, 
+            function(error){
+                console.log(error);
+
+            }).finally(function(){
+                $timeout(function(){
+                    $ionicLoading.hide();
+                }, 1000);
             });
 
 
 
 
 
-            BrandFive.addBrandFive({
+        BrandFive.addBrandFive({
                 id_db: 1,
                 code_marque: "GILLETTE",
                 name: "GILLETTE"
@@ -608,15 +951,15 @@ angular.module('starter.controllers', ['starter.services'])
     
 
     $scope.checkPoint = function(){
-        $state.go(checkPoint);
+
         var isVendeur = JSON.parse(window.localStorage['profile']).fonction == "vendeur";
-        if(checkPoint == "app.brands" && isVendeur)
+        if(checkPoint == "app.brands")
         {
-            $state.go(checkPoint, { vendeur: true, chargement: false });
+            $state.transitionTo(checkPoint, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false});
         }
         else
         {
-            $state.go(checkPoint);
+            $state.transitionTo(checkPoint);
         }
     };
 
@@ -638,11 +981,11 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.center = {
             lat: 33.565721, 
             lng: -7.626388,
-            zoom: 15
+            zoom: 14
         };
     $scope.defaults = { zoomControl: false, layerControl: false, tileLayer: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'};
     $scope.markers = { 
-            m2: {
+            m2 : {
                 lat: 33.565721, 
                 lng: -7.626388,
                 focus: true,
@@ -655,15 +998,47 @@ angular.module('starter.controllers', ['starter.services'])
                     iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
                     popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
                 }
-            } 
+            },
+            vendeur : {
+                lat: 33.565721, 
+                lng: -7.626388,
+                focus: false,
+                draggable: false,
+                message: "<h5><b>Vous êtes ici</b></h5>",
+                icon : {
+                    iconUrl: "img/vendeur.png",
+                    iconSize:     [46, 46], // size of the icon
+                    shadowSize:   [50, 64], // size of the shadow
+                    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+                    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+                }
+            }
+
 
         };
+    var posOptions = {timeout: 10000, enableHighAccuracy: false};
+    $cordovaGeolocation
+        .getCurrentPosition(posOptions)
+        .then(function (position) {
+            console.error(position);
+            $scope.markers.vendeur.lat  = position.coords.latitude;
+            $scope.markers.vendeur.lng = position.coords.longitude;
+
+        }, function(err) {
+          console.log(error.message);
+        });
 
     $scope.goClient = function(){
-        console.log(clientObject);
+        
+
+        $ionicLoading.show({ template : "Préparation de la visite en cours !"});
+
         var steps = [];
         CallSteps.get().then(
             function(success){
+
+                var destination = null;
+
                 for(var i = 0 ; i < success.length ; i++)
                 {
                     var object = {
@@ -674,98 +1049,102 @@ angular.module('starter.controllers', ['starter.services'])
                     if(success[i].rank == 1)
                     {
                         object.active = true;
+                        destination = success[i];
+                        break;
+                    }
+                }
+
+                window.localStorage['callSteps'] = JSON.stringify(success);
+
+                var startDay = new Date();
+
+                var mission = {
+                    ville: "Casablanca",
+                    region: "GRAND CASABLANCA",
+                    route: clientObject.route,
+                    nom: clientObject.nom,
+                    prenom: clientObject.prenom,
+                    codeClient: clientObject.code_client,
+                    lat: clientObject.lat,
+                    lng: clientObject.lng,
+                    route_id: $scope.client.route,
+                    client_id: $scope.client.id_db,
+                    date_start: startDay.getTime(),
+                    local: 1,
+                    state: 0,
+                    synced: false,
+                    entryDate : Date.now()
+                };
+
+                if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
+                {
+                        var posOptions = {timeout: 10000, enableHighAccuracy: false};
+                        $cordovaGeolocation
+                        .getCurrentPosition(posOptions)
+                        .then(function (position) {
+                              var object = {};
+                              object.lat  = position.coords.latitude;
+                              object.lng = position.coords.longitude;
+                              console.log(object);
+                              console.log(clientObject.id_db);
+                              Clients.updateClientCoords(clientObject.id_db, object).then(
+                                function(success){
+                                    console.log("Successfully up to date !");
+                                    console.log(success);
+                                },
+                                function(error){
+                                    console.log("Error while updating");
+                                });
+                            }, function(err) {
+                              console.log("WE'LL TRY NEXT TIME!");
+                        });
+                }
+
+                if(typeof window.localStorage['mission'] == "undefined")
+                {
+                    window.localStorage['mission'] = JSON.stringify(mission);
+                }
+                else
+                {
+                    var localMission = JSON.parse(window.localStorage['mission']);
+                    if(localMission.client_id != $scope.client.id_db)
+                    {
+                        window.localStorage['mission'] = JSON.stringify(mission);
+                    }
+                }
+
+
+
+                EntryPoint.prepare(clientObject.id_db).then(function(success){
+
+                    var profile = JSON.parse(window.localStorage["profile"] || "{}");
+
+                    var isVendeur = typeof(profile.fonction) != "undefined" && profile.fonction == "vendeur";
+
+                    $timeout(function(){
+                        $ionicLoading.hide();
+                    }, 900);
+
+
+                    if(destination.name == "app.brands" && isVendeur)
+                    {
+                        $state.go(destination.name, { vendeur: true, chargement: false });
                     }
                     else
                     {
-                        object.active = false;
+                        $state.go(destination.name);
                     }
-                    steps.push(object);
-                }
-                window.localStorage['callSteps'] = JSON.stringify(steps);
-                EntryPoint.prepare(clientObject.id_db);
+
+                }).finally(function(){
+
+                    
+
+                });
             }, 
             function(error){
                 console.log(error);
             });
-        $ionicLoading.show({
-            template : "Préparation de la visite en cours ..."
-        });
-        var startDay = new Date();
-        var mission = {
-            ville: "Casablanca",
-            region: "GRAND CASABLANCA",
-            route: clientObject.route,
-            nom: clientObject.nom,
-            prenom: clientObject.prenom,
-            codeClient: clientObject.code_client,
-            lat: clientObject.lat,
-            lng: clientObject.lng,
-            route_id: $scope.client.route,
-            client_id: $scope.client.id_db,
-            date_start: startDay.getTime(),
-            state: 0,
-            synced: false,
-            entryDate : Date.now()
-        };
-        if(($scope.client.lat == null || $scope.client.lat == 0) || ($scope.client.lng == null || $scope.client.lng == 0))
-        {
-                var posOptions = {timeout: 10000, enableHighAccuracy: false};
-                $cordovaGeolocation
-                .getCurrentPosition(posOptions)
-                .then(function (position) {
-                      var object = {};
-                      object.lat  = position.coords.latitude;
-                      object.lng = position.coords.longitude;
-                      console.log(object);
-                      console.log(clientObject.id_db);
-                      Clients.updateClientCoords(clientObject.id_db, object).then(
-                        function(success){
-                            console.log("Successfully up to date !");
-                            console.log(success);
-                        },
-                        function(error){
-                            console.log("Error while updating");
-                        });
-                    }, function(err) {
-                      console.log("WE'LL TRY NEXT TIME!");
-                });
-        }
-        else
-        {
-            console.log("no need !");
-        }
-        if(typeof window.localStorage['mission'] == "undefined")
-        {
-            window.localStorage['mission'] = JSON.stringify(mission);
-        }
-        else
-        {
-            var localMission = JSON.parse(window.localStorage['mission']);
-            if(localMission.client_id != $scope.client.id_db)
-            {
-                window.localStorage['mission'] = JSON.stringify(mission);
-            }
-        }
-        $timeout(
-            function(){
-                $ionicLoading.hide();
-                var callSteps = JSON.parse(window.localStorage['callSteps']);
-                for(var i = 0 ; i < callSteps.length ; i++)
-                {
-                    if(callSteps[i].active)
-                    {
-                        var isVendeur = JSON.parse(window.localStorage['profile']).fonction == "vendeur";
-                        if(callSteps[i].name == "app.brands" && isVendeur)
-                            {
-                                $state.go(callSteps[i].name, { vendeur: true, chargement: false });
-                            }
-                            else
-                            {
-                                $state.go(callSteps[i].name);
-                            }
-                    }
-                }
-            }, 5000);
+        
         
         
     };
@@ -939,24 +1318,22 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('RoutesCtrl', function($scope, $ionicLoading, $ionicPopup, $rootScope, $ionicModal,
-    Missions, Clients, Commandes,
+.controller('RoutesCtrl', function($scope, $cordovaGeolocation, $ionicLoading, $ionicPopup, $rootScope, $ionicModal,
+    Missions, Clients, Commandes, GPS,
     $ionicSideMenuDelegate, $state, $timeout, ionicMaterialMotion, ionicMaterialInk){
     $scope.ca = 0;
     $scope.missions = [];
     $scope.data = {};
-    var length = 0;
-    var scrollPosition = 0;
     $scope.$parent.clearFabs();
     $timeout(function()
         {
             $scope.$parent.showHeader();
         }, 500);
+
     $scope.$parent.setHeaderFab('left');
-    $scope.infos = JSON.parse(window.localStorage['profile']);
-    var profile = JSON.parse(window.localStorage['profile']);
-    $scope.address = "";
-    $scope.noMoreItemsAvailable = false;
+
+    var profile = $scope.infos = JSON.parse(window.localStorage['profile'] || "{}");
+   
     $scope.data.missions = [];
     
     /****************************************************/
@@ -998,34 +1375,52 @@ angular.module('starter.controllers', ['starter.services'])
         }, 1000);
         
     };
-    Missions.getTodaysMissions(profile.id_db).then(
+
+    todayMissions();
+
+    function todayMissions()
+    {
+        $scope.missions = [];
+
+        $ionicLoading.show({
+            template : "Recherche en cours ..."
+        })
+        Missions.getTodaysMissions(profile.id_db).then(
             function(missions){
-                angular.forEach(missions, function(mission){
+                console.debug(missions);
+                angular.forEach(missions, function(mission, index){
+                    
+                    /*// IF ACTIVITE HAS GPS RULE !
+                    if(false)
+                    {
+                        if(GPS.distance(object, mission, 300))
+                        {
+                            $scope.missions.push(mission);
+                        }
+                    }
+                    else
+                    {
+                        
+                    }*/
                     $scope.missions.push(mission);
+
                 });
             }, 
             function(error){
-                console.log(error.message);
+                
+            })
+        .finally(function(){
+            $timeout(function(){
+                            $ionicLoading.hide();
+                        }, 600);
             });
+    }
 
     $scope.today = function(){
-        $scope.missions = [];
-        $ionicLoading.show({
-            template: "chargement ..."
-        });
-        $timeout(function(){
-            Missions.getTodaysMissions(profile.id_db).then(
-            function(missions){
-                angular.forEach(missions, function(mission){
-                    $scope.missions.push(mission);
-                });
-            }, 
-            function(error){
-                console.log(error.message);
-            });
-            $ionicLoading.hide();
-        }, 1000);
+        
+        todayMissions();
     };
+
 
     $scope.retard = function(){
         $scope.missions = [];
@@ -1052,7 +1447,10 @@ angular.module('starter.controllers', ['starter.services'])
         if( (mission.state == null) || (mission.state == 0) )
         {
             mission.entryDate = Date.now();
-            window.localStorage['mission'] = JSON.stringify(mission);
+            if(window.localStorage.getItem("mission") == null)
+            {
+                window.localStorage["mission"] = JSON.stringify(mission);
+            }
             $state.go("app.client", {id : mission.client_id});
         }
         else
@@ -1820,12 +2218,13 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandsCtrl', function($scope, $timeout, $state, CallSteps, CartUtilities, $log, $ionicLoading, Chargement, Commandes, IonicPopUpUtilities, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
+.controller('BrandsCtrl', function($scope, $timeout, $state, total, Prelevements, Retours, CallSteps, CartUtilities, $log, $ionicLoading, Chargement, Commandes, IonicPopUpUtilities, $ionicPopup, position, LigneCommandes, $stateParams, Articles, $ionicModal, Missions){
     
-    // TOTAL INITIALIZATION TO 0 !
-    $scope.total = 0;
 
-    cartInitialization();
+    console.debug(total);
+
+    // TOTAL INITIALIZATION TO 0 !
+    $scope.total = total;
 
     function cartInitialization()
     {
@@ -1842,6 +2241,8 @@ angular.module('starter.controllers', ['starter.services'])
     var forChargement = $scope.forChargement = $stateParams.chargement == "true" ? true : false;
     var prelevement = $scope.prelevement = $stateParams.prelevement == "true" ? true : false;
     var retour = $scope.retour = $stateParams.retour == "true" ? true : false;
+
+    console.debug(forChargement);
 
     if(forChargement)
     {
@@ -1888,6 +2289,10 @@ angular.module('starter.controllers', ['starter.services'])
     };
     function next()
     {
+        // PRELEVEMENT AND RETOUR ARE NOT REAL CALL STEPS
+        // THEY ARE A JUST A WORKAROUND
+        // SO THE POSITION WIRED WITH THIS CONTROLLER IS NOT THE REAL POSITION IN THE CALLSTEP
+        // I HAVE TO FORCE THE SEARCH FOR THE CURRENT STEP 
         if(prelevement || retour)
         {
             var _target = prelevement ? "app.prelevement" : "app.retour";
@@ -1996,33 +2401,141 @@ angular.module('starter.controllers', ['starter.services'])
 
     $scope.sendPrelevement = function()
     {
-        console.debug("SEND PRELEVEMENT !!");
-        Chargement
-        .addPrelevementClient(1, JSON.parse(window.localStorage["prelevement"] || "{}").items)
-        .then(
-            function(success)
-            {
-                next();
-            });
+        var popup = $ionicPopup.alert({
+            title: "Confirmation",
+            buttons : [
+                {
+                    text: "OK",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+
+                        e.preventDefault();
+
+                        console.debug("IM SURE !");
+                        var prelevement = JSON.parse(window.localStorage["prelevement"] || "{}");
+                        var items = typeof(prelevement.items != "undefined") ? prelevement.items : [];
+                        var mission = JSON.parse(window.localStorage["mission"] || "{}");
+                        var clientId = mission.client_id || 0;
+                        Prelevements.add(items, clientId).then(
+                            function(success){
+                                console.debug(success);
+                                // GO TO NEXT STEP !
+                                popup.close();
+                                next();
+                            }, 
+                            function(error){
+                                console.error(success);
+                                popup.close();
+                            });
+                    }
+                },
+                {
+                    text: "ANNULER",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+
+                        e.preventDefault();
+
+                        console.debug("NO IM NOT !");
+
+                        popup.close();
+                    }
+                }
+                      ],
+                    template:'<span style="font-size: 12px; font-weight: 600;"> Etes-vous sûr de vouloir confirmer ?</span>'
+        })
+        
     };
 
     //Send retours !!
 
-    $scope.sendRetour = function(){
-        next();
+    $scope.sendRetour = function()
+    {
+        
+        var popup = $ionicPopup.alert({
+            title: "Confirmation",
+            buttons : [
+                {
+                    text: "OK",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+
+                        e.preventDefault();
+
+                        console.debug("IM SURE !");
+                        
+                        var retour = JSON.parse(window.localStorage["retour"] || "{}");
+                        var items = typeof(retour.items != "undefined") ? retour.items : [];
+                        
+                        Retours.clearCartFromRetours(items).then(
+                            function(success){
+                                popup.close();
+                                next();
+                                
+                            }, 
+                            function(error){
+                                console.error(success);
+                                popup.close();
+                            });
+                    }
+                },
+                {
+                    text: "ANNULER",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+
+                        e.preventDefault();
+
+                        console.debug("NO IM NOT !");
+
+                        popup.close();
+                    }
+                }
+                      ],
+                    template:'<span style="font-size: 12px; font-weight: 600;"> Etes-vous sûr de vouloir confirmer ?</span>'
+        })
     };
+
+
+    $scope.cancelDemande = function(){
+        $ionicLoading.show({
+            template : "Annulation en cours ... "
+        });
+
+        CartUtilities.clearVisit()
+        .then(function(success){
+
+        }).finally(function(){
+            $timeout(function(){
+                $ionicLoading.hide();
+                $state.transitionTo("menu.entry");
+            }, 900);
+        });
+    }
 
     //Send the demand !!
 
     $scope.sendDemande = function()
     {
 
-        $ionicLoading.show({
-            template : "Enregistrement de votre demande ..."
-        });
+        
+        var cart = JSON.parse(window.localStorage["cart"] || "{}");
 
-        Chargement.add().then(
+        if(typeof(cart.items) != "undefined" && cart.items.length > 0)
+        {
+            $ionicLoading.show({
+                template : "Enregistrement de votre demande ..."
+            });
+
+            var lignes = cart.items;
+
+            Chargement.add($scope.infos.id_db, lignes).then(
             function(success){
+                console.debug(success);
                 if(!(typeof(success.rowsAffected) == "undefined"))
                 {
                     $ionicPopup.alert(IonicPopUpUtilities.alert("Succès", success.rowsAffected+" ligne(s) ajoutés"));
@@ -2054,6 +2567,13 @@ angular.module('starter.controllers', ['starter.services'])
                 }, 500);
 
             });
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur", "Aucune ligne ajoutée"));
+        }
+
+        
     };
 
     // EXCLUSIONS FROM THE MEETING OF 21/01/2016  , Proposed by MONCEF in order to access to a predefined brand by conditions !!
@@ -2062,7 +2582,7 @@ angular.module('starter.controllers', ['starter.services'])
     var _gone = typeof(_marques.exclusion) == "undefined" || typeof(_marques.exclusion.gone) == "undefined"  ? false : _marques.exclusion.gone;
     var exclusion = _gone ? [] : [10];
 
-    $scope.infos = JSON.parse(window.localStorage['profile']);    
+    $scope.infos = JSON.parse(window.localStorage['profile'] || "{}");    
 
     $scope.rows = [];
     
@@ -2070,7 +2590,7 @@ angular.module('starter.controllers', ['starter.services'])
 
     var canGoToExclusion = typeof(marques.exclusion) != "undefined" && marques.exclusion.canGo;
     
-    Articles.getMarques(exclusion, isVendeur, forChargement).then(
+    Articles.getMarques(exclusion, isVendeur, forChargement, retour).then(
         function(marques){
             $log.debug(marques);
             var count = marques.length;
@@ -2138,7 +2658,7 @@ angular.module('starter.controllers', ['starter.services'])
       $scope.ca = 0;
       $scope.client = {};
       $scope.routes = [];
-      $scope.infos = JSON.parse(window.localStorage['profile']);      
+      $scope.infos = JSON.parse(window.localStorage['profile']  || '{}');      
       $cordovaGeolocation
         .getCurrentPosition(posOptions)
         .then(function (position) {
@@ -2146,7 +2666,7 @@ angular.module('starter.controllers', ['starter.services'])
             $scope.client.lng = position.coords.longitude;
             console.log(position.coords);
         }, function(err) {
-          console.log(error.message);
+          console.log(err.message);
         });
       Missions.getVendeurRoutes().then(
       function(routes){
@@ -2181,7 +2701,11 @@ angular.module('starter.controllers', ['starter.services'])
       };
 })
 
-.controller('CartCtrl', function($log, $state, $stateParams, ViewController, CartUtilities, $filter, $ionicLoading, IonicPopUpUtilities, PrinterService, Promotions, $timeout, $cordovaDatePicker,$cordovaFile, $scope, $ionicPopup, $cordovaPrinter,  ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
+.controller("ReportsCtrl", function($state, $scope){
+
+})
+
+.controller('CartCtrl', function($log, $state, $stateParams, RollBack, ViewController, CartUtilities, $filter, $ionicLoading, IonicPopUpUtilities, PrinterService, Promotions, $timeout, $cordovaDatePicker,$cordovaFile, $scope, $ionicPopup, $cordovaPrinter,  ca, position, Commandes, Accounts, Clients, Missions, LigneCommandes, Articles, ModePaiement){
     
     $scope.choice = {
         id: 0
@@ -2224,6 +2748,7 @@ angular.module('starter.controllers', ['starter.services'])
 
     $scope.currentIndex = 0;
 
+    $scope.promotionDiscount = 0;
     
     $scope.data = {};
 
@@ -2233,7 +2758,37 @@ angular.module('starter.controllers', ['starter.services'])
 
     $scope.totalHT = 0;
 
+    var totalFactureDiscounts = 0;
+
     $scope.checkOut = function(){
+        //
+        var myPopup = $ionicPopup.alert({
+            title: "Validation",
+            buttons: [
+                {
+                    text: "oui",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+                        e.preventDefault();
+                        checkOut();
+                        myPopup.close();
+                    }
+                },
+                {
+                    text: "non",
+                    onTap: function(e){
+
+                    },
+                    type: "button-assertive",
+                    cssClass: "assertive-survey"
+                }
+            ],
+            template: '<span style="font-size: 12px; font-weight: 600;">Etes-vous sûr de vouloir valider ?</span>'
+        });
+    };
+
+    function checkOut(){
         var missionObject = JSON.parse(window.localStorage['mission'] || "{}");
 
         if(!missionObject.concluded)
@@ -2242,7 +2797,9 @@ angular.module('starter.controllers', ['starter.services'])
             {
                 var cartObject = JSON.parse(window.localStorage['cart'] || "{}");
 
-                var local = typeof(missionObject.id_mission) == "undefined";
+                var local = missionObject.local == 1;
+
+                console.debug(local);
 
                 $ionicLoading.show({
                     template : "finalisation de la vente en cours ..."
@@ -2255,16 +2812,47 @@ angular.module('starter.controllers', ['starter.services'])
                     angular.copy($scope.data.items),
                     local, 
                     angular.copy($scope.choosenMethod.id), 
-                    angular.copy($scope.paymentDate)
+                    angular.copy($scope.paymentDate),
+                    $scope.totalTTC,
+                    $scope.totalHT,
+                    cartObject.discountHistory || [],
+                    $scope.currentDiscount,
+                    totalFactureDiscounts
 
                     ).then(
                     function(success){
-                        $ionicPopup.alert(IonicPopUpUtilities.alert("Succès !", "La commande a bien été enregistrée"));
-                        missionObject.concluded = true;
-                        window.localStorage['mission'] = JSON.stringify(missionObject);
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Succès !", "La commande a bien été enregistrée !"));
+                        //missionObject.concluded = true;
+                        //window.localStorage['mission'] = JSON.stringify(missionObject);
+                        if(position.hasNext)
+                        {
+                            if(position.nextStep.name != "app.brands")
+                            {
+                                $state.transitionTo(position.nextStep.name);
+                            }
+                            else
+                            {
+                                $state.transitionTo(position.nextStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
+                            }
+                        }
+                        else
+                        {
+                            CartUtilities.clearVisit()
+                            .then(function(success){
+                                $state.transitionTo("menu.entry");
+                            });
+                        }
                     }, 
                     function(error){
-                        $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur !", "Erreur lors de l'enregistrement : \n "+error.message));
+                        $ionicPopup.alert(IonicPopUpUtilities.alert("Erreur !", "Erreur lors de l'enregistrement \n :"+JSON.stringify(error)+" \n En cours de dévelopement !"));
+                        
+                        RollBack.mission(error).then(
+                            function(success2){
+                                console.debug(success2);
+                            }, 
+                            function(error2){
+                                console.debug(error2);
+                            });
                     }).
                 finally(function(){
                     $timeout(function(){
@@ -2283,14 +2871,19 @@ angular.module('starter.controllers', ['starter.services'])
         }
     };
 
+    init();
+
     function init()
     {
         $scope.data.items = [];
-
-        var items = CartUtilities.getCartItems();
+        $scope.promotionDiscount = 0;
         var done = false;
         CartUtilities.getCartItems()
-        .then(function(items){
+        .then(function(input){
+
+            console.debug(input);
+
+            var items = input.items;
 
             for(var i = 0; i < items.length ; i++)
             {
@@ -2298,15 +2891,22 @@ angular.module('starter.controllers', ['starter.services'])
 
                 if(Object.prototype.toString.call(item) != "[object Array]")
                 {
-                    item.tva = item.tva - item.remise;
-
                     if(item.prixVente != 0)
                     {
-                        $scope.totalTTC+=item.tva;
+                        console.debug(item);
+
+                        item.ht = item.ht - item.remise;
+
+                        var tva = (typeof(item.tva) != "undefined" && item.tva != null && item.prixVente > 0) ? item.ht * item.tva/100 : 0;
+
+                        console.debug(tva);
+
+                        item.ttc =  item.ht + tva;
+
+                        $scope.totalTTC+=item.ttc;
 
                         $scope.totalHT+=item.ht;
                     }
-
                     $scope.data.items.push(item);
                 }
                 else
@@ -2315,21 +2915,49 @@ angular.module('starter.controllers', ['starter.services'])
                 }
                 if(i == items.length - 1)
                 {
-                    promptGiftsOrAddThem();
-                    /*done = true;
-                    var change = JSON.parse(window.localStorage["change"] || "true");
-                    console.debug(change);
-                    if(!done && !change)
-                    {
-                        console.debug("SHOULD DO THIS !");
-                       
-                        items = items.concat(JSON.parse(window.localStorage['gifts'] || '[]'));
-                    }
-                    else
-                    {
-                        console.debug("SHOULD NOT DO THIS !");
-                        
-                    } */    
+                    var discounts = input.discounts;
+
+                    //SORTING THE PROMOTIONS !!
+                    discounts = discounts.sort(function(a, b){
+                        a = a.priorite;
+                        b = b.priorite;
+
+                        if(a > b)
+                        {
+                            return 1;
+                        }
+                        else if (a < b)
+                        {
+                            return -1;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    });
+                    // AN EMPTY THAT WILL HOLD ALL THE FINAL DETAILED DISCOUNTS!
+                    // AND THEN SAVED INTO CART ITEMS DISCOUNT HISTORY OBJEECT !
+                    var discounts_history = [];
+                    totalFactureDiscounts = 0;
+
+                    angular.forEach(discounts, function(discount, discountsIndex){
+                        discount.value =  $scope.totalTTC;
+                        discount.rank = discountsIndex + 1;
+                        discount.remiseP = discount.remise;
+                        discount.remiseV = discount.value * (discount.remiseP/100);
+                        totalFactureDiscounts += discount.remiseV;
+                        $scope.totalTTC = $scope.totalTTC - discount.remiseV;
+                        $scope.promotionDiscount+=discount.remiseV;
+                        discounts_history.push(discount);
+                        if(discountsIndex == discounts.length - 1)
+                        {
+                            var cart = JSON.parse(window.localStorage["cart"]);
+                            cart.discountHistory = discounts_history;
+                            window.localStorage["cart"] = JSON.stringify(cart);
+                        }
+                    });
+
+                    promptGiftsOrAddThem();   
                 }
             }
 
@@ -2362,36 +2990,11 @@ angular.module('starter.controllers', ['starter.services'])
             }
             
         }
-
-        var promotions = JSON.parse(window.localStorage['promotions'] || "[]");
-        for(var i = 0 ; i < promotions.length ; i++)
-        {
-            var promotion = promotions[i];
-            if(promotion.type == "PC")
-            {
-                console.debug($scope.totalHT);
-                console.debug(promotion.ca);
-                if(promotion.ca <= $scope.totalHT)
-                {
-                    promotion.consumed = true;
-                }
-                else
-                {
-                    promotion.consumed = false;
-                }
-            }
-        }
-        window.localStorage['promotions'] = JSON.stringify(promotions);
     }
 
     $scope.hello = function(group, index){
         group.choosen = index;
     };
-
-    /*
-    $scope.nextPopUpShow = true;
-    $scope.previousPopUpShow = false;
-    */
 
 
     $scope.previousPopUp = function()
@@ -2508,17 +3111,17 @@ angular.module('starter.controllers', ['starter.services'])
         console.debug(popUp);
     }
 
-    init();
+    
 
     var promotionsSuccess = [];
     var replace = true;
 
-    $scope.change = function(article){
+    /*$scope.change = function(article){
 
         //Promotions and SBDs 
         ViewController.check(article);
         init();
-    };
+    };*/
     
 
     $scope.print = function(){
@@ -2667,12 +3270,12 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('SurveyCtrl', function($scope, $timeout,position, CartUtilities, Surveys, $state, $ionicPopup){
+.controller('SurveyCtrl', function($scope, $timeout, total, position, CartUtilities, Surveys, $state, $ionicPopup){
     
     // TOTAL INITIALIZATION TO 0 !
-    $scope.total = 0;
+    $scope.total = total;
 
-    cartInitialization();
+    //cartInitialization();
 
     function cartInitialization()
     {
@@ -2861,17 +3464,72 @@ angular.module('starter.controllers', ['starter.services'])
     };
 })
 
-.controller('BrandCtrl', function($scope, $log, $state, $ionicPopup, $stateParams, CartUtilities, IonicPopUpUtilities, Articles, ViewController, $ionicLoading){
+.controller('BrandCtrl', function($scope, $log, $state, $ionicPopup, $stateParams, total, Retours, CartUtilities, IonicPopUpUtilities, Articles, ViewController, $ionicLoading){
    
 
     // TOTAL INITIALIZATION TO 0 !
-    $scope.total = 0;
+    $scope.total = total;
 
-    cartInitialization();
+    $scope.motifs = { items : [], choosen: "" };
+
+    Retours.get(1)
+        .then(
+            function(success){
+                $scope.motifs.items = [];
+                angular.forEach(success.motifs, function(motif){
+                    $scope.motifs.items.push(motif);
+                });
+            },
+            function(error){
+                console.debug(error);
+            });
+
+    function showPopup(article)
+    {
+        var popUp = $ionicPopup.show({
+
+            scope: $scope,
+
+            templateUrl : "motifs.html",
+
+            buttons: [
+                {
+                    text: "TERMINER",
+                    type: "button-assertive",
+                    cssClass: "assertive-survey",
+                    onTap: function(e){
+                        e.preventDefault();
+                        article.cause = $scope.motifs.choosen;
+                        console.debug(article);
+                        if(true)
+                        {
+                            popUp.close();
+                        }
+                        else
+                        {
+                            popUp.close();
+                        }
+                    }
+                }
+            ],
+            title: 'Motifs',
+            subTitle: '('+$scope.motifs.items.length+')'
+        });
+    }
+
+
+    $scope.ajouterMotif = function(article){
+        showPopup(article);
+    };
+
+    //cartInitialization();
 
     function cartInitialization()
     {
-        $scope.total = CartUtilities.totalCart(true, false, true);
+        $scope.total = 0;
+        CartUtilities.totalCart(true, false, true).then(function(total){
+            $scope.total = total;
+        });
     }
 
     var isVendeur = $scope.isVendeur = $stateParams.vendeur && $stateParams.vendeur == "true" ? true : false;
@@ -2882,7 +3540,7 @@ angular.module('starter.controllers', ['starter.services'])
 
     var retour = $scope.retour = $stateParams.retour && $stateParams.retour == "true" ? true : false;
 
-    console.debug(retour);
+    
     
     var brand = $scope.brand = typeof($stateParams.name) != "undefined" ? $stateParams.name: "NONE";
 
@@ -2906,32 +3564,30 @@ angular.module('starter.controllers', ['starter.services'])
    
     if(true)
     {
+        console.debug(retour);
         // add the brand name + true if it is a vendeur profile + true if it is for chargement
         // + the id of vendeur if it is the current profile !
         Articles.getArticlesByMarque(brand, isVendeur, forChargement, vendeurId, retour).then(
             function(articles){
-
-                $log.debug(articles);
-
+                console.debug(articles);
                 $scope.articles = [];
-                console.debug(prelevement);
 
                 var _articles = ViewController.prepare(articles, brand, forChargement, prelevement, retour);
-
+                
                 for(var i = 0 , len = _articles.length ; i < len ; i++)
                 {
                     var _article = _articles[i];
                     if(forChargement)
                     {
-                        if(_article.demandeUnit > 0 || _article.demandeStock > 0)
+                        if(_article.unit > 0 || _article.packet > 0)
                         {
-                            if(!(_article.unit > 0 || _article.packet > 0))
-                            {
-                                _article.unit = _article.demandeUnit;
-                                _article.packet = _article.demandePacket;
-                                ViewController.check(_article, forChargement, isVendeur);
-                            }
+                            console.debug("SHOULD VERIFY !");
+                            ViewController.check(_article, forChargement, isVendeur, false, false, false);
                         }
+                    }
+                    else
+                    {
+                        console.debug("NOTHING !");
                     }
                     $scope.articles.push(_article);
                 }
@@ -2946,10 +3602,11 @@ angular.module('starter.controllers', ['starter.services'])
 
         $scope.change = function(article){
 
-            ViewController.check(article, forChargement, isVendeur, prelevement, retour);
+            ViewController.check(article, forChargement, isVendeur, prelevement, retour, false);
             console.debug(retour);
             if(!prelevement && !forChargement && !retour)
             {
+                console.debug("SHOULD DO IT");
                 cartInitialization();
             }
             else
@@ -2967,7 +3624,7 @@ angular.module('starter.controllers', ['starter.services'])
             //&& to not point on them !!
             var _articles = angular.copy($scope.articles);
 
-            if(!Articles.itemInScopeOutOfQuota(_articles, isVendeur, prelevement, retour))
+            if(!Articles.itemInScopeOutOfQuota(_articles, isVendeur, prelevement, retour, forChargement))
             {
                 $state.transitionTo("app.brands", { vendeur: isVendeur, chargement: forChargement, prelevement: prelevement, retour: retour });
             }
@@ -2984,30 +3641,61 @@ angular.module('starter.controllers', ['starter.services'])
     
 })
 
-.controller('RemainingCtrl', function($scope, $state,ViewController, Articles, Promotions, SBD, position){
-    console.log(position);
+.controller('RemainingCtrl', function($scope, $state, $rootScope, total, ViewController, Articles, Promotions, SBD, position){
+    
+    var profile = JSON.parse(window.localStorage["profile"] || "{}");
+    var mission = JSON.parse(window.localStorage["mission"] || "{}");
+
+    $scope.total = total;
+
+    var isVendeur = $scope.isVendeur = typeof(profile.fonction) != "undefined" && profile.fonction == "vendeur";
+
     $scope.hasNext = position.hasNext;
     $scope.hasPrevious = position.hasPrevious;
     $scope.next = function(){
-        if(position.hasNext)
-            {
-                console.log(position.nextStep.name);
-                $state.transitionTo(position.nextStep.name);
-            }
+        next();
     };
 
-    $scope.previous = function(){
-        if(position.hasPrevious)
+    function next()
+    {
+        if(position.hasNext)
+        {
+            if(position.nextStep.name == "app.brands")
             {
-                $state.go(position.previousStep.name);
+                $state.transitionTo("app.brands", { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
             }
+            else
+            {
+                $state.transitionTo(position.nextStep.name);
+            }
+            
+        }
+    }
+
+    $scope.previous = function(){
+        previous();
     };
+
+    function previous()
+    {
+        if(position.hasPrevious)
+        {
+            if(position.previousStep.name == "app.brands")
+            {
+                $state.transitionTo("app.brands", { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
+            }
+            else
+            {
+                $state.transitionTo(position.previousStep.name);
+            }
+        }
+    }
 
     $scope.change = function(article){
 
-        ViewController.check(article);
+        ViewController.check(article, false, isVendeur, false, false, false);
 
-        //initialize();
+        initialize();
     };
 
     $scope.infos = JSON.parse(window.localStorage['profile']);
@@ -3019,12 +3707,18 @@ angular.module('starter.controllers', ['starter.services'])
     function initialize()
     {
         var ids = ViewController.idsRemaining();
+        var vendeurId = profile.id_db;
+        var clientId = mission.client_id;
 
-        Articles.getArticlesInRange(ids).then(
+
+        Articles.getArticlesInRange(ids, vendeurId, clientId).then(
             function(articles){
+                console.log(articles);
                 $scope.articles = [];
                 
                 var _articles = ViewController.prepare(articles);
+
+                console.debug(_articles);
 
                 for(var i = 0, len = _articles.length ; i < len ; i++)
                 {
@@ -3041,12 +3735,10 @@ angular.module('starter.controllers', ['starter.services'])
 
 })
 
-.controller('BrandFiveCtrl', function($http, $filter, $log,  $scope, $cordovaVibration, $ionicLoading, ViewController, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
+.controller('BrandFiveCtrl', function($http, $filter, $log,  $scope, $cordovaVibration, $ionicLoading, total, ViewController, SBD, CartUtilities, IonicPopUpUtilities, $stateParams, $state,Commandes, Articles, Promotions, Marques, $ionicPopup, $timeout, Missions, LigneCommandes, position){
    
     // TOTAL INITIALIZATION TO 0 !
-    $scope.total = 0;
-
-    cartInitialization();
+    $scope.total = total;
 
     function cartInitialization()
     {
@@ -3101,29 +3793,42 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.next = function(){
         //$cordovaVibration.vibrate(100);
         $log.debug(isVendeur);
-        if(position.hasNext && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
+        if(position.hasNext && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur, false, false, false))
+        {
+            if(position.nextStep.name != "app.brands")
             {
-
-                //$cordovaVibration.vibrate(100);
-                $state.go(position.nextStep.name, { vendeur: isVendeur, chargement: false });
+                $state.transitionTo(position.nextStep.name);
             }
             else
             {
-                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
+                $state.transitionTo(position.nextStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
             }
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
+        }
     };
     $scope.previous = function(){
         //$cordovaVibration.vibrate(100);
-
-        if(position.hasPrevious && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles)))
+        if(position.hasPrevious && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur, false, false, false))
+        {
+            console.debug(position);
+            //$cordovaVibration.vibrate(100);
+            
+            if(position.previousStep.name != "app.brands")
             {
-                //$cordovaVibration.vibrate(100);
-                $state.go(position.previousStep.name, { vendeur: isVendeur, chargement: false });
+                $state.transitionTo(position.previousStep.name);
             }
             else
             {
-                $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
+                $state.transitionTo(position.previousStep.name, { vendeur: isVendeur, chargement: false, prelevement: false, retour: false });
             }
+        }
+        else
+        {
+            $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
+        }
     };
 
     //DEFAULT SETTINGs
@@ -3155,7 +3860,7 @@ angular.module('starter.controllers', ['starter.services'])
     //REAL TIME PROCESS !!
     //ADDING ITEMS TO CART, REMOVING THEM, MODIFY QTYs, PROMOTIONS && SBDs
     $scope.change = function(article) {
-        ViewController.check(article, forChargement, isVendeur);
+        ViewController.check(article, false, isVendeur, false, false, false);
         cartInitialization();
     };
     
@@ -3177,9 +3882,6 @@ angular.module('starter.controllers', ['starter.services'])
                     $scope.articles.push(_articles[i]);
                 }
 
-            }, 
-            function(error){
-                console.log(error);
             })
             .finally(function(){
                 $ionicLoading.hide();
@@ -3192,9 +3894,8 @@ angular.module('starter.controllers', ['starter.services'])
     $scope.backward = function(){
         //$cordovaVibration.vibrate(100);
 
-        if($scope.back && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
+        if($scope.back && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur, false, false, false))
         {
-            //
             if($scope.currentStep > 0)
             {
                 $scope.forw = true;
@@ -3217,13 +3918,14 @@ angular.module('starter.controllers', ['starter.services'])
         }
         else
         {
+            console.debug(Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur));
             $ionicPopup.alert(IonicPopUpUtilities.alert("Problème de qté", "Veuillez modifier les quantités."));
         }
     };
     $scope.forward = function(){
         $log.debug(isVendeur);
         //$cordovaVibration.vibrate(100);
-        if($scope.forw && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur))
+        if($scope.forw && !Articles.itemInScopeOutOfQuota(angular.copy($scope.articles), isVendeur, false, false, false))
             {
                 
                 if($scope.currentStep < $scope.brandFives.length)

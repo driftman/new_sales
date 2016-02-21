@@ -1,0 +1,56 @@
+<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; font-family: RobotoDraft,Roboto,sans-serif;">
+  
+  <div class="buttons">
+    <span></span>
+  </div>
+
+  <h1 class="title">{{ 'VENTES('+(total | number : 2)+' DHS)' }}</h1>
+
+  <div class="buttons">
+    <span></span>
+  </div>
+
+</ion-header-bar>
+
+<ion-content>
+
+    	<ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
+
+            <ion-item
+            collection-repeat="mission in missions"
+            style="padding: 0 !important; border-bottom: .5px solid rgba(183, 28, 28, 0.29);"
+            item="mission">
+                <div class="row" style="max-width: 100%;">
+                	<div class="col col-20" style="margin: 0 !important; border-right: .3px solid rgba(183, 28, 28, 0.29);">
+                		<div class="row">
+                			<h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ mission.day }}</h2>
+                		</div>
+                		<div class="row">
+                			<h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ mission.month | month }}</h2>
+                		</div>
+                	</div>
+
+                	<div class="col" style="max-width: 200px;">
+                		<p style="font-weight: 600;">Client : <span style="color: #B71C1C;">{{ mission.nom+' '+mission.prenom }}</span></p>
+		                <p style="font-weight: 600;">CA: <span style="color: #B71C1C;">{{ (mission.totalTTC | number : 2) + ' DHS' }}</span></p>
+		                <p style=" margin: 0; font-weight: 600;">Code visite: {{ mission.code }}</p>
+		                <p style=" margin: 0; font-weight: 600;">Adresse: {{ mission.address }} </p>
+                	</div>
+
+                	<div class="col col-10" style="margin: 0 !important;">
+                		<div class="row">
+                			<div class="col" style="color: #B71C1C;">
+                				<span style="font-size: 18px;">&#8471</span> <span style="font-size: 10px; ">{{mission.promotions }}</span> 
+                			</div>
+                		</div>
+                		<div class="row">
+                			<div class="col" style="color: #05599D;">
+                				<span style="font-size: 10px; ">SBD {{ mission.sbds }}</span> 
+                			</div>
+                		</div>
+                	</div>
+                </div>
+            </ion-item>
+
+        </ion-list>
+</ion-content>

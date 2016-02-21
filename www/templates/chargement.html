@@ -1,0 +1,101 @@
+<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; box-shadow: none;">
+  
+  <div class="buttons">
+    <button ng-click="menu()" class="button" style="margin: 5px; background: transparent; box-shadow: none;"><i class="icon ion-android-arrow-back"></i></button>
+  </div>
+
+  <h1 class="title">CHARGEMENT VENDEUR</h1>
+
+  <div class="buttons">
+    <button class="button" style="background: transparent; box-shadow: none;"><i class="icon ion-android-print"></i></button>
+  </div>
+
+</ion-header-bar>
+
+<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C; height: 40px; box-shadow: none;">
+
+<div class="row" style="font-size: 10px; font-weight: 900;">
+    			
+    			<div class="col">
+
+    				<div class="row">
+    					<div class="col" style="text-align: left;">Code</div>
+    					<div class="col" style="margin-left: 10px !important; min-width: 50%; max-width: 50%; text-align: left;">Désignation</div>
+    					<div class="col" style="text-align: left;">Cs.I</div>
+    					<div class="col" style="text-align: left;">Un.I</div>
+    					<div class="col" style="text-align: left;">Cs.O</div>
+    					<div class="col" style="text-align: left;">Un.O</div>
+    				</div>
+
+    			</div>
+
+</div>
+</div>
+
+<ion-content>
+
+		<div class="rapport" style=" border-bottom: 2px solid #B71C1C; font-size: 10px; font-weight: 600;">
+    		<div class="row chargement" ng-repeat="input in lignes" style="background-color: {{ input | chargement }}">
+    			<div class="col chargement">{{input.code}}</div>
+				<div class="col chargement" style="margin-left: 10px !important; min-width: 50%; max-width: 50%; text-align: left;">{{input.designation}}</div>
+				<div class="col chargement">{{input.packetIn}}</div>
+				<div class="col chargement">{{input.unitIn}}</div>
+				<div class="col chargement">{{input.packetOut}}</div>
+				<div class="col chargement">{{input.unitOut}}</div>
+    		</div>
+    	</div>
+    	<div>
+    		<table>
+    			<tr>
+    				<th style="padding-right: 10px">
+    					<span style="    
+			    		font-size: 14px;
+			    		font-weight: 900;
+			    		color: #B71C1C;">Code chargement</span>
+    				</th>
+    				<th style="margin-left: 10px;">
+    					<span style="    
+			    		font-size: 14px;
+			    		font-weight: 900;
+			    		color: #B71C1C;">Date chargement</span>
+    				</th>
+    			</tr>
+    			<tr>
+    				<td>{{ chargement.id }}</td>
+    				<td>{{ chargement.date }}</td>
+    			</tr>
+    		</table>
+    		
+    	</div>
+    	<!-- <div class="rapport" ng-repeat="demande in demandes" style=" border-bottom: 2px solid #B71C1C; font-size: 10px; font-weight: 600;">
+
+
+    		<div class="row chargement">
+    			<p class="chargement"> <span style="color: black; font-size: 11.5; font-weight: 900;" > Code chargement : </span> {{ demande.chargement_id }} </p>
+    		</div>
+    		<div class="row chargement">
+    			<p class="chargement"> <span style="color: black; font-size: 11.5; font-weight: 900;"> Date : </span> {{ demande.date }}</p>
+    		</div>
+
+    		<div class="row chargement">
+    			<h4 style="color: #B71C1C;">Demande envoyée : </h4>
+    		</div>
+
+    		
+
+    		
+    		<div class="row chargement">
+    			<h4 style="color: #B71C1C;">Elements validés : </h4>
+    		</div>
+
+    		<div class="row chargement" ng-repeat="input in demande.input">
+    			<div class="col chargement">{{input.code}}</div>
+				<div class="col chargement" style="min-width: 50%; max-width: 50%; text-align: left;">{{input.designation}}</div>
+				<div class="col chargement">{{input.packet}}</div>
+				<div class="col chargement">{{input.unit}}</div>
+
+    		</div>
+    		
+
+    	</div> -->
+</ion-content>

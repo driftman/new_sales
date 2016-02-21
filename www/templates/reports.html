@@ -1,0 +1,19 @@
+<ion-view view-title="C.A : {{ caVendeur | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts" ng-class="{expanded:$scope.isExpanded}">
+	
+	<ion-tabs class="tabs-assertive tabs-icon-top">
+
+	  		<ion-tab href="#/reports/chargements" title="chargements" icon-on="ion-ios-filing" icon-off="ion-ios-filing-outline">
+	    		<ion-nav-view name="chargements-tab"></ion-nav-view>
+		  	</ion-tab>
+
+		  	<ion-tab href="#/reports/stocks" title="stock" icon-on="ion-ios-clock" icon-off="ion-ios-clock-outline">
+				<ion-nav-view name="stocks-tab"></ion-nav-view>
+		  	</ion-tab>
+
+		  	<ion-tab href="#/reports/ventes" title="ventes" icon-on="ion-ios-gear" icon-off="ion-ios-gear-outline">
+				<ion-nav-view name="ventes-tab"></ion-nav-view>
+		  	</ion-tab>
+
+	</ion-tabs>
+
+</ion-view>

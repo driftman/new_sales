@@ -9,6 +9,7 @@
           <div class="list" style="margin-top: 10px;">
             <div class="row " ng-repeat="row in rows" style="padding: 0; border: none;">
                 <div class="col col-20 brands" ng-repeat="col in row" style="position: relative;">
+                    <span style="position: absolute; bottom: 0; right: 0;">{{ col.marqueArticle }}</span>
                     <img src="{{ col.logo }}" ng-click="goToBrand(col.marqueArticle)" style="height: 100%; background-color: #FFFFF1; width: 100%; max-width: 100%;">
                     <span ng-if="col.checked && !forChargement && !prelevement && !retour" style="position: absolute; top: 0px; right: 0px;"> <i class="icon ion-checkmark" style="color: #B71C1C; font-size: 15px;"></i></span>
                 </div>
@@ -17,12 +18,17 @@
 	</ion-content>
      <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
+      
+      <a ng-click="cancelDemande()" ng-if="forChargement" style="font-weight: 900; float: left; font-size: 12px; margin: 0; margin-right: 10px;">
+       annuler
+      </a>
+
       <a ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
 
-      <span ng-click="goCart()" ng-if="!forChargement && !prelevement"><i class="icon ion-android-cart" style="font-weight: 900;
-    font-size: 20px;"></i> : {{ total | number : 2 }} DHS</span>
+      <span ng-click="goCart()" ng-if="!forChargement"><i class="icon ion-android-cart" style="font-weight: 900;
+    font-size: 20px;"></i> {{ ' : ' + (total | number : 2) + ' DHS' }} </span>
 
-    <span ng-if="forChargement">Demande de chargement</span>
+      <span ng-if="forChargement">Demande de chargement</span>
 
       <a ng-click="next()" ng-if="hasNext && !prelevement && !retour" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
 

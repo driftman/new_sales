@@ -13,7 +13,7 @@ angular.module('starter',
         function(event, toState, toParams, fromState, fromParams)
         { 
             
-            if((toState.name == "menu.login") && !(typeof(window.localStorage['profile']) == "undefined"))
+            /*if((toState.name == "menu.login") && !(typeof(window.localStorage['profile']) == "undefined"))
             {
                 event.preventDefault();
                 $state.transitionTo("menu.entry");
@@ -22,13 +22,13 @@ angular.module('starter',
             {
                 event.preventDefault();
                 $state.transitionTo("menu.login");
-            }
+            }*/
             if(toState.name == "app.prelevement")
             {
                 event.preventDefault();
                 var profile = JSON.parse(window.localStorage["profile"] || "{}");
                 var _vendeur = typeof(profile.fonction) != "undefined" && profile.fonction == "vendeur";
-                $state.transitionTo("app.brands", { vendeur: _vendeur, chargement: false, prelevement: true});
+                $state.transitionTo("app.brands", { vendeur: _vendeur, chargement: false, prelevement: true, retour: false});
             }
             if(toState.name == "app.retour")
             {
@@ -49,8 +49,8 @@ angular.module('starter',
             }
           
         });
-        
         DB.init();
+        
          
           
 })
@@ -182,6 +182,9 @@ angular.module('starter',
         resolve : {
             position : function(CallSteps){
                 return CallSteps.checkForSteps("app.remainings");
+            },
+            total : function(CartUtilities){
+                return CartUtilities.totalCart(true, false, true);
             }
         }
     })
@@ -225,6 +228,50 @@ angular.module('starter',
         }
     })
 
+
+    .state('reports', {
+        url: "/reports",
+        abstract: true,
+        templateUrl: "templates/reports.html"
+    })
+
+    .state('reports.chargements', {
+        url : "/chargements",
+        views : {
+            'chargements-tab': {
+                templateUrl: 'templates/chargement.html',
+                controller: 'ChargementReportsCtrl'
+            }
+        }
+    })
+
+    .state('reports.stocks', {
+        url : "/stocks",
+        views : {
+            'stocks-tab': {
+                templateUrl: 'templates/stock.html',
+                controller: 'StockReportsCtrl'
+            }
+        }
+    })
+
+    .state('reports.ventes', {
+        url : "/ventes",
+        views : {
+            'ventes-tab': {
+                templateUrl: 'templates/ventes.html',
+                controller: 'VentesReportsCtrl'
+            }
+        }
+    })
+
+
+
+
+
+
+
+
     .state('app.brandfive', {
         url : "/brandfive",
         views : {
@@ -239,6 +286,9 @@ angular.module('starter',
         resolve : {
             position : function(CallSteps){
                 return CallSteps.checkForSteps("app.brandfive");
+            },
+            total : function(CartUtilities){
+                return CartUtilities.totalCart(true, false, true);
             }
         }
     })
@@ -257,6 +307,9 @@ angular.module('starter',
         ,resolve : {
             position : function(CallSteps){
                 return CallSteps.checkForSteps("app.brands");
+            },
+            total : function(CartUtilities){
+                return CartUtilities.totalCart(true, false, true);
             }
         }
     })
@@ -320,6 +373,11 @@ angular.module('starter',
             'fabContent': {
                 template: ''
             }
+        },
+        resolve : {
+            total : function(CartUtilities){
+                return CartUtilities.totalCart(true, false, true);
+            }
         }
     })
     // WORKAROUNDS NO MORE !
@@ -377,6 +435,9 @@ angular.module('starter',
         resolve : {
             position : function(CallSteps){
                 return CallSteps.checkForSteps("app.survey");
+            },
+            total : function(CartUtilities){
+                return CartUtilities.totalCart(true, false, true);
             }
         }
     })
@@ -419,21 +480,6 @@ angular.module('starter',
             }
         });
 
-
-/*.state('app.forgot-password', {
-        url: '/forgot-password',
-        views : {
-            'menuContent': {
-                templateUrl: 'templates/password_forgot.html',
-                controller: 'ClientCtrl'
-                }
-            },
-            'fabContent': {
-                template: ''
-            }
-        });*/
-
-    // if none of the above states are matched, use this as the fallback
     //$urlRouterProvider.otherwise('/menu/login');
      $urlRouterProvider.otherwise( function($injector, $location) {
             var $state = $injector.get("$state");

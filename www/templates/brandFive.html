@@ -84,7 +84,7 @@
                 font-size: 11px; 
                 font-weight: 900; 
                 float: left;">un.</div>
-                <div class="col col-15" 
+                <!-- <div class="col col-15" 
                 style="
                 border: none;
                 margin: 0;
@@ -93,7 +93,7 @@
                 border: none;
                 font-size: 11px; 
                 font-weight: 900; 
-                float: left;">total</div>
+                float: left;">total</div> -->
                 <div class="col" 
                 ng-if="isVendeur"
                 style="
@@ -104,9 +104,23 @@
                 border: none;
                 font-size: 11px;  
                 font-weight: 900; 
-                float: left;">stock</div>
+                float: left;">stv.</div>
 
-                <div class="col" 
+                <div 
+                class="col"
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 11px;  
+                font-weight: 900; 
+                float: left;">stc.</div>
+
+                <div 
+                ng-if="!isVendeur || forChargement"
+                class="col" 
                 style="
                 border: none;
                 margin: 0;
@@ -134,7 +148,7 @@
             border: none;
             border-bottom: 1px solid rgba(0,0,0,0.2);
             min-height: 0px;
-            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:groupeSBD track by $index">
+            text-align: left;" ng-repeat="article in articles | filter:articleName track by $index">
                 <div class="row" style="
                 background-color: {{ article | backgroundSBD : isVendeur }};
                 margin: 0;
@@ -163,13 +177,13 @@
                     margin-top: -5px;
                     font-size: 10.5px; 
                     font-weight: 900; 
-                    text-align: left;">PPQ: {{ article.past }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
+                    text-align: left;">PPQ: {{ article.past || '0,0,0' }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
                     font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span></p></div>
                 <div class="col col-15" style="
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD }}; color: green; width: 100%; text-align:center;
+                border: none;"><input type="number" ng-readonly="(isVendeur &&  !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0)) || (!isVendeur && !prelevement && !retour && (!article.quotaVALUE > 0 && !article.quotaQTY > 0))" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur }}; color: green; width: 100%; text-align:center;
                 margin-left: 2.5px;
                 font-size: 11px;
                 border-bottom-right-radius: 5px;
@@ -179,7 +193,7 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" value="0" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD }};color: green; width: 100%; text-align:center;
+                border: none;"><input type="number" value="0" ng-readonly="(isVendeur && !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0)) || (!isVendeur && !prelevement && !retour && (!article.quotaVALUE > 0 && !article.quotaQTY > 0))" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur }};color: green; width: 100%; text-align:center;
                 margin-left: 2.5px;
                 font-size: 11px;
                 border-bottom-right-radius: 5px;
@@ -187,13 +201,13 @@
                 border-bottom-width: 2px;"></input>
 
                 </div>
-                <div class="col col-15" style="
+                <!-- <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 900;
                 text-align: center;"><span style="font-size: 10px;" ng-bind="(article.packet*article.unitConversion)+(article.unit)"></span>
-            </div>
+            </div> -->
                 <div 
                 ng-if="isVendeur" 
                 class="col" 
@@ -206,7 +220,21 @@
                 font-size: 11px;  
                 font-weight: 900; 
                 float: left;">{{ article.stock }}</div>
-                <div class="col"
+                <div 
+                class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 11px;  
+                font-weight: 900; 
+                float: left;">{{ article.stc }}</div>
+
+                <div 
+                ng-if="!isVendeur || forChargement"
+                class="col"
                 style="
                 margin: 0;
                 padding: 0;
@@ -229,7 +257,13 @@
     font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div>  -->
     <div class="title">
       <span ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></span>
-      <span ng-click="goCart()">{{ total | number : 2 }} DHS</span>
+
+      <span ng-click="goCart()">
+        <i class="icon ion-android-cart" style="font-weight: 900;
+        font-size: 20px;"></i>
+        {{ ' : ' + (total | number : 2) + ' DHS' }} 
+      </span>
+
       <span ng-click="next()" ng-if="hasNext && done" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></span>
     </div>
 

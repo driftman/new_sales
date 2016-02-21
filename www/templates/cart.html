@@ -142,7 +142,7 @@
                 padding: 0;
                 text-align: center;
                 border: none;"><span style="color: green; font-weight: 900; font-size: 9px;">
-                {{ item.tva - item.remise || 0 | number:2 }}</span></div>
+                {{ item.ttc | number:2 }}</span></div>
                 </div>
             </div>
 
@@ -240,6 +240,46 @@
               margin-top: 30px;
               margin: 0;
               padding: 0;">
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">TOTAL REMISES : </span></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                background-color: #B71C1C;">{{ '- '+(promotionDiscount | number:2 || 0)+' DHS' }}</div>
+              </div>
+            </div>
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
                 <div class="col col-50"
                 style="
                 border: none;
@@ -263,7 +303,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ totalTTC - (totalTTC*currentDiscount/100) | number : 2 }} DHS </div>
+                background-color: #B71C1C;">{{ (totalTTC - (totalTTC*currentDiscount/100) | number : 2 )}} DHS </div>
               </div>
             </div>
           </div>

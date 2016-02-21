@@ -1,0 +1,68 @@
+<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; box-shadow: none;">
+  
+  <div class="buttons">
+    <button class="button" style="box-shadow: none; margin: 5px; background: transparent;"><i class="icon ion-android-arrow-back"></i></button>
+  </div>
+
+  <h1 class="title">{{ 'STOCK-DECHARGEMENT' }}</h1>
+
+  <div class="buttons">
+    <button class="button" style="box-shadow: none; background: transparent;"><i class="icon ion-android-print"></i></button>
+  </div>
+
+</ion-header-bar>
+
+<div class="bar bar-subheader bar-balanced" style="box-shadow: none; background-color: #B71C1C; height: 40px;">
+
+	<div class="row" style="font-size: 10px; font-weight: 900;">
+	    			
+		<div class="col">
+
+			<div class="row chargement">
+				<div class="col" style="text-align: left; padding-left: 15px; text-align: left;">Code</div>
+				<div class="col" style="text-align: center; padding-left: 15px; min-width: 50%; max-width: 50%; text-align: center;">{{ 'Désignation ('+stock.length+')'}}</div>
+				<div class="col" style="text-align: center; padding-left: 15px;">Cs.</div>
+				<div class="col" style="text-align: center; padding-left: 15px;">Un.</div>
+				<div class="col" style="text-align: center; padding-left: 15px;">Total</div>
+			</div>
+
+		</div>
+
+	</div>
+
+</div>
+
+<ion-content>
+    	<div class="rapport" style=" border-bottom: 2px solid #B71C1C; font-size: 10px; font-weight: 600;">
+    		<div class="row chargement" ng-repeat="input in stock track by $index" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+
+    			<div class="col chargement" style="font-weight: 900;">{{input.code}}</div>
+				<div class="col chargement" style="font-weight: 900; min-width: 50%; max-width: 50%; text-align: center;">{{input.designation}}</div>
+				<div class="col chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+					<input ng-readonly="input.totalStock == 0" type="number" value="item.packet" ng-change="change(input)" ng-model="input.packet" style="background-color: transparent; font-weight: 900; color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input>
+				</div>
+				<div class="col chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+					<input ng-readonly="input.totalStock == 0" type="number" value="input.unit" ng-change="change(input)" ng-model="input.unit"  style="background-color: transparent; font-weight: 900; color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input>
+				</div>
+				<div class="col chargement" style="text-align: center; font-weight: 900;">{{ input.csUn }}</div>
+				
+    		</div>
+    		
+    		
+    	</div>
+    	
+		<div class="button-bar">
+		  <a class="button button-clear button-assertive" ng-click="discard()" style="font-weight: 900;">ANNULER</a>
+		  <a class="button button-clear button-balanced" ng-click="confirm()" style="font-weight: 900;">VALIDER</a>
+		</div>
+</ion-content>
