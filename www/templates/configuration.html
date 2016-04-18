@@ -1,0 +1,166 @@
+<ion-view view-title="PARAMETRAGE" style="font-size: 13px;">
+    <ion-content>
+        <h3 style="color: #F12424; font-size: 20px; text-align: center; margin-top: 20px;">Paramétrage Serveur</h3>
+
+       <!-- <div class="row">
+
+            <div class="col col-33" style="font-size:16px;"><b>Nom :</b></div>
+            <div class="col" ng-class="{'successClass':conncetionSuccess,'failureClass':connectionFail}" style=" font-size:16px;">{{ chosen.server.name | uppercase }}</div>
+
+        </div>-->
+
+
+        <div class="row">
+
+            <div class="col col-33"><b style="font-size:16px;">IP :</b></div>
+            <div class="col" ng-class="{'successClass':conncetionSuccess,'failureClass':connectionFail}" >{{chosen.server.ip}}</div>
+        </div>
+
+
+
+
+
+
+        <div class="row">
+            <div class="col">
+                <button style="width: 100%; padding: 0;" ng-click="showServersPop()" class="button button-small ">
+                   Modifier
+                </button>
+            </div>
+            <div class="col">
+                <button style="width: 100%; padding: 0;" ng-click="testConnection()" class="button button-small">
+                    Tester
+                </button>
+            </div>
+
+        </div>
+
+
+        <h3 style="color: #F12424; font-size: 20px; text-align: center;">Paramétrage Imprimante</h3>
+
+
+
+        <div class="row">
+            <div class="col col-33"><b>NOM : </b></div>
+            <div class="col" style="color: green; font-size: 16px;">{{ chosen.printer.name | uppercase }}</div>
+        </div>
+
+        <div class="row">
+            <div class="col col-33"><b>MAC : </b></div>
+            <div class="col" style="color: green;">{{ chosen.printer.mac | uppercase }}</div>
+        </div>
+
+
+        <div class="row">
+            <div class="col">
+                <button style="width: 100%; padding: 0;" ng-click="showPrintersPop()" class="button button-small ">
+                    Modifier
+                </button>
+            </div>
+            <div class="col">
+                <button style="width: 100%; padding: 0;" ng-click="showTestPop()" class="button button-small">
+                    Tester
+                </button>
+            </div>
+
+        </div>
+
+        <h3 style="color: #F12424; font-size: 20px; text-align: center;">Paramétrage Societé</h3>
+
+
+        <div class="row">
+            <div class="col col-33"><b>SOCIETE : </b></div>
+            <div class="col" ng-click="showCompsPopup()" style="color: green; font-size: 16px; ">{{ ( chosen.company.name || "CHOISIR" ) | uppercase }}</div>
+        </div>
+
+    </ion-content>
+</ion-view>
+
+<div ng-click="confirm()" ng-show="true" class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+    <div class="title">
+        <span style="text-align: center; font-size: 20px; margin: 0; font-weight: 500"> Valider </span>
+    </div>
+</div>
+
+<script id="test.html" type="text/ng-template">qsdfsdf</script>
+
+<script id="companies.html" type="text/ng-template">
+
+    <div class="list" style="max-length: 500px;">
+        <div ng-repeat="item in companies">
+            <ion-radio ng-model="chosen.company" ng-value="{{item}}"><b>{{ item.name | uppercase }}</b></ion-radio>
+        </div>
+    </div>
+</script>
+
+<script id="printers.html" type="text/ng-template">
+    <div class="list" style="max-length: 500px;">
+        <div ng-repeat="item in printers">
+            <ion-radio ng-model="chosen.printer" ng-click="showScope()" ng-value="{{item}}"><b>{{ item.name | uppercase }}</b><br><b
+                    style="color: green; font-size:16px;">{{item.mac}}</b></ion-radio>       </div>
+    </div> </script>
+
+<script id="servers.html" type="text/ng-template">
+    <div class="list" style="max-length: 500px;">
+        <div ng-repeat="item in servers">
+            <ion-radio ng-model="chosen.server" ng-click="showScope()" ng-value="{{item}}"><b>{{ item.name|uppercase }}</b><br><b
+                    style="color: green; font-size:14px;">{{item.ip}}</b></ion-radio>
+        </div>
+        <div ng-if="newForm">
+            <div class="row">
+                <div class="col col-33">Nom :</div>
+                <div class="col" style="
+               "><input type="text" ng-change="partsChanged('p')" ng-model="server.name" value="0"
+                        style="font-weight: 500; background-color: transparent !important; color: green; width: 100%; text-align:center; border-bottom: 1px solid black;"></input></div>
+
+            </div>
+            <div class="row">
+                <div class="col">IP :</div>
+                <div class="col" style="
+                text-align: center;
+               "><input type="number" ng-change="partsChanged('a')" ng-model="server.aPart" value="0"
+                        style="border-bottom: 1px solid black; background-color: transparent !important; font-weight: 500; color: green; width: 100%; text-align:center; "></input></div>
+                <div class="col" style="
+                text-align: center;
+               "><input type="number" ng-model="server.bPart" ng-change="partsChanged('b')" value="0" style="border-bottom: 1px solid black; font-weight:500; background-color: transparent !important; color: green; width: 100%; text-align:center;
+                " ></input></div>
+
+                <div class="col" style="
+                text-align: center;
+               "><input type="number" background-color: transparent !important; ng-model="server.cPart" ng-change="partsChanged('c')" value="0"
+                        style="border-bottom: 1px solid black; background-color: transparent !important; font-weight:500; color: green; width: 100%; text-align:center;"></input></div>
+
+
+                <div class="col" style="
+                text-align: center;
+               "><input type="number" ng-model="server.dPart" ng-change="partsChanged('d')" value="0"
+                        style="border-bottom: 1px solid black; background-color: transparent !important; font-weight: 500; color: green; width: 100%; text-align:center;" ></input></div>
+            </div>
+
+            <div class="row">
+                <div class="col col-33">Port :</div>
+
+                <div class="col" style="
+               "><input type="number" ng-change="partsChanged('p')" ng-model="server.pPart" value="0"
+                        style="border-bottom: 1px solid black; background-color: transparent !important; font-weight: 500; color: green; width: 100%; text-align:center;"></input>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <button style="padding:0px 10px 0px 10px;" ng-click="showAddForm()" ng-disabled="disableAdd"
+                    class="button button-small ">
+                <b style="font-size:12px;">modifier</b>
+            </button>
+        </div>
+        <div class="col">
+            <button style="padding:0px 10px 0px 10px;" ng-click="confirmAddition(); testing();"
+                    ng-disabled="disableConfirmation" class="button button-small ">
+                <b style="font-size:12px;">Confirmer</b>
+            </button>
+        </div>
+    </div>
+    </div>
+</script>

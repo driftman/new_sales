@@ -1,56 +1,89 @@
-<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; font-family: RobotoDraft,Roboto,sans-serif;">
-  
-  <div class="buttons">
-    <span></span>
-  </div>
-
-  <h1 class="title">{{ 'VENTES('+(total | number : 2)+' DHS)' }}</h1>
-
-  <div class="buttons">
-    <span></span>
-  </div>
-
-</ion-header-bar>
+<ion-view view-title='Mes ventes' >
 
 <ion-content>
 
-    	<ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
+        <div ng-if="missions.length <= 0" style="color: #E82C2E;">
+            <!-- <h3 style="text-align: center;"><i class="icon ion-social-dropbox"></i></h3> -->
+            <div class="row">
+                <div class="col"><img style="width: 70%; height: 70%; display: block; margin: auto;" src="img/animat-linechart-color.gif"/></div>
+            </div>
+
+            <div class="row">
+                <div class="col"><p style="text-align: center; color: #496783; font-size: 16px;"> Aucune vente jusqu'à l'instant, allez courage et levez la barrière plus haut. </p></div>
+            </div>
+            
+            
+        </div>
+
+         <!-- <div class="row">
+            <div class="col">
+                <div>
+                    <span style="float: left;"> Du : </span>
+                    <span style="float: right; margin-right: 10px;
+    text-decoration: underline;
+    font-weight: 600;
+    color: #B71C1C;"> 2016 - 03 - 04 </span>
+                </div>
+            </div>
+            <div class="col">
+                <div>
+                    <span style="float: left;"> Au : </span>
+                    <span style="float: right; margin-right: 10px;
+    text-decoration: underline;
+    font-weight: 600;
+    color: #B71C1C;"> 2016 - 03 - 05 </span>
+                </div>
+            </div>
+        </div> -->
+
+    	<div ng-if="missions.length > 0">
+            <ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
 
             <ion-item
+            ng-click="prompt(mission.nom, mission.prenom, mission.printContent)"
             collection-repeat="mission in missions"
-            style="padding: 0 !important; border-bottom: .5px solid rgba(183, 28, 28, 0.29);"
+            style="padding: 0 !important; border-bottom: 1px solid rgba(183, 28, 28, 0.29);"
             item="mission">
                 <div class="row" style="max-width: 100%;">
-                	<div class="col col-20" style="margin: 0 !important; border-right: .3px solid rgba(183, 28, 28, 0.29);">
-                		<div class="row">
-                			<h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ mission.day }}</h2>
-                		</div>
-                		<div class="row">
-                			<h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ mission.month | month }}</h2>
-                		</div>
-                	</div>
+                    <div class="col col-20" style="margin: 0 !important; border-right: 1px solid rgba(183, 28, 28, 0.29);">
+                        <div class="row">
+                            <h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ mission.day }}</h2>
+                        </div>
+                        <div class="row">
+                            <h2 style="font-size: 13px; font-weight: 500; margin: 0 auto; color: black;">{{ mission.month | month }}</h2>
+                        </div>
+                    </div>
 
-                	<div class="col" style="max-width: 200px;">
-                		<p style="font-weight: 600;">Client : <span style="color: #B71C1C;">{{ mission.nom+' '+mission.prenom }}</span></p>
-		                <p style="font-weight: 600;">CA: <span style="color: #B71C1C;">{{ (mission.totalTTC | number : 2) + ' DHS' }}</span></p>
-		                <p style=" margin: 0; font-weight: 600;">Code visite: {{ mission.code }}</p>
-		                <p style=" margin: 0; font-weight: 600;">Adresse: {{ mission.address }} </p>
-                	</div>
+                    <div class="col" style="max-width: 200px;">
+                        <p style="font-weight: 300;">Magasin : <span style="color: #B71C1C;">{{ mission.nom+' '+mission.prenom }}</span></p>
+                        <p style="font-weight: 300;">Etat : <span style="color: #B71C1C;">{{ mission.state }}</span></p>
+                        <p style="font-weight: 300;">CA: <span style="color: #B71C1C;">{{ (mission.totalTTC | number : 2) + ' DHS' }}</span></p>
+                        <p style=" margin: 0; font-weight: 300;">Code visite: {{ mission.code }}</p>
+                        <p style=" margin: 0; font-weight: 300;">Adresse: {{ mission.address }} </p>
+                    </div>
 
-                	<div class="col col-10" style="margin: 0 !important;">
-                		<div class="row">
-                			<div class="col" style="color: #B71C1C;">
-                				<span style="font-size: 18px;">&#8471</span> <span style="font-size: 10px; ">{{mission.promotions }}</span> 
-                			</div>
-                		</div>
-                		<div class="row">
-                			<div class="col" style="color: #05599D;">
-                				<span style="font-size: 10px; ">SBD {{ mission.sbds }}</span> 
-                			</div>
-                		</div>
-                	</div>
+                    <div class="col col-10" style="margin: 0 !important;">
+                        <div class="row">
+                            <div class="col" style="color: #B71C1C;">
+                                <span style="font-size: 18px;">&#8471</span> <span style="font-size: 10px; ">{{mission.promotions }}</span> 
+                            </div>
+                        </div>
+                        <div class="row" style="margin: 0;">
+                            <div class="col" style="color: #05599D;">
+                                <span style="font-size: 10px; ">SBD {{ mission.sbds }}</span> 
+                            </div>
+                        </div>
+                        <div class="row" style="margin: 0;">
+                            <div class="col" style="color: #05599D;">
+                                <span ng-if="mission.synced == 0" style="font-size: 10px; text-decoration: line-through;">sync</span> 
+                                <span ng-if="mission.synced == 1" style="font-size: 10px;">sync</span> 
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </ion-item>
 
         </ion-list>
+        </div>
 </ion-content>
+</ion-view>

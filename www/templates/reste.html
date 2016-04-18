@@ -1,0 +1,329 @@
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}' >
+    
+
+    <ion-content scroll="true"
+    style = "position: relative;" ng-class="{expanded:$scope.isExpanded}">
+
+        <br>
+
+        <div ng-if="isPromotion" style="margin-right: 10px;">
+
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 500; color: #B71C1C;" class="col col-50">CODE : </div>
+                <div class="col" style="font-size: 12px; font-weight: 500;">001</div>
+            </div>
+
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 500; color: #B71C1C;" class="col col-50">LIBELLE : </div>
+                <div class="col" style="font-size: 12px; font-weight: 500;">{{::promotion.libelle}}</div>
+            </div>
+
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 500; color: #B71C1C;" class="col col-50">TYPE : </div>
+                <div class="col" ng-if="promotion.type == 'PMT'" style="font-size: 12px; font-weight: 500;"> Promotion sur montant </div> 
+                <div class="col" ng-if="promotion.type == 'PP'" style="font-size: 12px; font-weight: 500;"> Promotion sur paliers </div> 
+            </div>
+
+                <div class="row" ng-if="promotion.gratuites.length > 0">
+                    <div class="col col-50" style="color: #B71C1C; font-size: 16px; font-weight: 500;">
+                        GRATUITES :
+                    </div>
+                    <div class="col">
+                        <div class="row" ng-repeat="gratuite in promotion.gratuites" style="padding: 0; margin: 0;">
+                            <div style="font-size: 12px; font-weight: 500; overflow: scroll;" class="col">
+                                <ion-scroll direction="x"> {{ ::gratuite.designation }} </ion-scroll>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" ng-if="promotion.remise">
+                    <div class="col" style="color: #B71C1C; font-size: 16px; font-weight: 500;">
+                        REMISE : 
+                    </div>
+                    <div class="col" style="font-size: 16px; font-weight: 500; color: {{ promotion.consumed ? 'green;' : '#B71C1C;' }}">
+                        {{ ::( promotion.remise || 0 | number : 2 ) + " %" }}
+                    </div>
+                </div>
+
+                <div class="row" ng-if="promotion.type == 'PMT'">
+                    <div class="col col-50" style="color: #B71C1C; font-size: 16px; font-weight: 500;">
+                        Objectif :
+                    </div>
+                    <div class="col" style="font-size: 16px; font-weight: 500; color: {{ promotion.consumed ? 'green;' : '#B71C1C;' }}">
+                        {{ ( ( promotion.currentTotal || 0 ) | number: 2) + " / " + (promotion.ca | number:2) +" DHS"}}
+                    </div>
+                </div>
+
+                <div class="row" ng-if="promotion.type == 'PP'">
+                    <div class="col col-50" style="color: #B71C1C; font-size: 16px; font-weight: 500;">
+                        Cumule :
+                    </div>
+                    <div class="col" style="font-size: 16px; font-weight: 500; color: {{ promotion.consumed ? 'green;' : '#B71C1C;' }}">
+                        {{ ( promotion.cumule || 0 ) +" x fois" }}
+                    </div>
+                </div>
+            
+        </div>
+
+        <div ng-if="isSBD">
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 600; color: #B71C1C;" class="col col-33">CODE : </div>
+                <div class="col" style="font-size: 16px; font-weight: 500;">{{ "SBD00"+sbd.id }}</div>
+            </div>
+
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 600; color: #B71C1C;" class="col col-33">LIBELLE : </div>
+                <div class="col" style="font-size: 16px; font-weight: 500;">{{ "SBD" }}</div>
+            </div>
+
+            <div class="row">
+                <div style="font-size: 16px; font-weight: 600; color: #B71C1C;" class="col col-33">MIN : </div>
+                <div class="col" style="font-size: 16px; font-weight: 500; color: {{ sbd.consumed ? 'green' : 'red' }};">{{ sbd.min }}</div>
+            </div>
+
+        </div>
+        
+        
+          
+         
+
+            <div ng-if="articles.length > 0"
+                style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.2);
+            min-height: 0px;
+            text-align: left;">
+
+                <div class="row" style="
+                margin: 0;
+                padding: 0;
+                border: none;
+                min-height: 100%;
+                text-align: left;
+                margin-top: 15px; 
+                background-color: #3F51B5; 
+                color: white;
+                font-size: 10px;
+                margin: 0; 
+                margin-top: 30px;
+                margin: 0;
+                padding: 0;">
+                <div class="col" 
+                style="
+                border: none;
+                min-width: 50%;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 11px; 
+                font-weight: 900;
+                text-align: left;">désignation({{ articles.length }})</div>
+                
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 10px;  
+                font-weight: 600;  
+                float: left;">cs.</div>
+                <div class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 10px;  
+                font-weight: 600; 
+                float: left;">un.</div>
+
+                <div 
+                class="col"
+                ng-if="isVendeur"
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 10px;  
+                font-weight: 600; 
+                float: left;">stv.</div>
+
+                <div 
+                class="col"
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 10px;  
+                font-weight: 600; 
+                float: left;">stc.</div>
+
+                <div 
+                ng-if="!isVendeur"
+                class="col"
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 10px;  
+                font-weight: 600; 
+                float: left;">quota</div>
+              </div>
+            </div>
+            <ion-scroll style="height: 250px;">  
+            <div class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            border-bottom: 1px solid rgba(0,0,0,0.2);
+            min-height: 0px;
+            text-align: left;" ng-repeat="article in articles | filter:articleName track by $index">
+                
+
+                <div class="row" style="
+                background-color: {{ article | backgroundSBD : isVendeur : prelevement : retour : forChargement }};
+                margin: 0;
+                padding: 0;
+                margin: 0;">
+                <div class="col" style="
+                  margin: 0;
+                  min-width: 50%;
+                  padding: 0;
+                  text-align: center;
+                   overflow: hidden; border: none;">
+                    <ion-scroll direction="x"><p 
+                    style="
+                    padding: 0;
+                    margin: 0;
+                    margin-top: -3px;
+                    margin-bottom: -3px;
+                    font-size: 10.3px; 
+                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }};
+                    color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement }}
+                    text-align: left; 
+                    ">{{ ::article.nomArticle }}</p></ion-scroll>
+                    <p 
+                    style="
+                    padding: 0;
+                    margin: 0;
+                    margin-top: -5px;
+                    font-size: 10.5px; 
+                    font-weight: 900; 
+                    text-align: left;
+                    color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement }}">
+                    <span ng-if="!retour && !prelevement">PPQ: {{ ::article.past || '0,0,0'}} </span>
+                    <span ng-if="article.promotions != null && article.promotions.length > 0 && !prelevement && !retour" style="margin-right: 15px; float: right; font-weight: bolder;
+                    font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span>
+                    </p>
+                </div>
+                <div class="col" style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;"><input type="number" ng-readonly="(isVendeur && article.totalStock <= 0)" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur : prelevement : retour : forChargement }}; color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input></div>
+                <div class="col" style="
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;"><input type="number" value="0"  ng-readonly="(isVendeur && article.totalStock <= 0)" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur : prelevement : retour : forChargement }};color: green; width: 100%; text-align:center;
+                margin-left: 2.5px;
+                font-size: 11px;
+                border-bottom-right-radius: 5px;
+                border-bottom-left-radius: 5px;
+                border-bottom-width: 2px;"></input>
+
+                </div>
+
+
+                <div 
+                ng-if="isVendeur" 
+                class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 11px;  
+                font-weight: 900; 
+                float: left;">{{ ::article.stock }}</div>
+
+                <div 
+                class="col" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                border: none;
+                font-size: 11px;  
+                font-weight: 900; 
+                float: left;">{{ ::article.stc }}</div>
+
+                <div 
+                class="col"
+                ng-if="!isVendeur"
+                style="
+                margin: 0;
+                padding: 0;
+                font-size: 11px;  
+                font-weight: 900;
+                text-align: center;
+                border: none;">{{ ::article.quota }}</div>
+                </div>
+            </div>
+            </ion-scroll>
+
+            
+   
+          
+    </ion-content>
+
+  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+    <div class="title" style="font-size: 11px !important;">
+     
+
+      <span ng-click="goCart()">
+        <i class="icon ion-android-cart" style="font-weight: 900;
+        font-size: 20px;"></i>
+        {{ ' : ' + (total | number : 2) + ' DHS' }} 
+      </span>
+
+      <span ui-sref="app.remainings" ng-if="(!promotion.consumed && sbd.consumed) || (promotion.consumed && !sbd.consumed)" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i class="icon  ion-arrow-right-a"></i></span>
+      <span ng-click="openPopUp()" ng-if="!promotion.consumed && !sbd.consumed" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i
+              class="icon ion-arrow-right-a"></i></span>
+
+    </div>
+  </div>
+
+</ion-view>
+
+<script id="motifRemaining.html" type="text/ng-template">
+    <ion-list ng-repeat="answer in motifs.items">
+        <div class="row">
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ answer.motif | uppercase }}</div>
+            <div class="col">
+            <input style="width: 12px;" ng-click="clicked()" ng-model="motifs.choosen" ng-value="answer.motif" type="radio" class="regular-radio"></div>
+        </div>
+    </ion-list>
+</script>

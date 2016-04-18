@@ -19,6 +19,10 @@ p {
     margin: 0 0 25px;
 }
 
+h5 {
+    font-weight: 600;
+}
+
 .scroll {
     height: 100%;
 }
@@ -284,6 +288,94 @@ div.col.col-brand-five {
     margin: 0;
     color: #B71C1C;
 }
+.textGreen{
+    color:green;
+}
+.successClass{
+    color: green;
+}
+.failureClass{
+    color: red;
+}
+.fixedRow {
+��� position: fixed;
+��� bottom: 0;
+}
+.textLightGreen{
+    color:lightgreen;
+}
+.textLightRed{
+    color:lightcoral;
+}
+
+@-webkit-keyframes blink {
+    0% {
+        opacity:1;
+    }
+    50% {
+        opacity:0;
+    }
+    100% {
+        opacity:1;
+    }
+}
+@-moz-keyframes blink {
+    0% {
+        opacity:1;
+    }
+    50% {
+        opacity:0;
+    }
+    100% {
+        opacity:1;
+    }
+}
+
+.objblink {
+-webkit-transition: all 1s ease-in-out;
+    -moz-transition: all 1s ease-in-out;
+    -o-transition: all 1s ease-in-out;
+    -ms-transition: all 1s ease-in-out;
+    transition: all 1s ease-in-out;
+
+    -webkit-animation-direction: normal;
+    -webkit-animation-duration: 2s;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-name: blink;
+    -webkit-animation-timing-function: ease-in-out;
+
+-moz-animation-direction: normal;
+    -moz-animation-duration: 2s;
+    -moz-animation-iteration-count: infinite;
+    -moz-animation-name: blink;
+    -moz-animation-timing-function: ease-in-out;
+}
+.blink {
+  animation: blink-animation 1s steps(5, start) infinite;
+  -webkit-animation: blink-animation 1s steps(5, start) infinite;
+}
+@keyframes blink-animation {
+    0% {
+        opacity:1;
+    }
+    50% {
+        opacity:0;
+    }
+    100% {
+        opacity:1;
+    }
+}
+@-webkit-keyframes blink-animation {
+    0% {
+        opacity:1;
+    }
+    50% {
+        opacity:0;
+    }
+    100% {
+        opacity:1;
+    }
+}
 .row.row-brand-five {
     border: none;
     padding: 0;
@@ -470,7 +562,7 @@ h3 .title-promotion {
     font-weight: 100;
 }
 .bar .title{
-    font-size: 13px;
+    font-size: 11px;
 }
 /*input[type='radio'] {
    -webkit-appearance: none;
@@ -487,11 +579,10 @@ input[type='radio']:active, input[type='radio']:checked:active  {
     background-color: #B71C1C;
 }*/
 .chargement {
-    margin: 0 !important;
     padding: 0 !important;
 }
 .rapport {
-    margin-top: 40px;
+    margin-top: 10px;
     margin-bottom: 0px;
     margin-right: 0px;
     margin-left: 0px;
@@ -499,7 +590,199 @@ input[type='radio']:active, input[type='radio']:checked:active  {
 .tab-item {
     font-weight: 100 !important; 
 }
-.datemission {
-    margin: 0 auto;
-    font-weight: 900;
+.tabs-assertive > .tabs, .tabs.tabs-assertive{
+    background-color: #B71C1C !important;
+}
+.list .item-radio input:checked ~ .item-content {
+  background-color: rgba(233, 12, 31, 0.07);
+  color: #B71C1C;
+}
+.bar-assertive-900 {
+    font-size: 2px;
+}
+.spinner svg {
+  width: 28px;
+  height: 28px;
+  stroke: white;
+  fill: white;
+}
+.card {
+    box-shadow: 0 2px 5px 0 rgba(183, 28, 28, 0.38);
+}
+
+.wide-as-needed {
+  overflow: scroll;
+  white-space: nowrap;
+}
+.scroll {
+  min-width: 100%;
+}
+.bar.bar-loading {
+  display: block;
+  height: 24px;
+
+  /* starts right below a normal header */
+  top: 44px;
+
+  /* make the text centered vertically and horizontally */
+  text-align: center;
+  padding: 0;
+  line-height: 24px;
+
+  /* transition 'sliding down' (check below)*/
+  -webkit-transition: 200ms all;
+}
+
+
+/*
+ * make the content's top changes animate.
+ * might not always look good, but looks
+ * good when our loader is added & removed
+ */
+.has-header {
+  -webkit-transition: 200ms top;
+}
+.has-header.has-loading {
+  /* 44px (header) + 24px */
+  top: 68px;
+}
+
+/* make loading bar slide up/down */
+.bar-loading.ng-enter,
+.bar-loading.ng-leave.ng-leave-active {
+  height: 0;
+  border-width: 0px;
+}
+.bar-loading.ng-enter.ng-enter-active,
+.bar-loading.ng-leave {
+  height: 24px;
+  border-width: 1px;
+}
+
+
+.background-image {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 1;
+
+  display: block;
+  background: url('img/delivery.jpg');
+  width: 100%;
+  height: 100%;
+
+  -webkit-filter: blur(5px);
+  -moz-filter: blur(5px);
+  -o-filter: blur(5px);
+  -ms-filter: blur(5px);
+  filter: blur(5px);
+}
+
+
+.item-check input:checked ~ .radio-icon {
+    color: #B71C1C !important;
+}
+
+.regular-check {
+    -webkit-appearance: none;
+    margin-left: 15px !important;
+    background-color: #fafafa;
+    border: 1px solid #cacece;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px -15px 10px -12px rgba(0,0,0,0.05);
+    padding: 8px;
+  
+    display: inline-block;
+    position: relative;
+}
+
+.regular-check:checked:after {
+    content: '\2714';
+  
+    position: absolute;
+   right: 0px;
+    bottom:0px;
+   
+    text-shadow: 0px;
+   
+
+    font-size: 23px;
+     color: #B71C1C;
+}
+
+.regular-check:checked {
+    background-color: #e9ecee;
+    color: #99a1a7;
+    border: 1px solid #adb8c0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px -15px 10px -12px rgba(0,0,0,0.05), inset 15px 10px -12px rgba(255,255,255,0.1), inset 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+.regular-check:active, .regular-check:checked:active {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px 1px 3px rgba(0,0,0,0.1);
+}
+
+.datepickerdemoBasicUsage {
+  /** Demo styles for mdCalendar. */ }
+  .datepickerdemoBasicUsage md-content {
+    padding-bottom: 200px; }
+  .datepickerdemoBasicUsage .validation-messages {
+    font-size: 12px;
+    color: #dd2c00;
+    margin: 10px 0 0 25px; }
+
+
+
+
+.prev_btn_section {
+  color:red !important;
+}
+.selected_date {
+  color:white !important;
+}
+
+
+.ionic_datepicker_popup .popup-body .selected_date_full {
+    background-color: #CB2727 !important;
+}
+
+.selected_date_full {
+    color: white !important;
+}
+
+
+.ionic_datepicker_popup .popup-buttons button {
+    background-color: #CB2727 !important;
+}
+
+.ionic_datepicker_popup .selected_date {
+    background-color: #CB2727 !important;
+    color: white;
+}
+.ionic_datepicker_popup .popup-body .button-clear {
+    color: #CB2727 !important;
+}
+
+.ionic_datepicker_popup .popup-body .month_select, .ionic_datepicker_popup .popup-body .year_select {
+    border: none;
+    border-bottom: 1px solid #CB2727 !important;
+    padding: 0;
+}
+
+.ionic_datepicker_popup .popup-body .month_select:after, .ionic_datepicker_popup .popup-body .year_select:after {
+    right: 5px;
+    color: #CB2727 !important;
+
+
+    }
+
+.ionic_datepicker_popup .today {
+    border: 1px solid #CB2727 !important;
+    border-radius: 50%;
+}
+
+.details {
+    font-size: 12px;
+}
+
+.title {
+    font-weight: 600;
 }

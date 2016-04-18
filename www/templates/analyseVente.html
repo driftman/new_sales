@@ -1,0 +1,52 @@
+<ion-view style="font-size: 13px;" view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'> <ion-content> <div class="row">
+            <div class="list card" style="width: 100%">
+                <div class="item">
+                    <h2 style="font-weight: 500; color: #B71C1C; text-align: center;">Analyse de vente</h2>
+                </div>
+                <div class="item item-image blink" ng-if="fillStar" >
+                    <img  src="img/fullStar.png" style="margin: 0 auto; width: 30%; height: 30%">
+                    </div>
+                 <div class="item item-image" ng-if="!fillStar">
+                   <img   src="img/emptyStar.png" style="margin: 0 auto; width: 30%; height: 30%">
+                </div>
+                <div class="item">
+                    <div class="row">
+                        <div class="col" style="color: #B71C1C;"><span style="font-weight: 600;">Durée de visite  </span></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">{{dureeStr}}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="color: #B71C1C;"><span style="font-weight: 600;">Total {{infos.fonction=="vendeur"?"vente":"commande"}}  </span></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">{{ ( totalTTC || 0 ) | number : 2 }} DHS</div>
+                    </div>
+                    <div class="row">
+                        <div class="col" style="color: #B71C1C;"><span style="font-weight: 600;">Taux initiative à succès  </span></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">{{ consumedPromotions }}/{{ promotions.length }} , {{ promotionRatio}}
+                        </div>
+                    </div>
+                    <div class="row" ng-show="sbds.length>0">
+                        <div class="col" style="color: #B71C1C;"><span style="font-weight: 600;">Taux de distribution SBD  </span></div>
+                    </div >
+                    <div class="row" ng-show="sbds.length>0">
+                        <div class="col">{{ consumedSbds }}/{{ sbds.length }} , {{ sbdRatio}}</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </ion-content>
+</ion-view>
+
+<div ng-show="footerBar" class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+    <div class="title">
+        <a ng-click="checkout()" ng-if="!hasNext"
+           style="float: right; font-size: 35px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i
+                class="icon  ion-arrow-right-a"></i></a>
+    </div>
+</div>
+

@@ -1,47 +1,143 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts">
-    <ion-content ng-class="{expanded:$scope.isExpanded}" style="background-color:#D4D4B7;">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'  style="font-size: 14px !important;">
+    <ion-content style="background-color:#fff;" scroll="true">
 
           <div class="row">
             <div class="col" style="text-align: center; font-family: RobotoDraft,Roboto,sans-serif;">
-              <h4 style="color: #B71C1C; font-weight: 600;">{{ title }}</h4>
+              <h4 style="color: #B71C1C; font-weight: 600;" ng-if="(rows.length>1 && rows[0].length>1)|| (rows.length==1 && rows[0].length==0)">{{ title }}</h4>
             </div>
           </div>
-          <div class="list" style="margin-top: 10px;">
-            <div class="row " ng-repeat="row in rows" style="padding: 0; border: none;">
-                <div class="col col-20 brands" ng-repeat="col in row" style="position: relative;">
-                    <span style="position: absolute; bottom: 0; right: 0;">{{ col.marqueArticle }}</span>
-                    <img src="{{ col.logo }}" ng-click="goToBrand(col.marqueArticle)" style="height: 100%; background-color: #FFFFF1; width: 100%; max-width: 100%;">
-                    <span ng-if="col.checked && !forChargement && !prelevement && !retour" style="position: absolute; top: 0px; right: 0px;"> <i class="icon ion-checkmark" style="color: #B71C1C; font-size: 15px;"></i></span>
+        <div>
+        <div ng-if="(rows.length==1 && rows[0].id===null)|| (rows.length==1 && rows[0].length==0)"  class="row">
+            <div class="col col-offset-20">
+              <!-- <img style="width: 300px; height: 300px; display: block; margin: auto;" src="img/animat-pencil-color.gif"/> -->
+              
+            </div>
+        </div>
+        <h4 ng-if="rows.length==1 && rows[0].length==0" style="text-align: center;color: #496783;">{{retour?"Aucun retour n'est autorisé pour ce client":''}}{{forChargement?"Aucun chargement n'est autorisé":''}}</h4>
+        </div>
+
+        <ion-scroll ng-if="rows.length!=0 && rows[0].length!=0" style="height: 80%; width: 100;">
+            <div class="list" style="margin-top: 10px; margin-bottom: 43px;">
+<!--{{rows}}-{{rows.length==1 && rows[0].id===null}}-->
+                  <div class="row item" ng-repeat="row in rows" style="padding: 0; border: none;">
+                  <div ng-if="col.id != null" class="col col-20 brands" ng-repeat="col in row" style="position: relative;">
+                      
+                      <img src="data:image/png;base64,{{ col.logo }}" ng-click="goToBrand(col.id_db)" style="height: 100%; background-color: #FFFFF1; width: 100%; max-width: 100%;">
+                      
+
+                      <span ng-if="col.checked && !forChargement && !prelevement && !retour" style="position: absolute; top: 0px; right: 0px;"> <i class="icon ion-checkmark" style="color: #B71C1C; font-size: 15px;"></i></span>
+
+
+                  </div>
+
+
+              </div>
+
+
+              <!--  <div class="row">
+                    <div class="col col-offset-20 ">
+                        <span style="font-weight: 300;font-size: 16px;">Prélévement stock confrères </span>
+                    </div>
+
+                </div>
+                <div class="row">
+
+                    <div class="col col-offset-50">
+                        <a class="button button-outline button-assertive icon ion-clipboard" style="border-radius: 50%; float: left;" ng-click="goToBrand(null)" > </a>
+                    </div>
+                </div>-->
+                <!--<div class="row">
+       <div class="col col-50">
+        <a class="button button-outline button-assertive icon ion-log-out" style="border-radius: 50%; float: left;" ng-click="goToBrand(null)" > Prélévement stock concurrents</a>
+       </div>
+       <div class="col col-50" >
+         <a class="button  button-outline  button-assertive  icon ion-printer" style="border-radius: 50%; float: right;" ng-click="print()"></a>
+       </div>
+    </div>-->
+              
+            </div>
+          </ion-scroll>
+        <div  ng-if="prelevement" class="item" style="text-align: center;  bottom: 100px; border:none;
+    background: white;">
+            <!--   <button ng-if="prelevement" ng-click="goToBrand(null)" class="button button-full button-assertive" style="background-color: rgba(220, 30, 30, 0.83);">
+               Prélévement stock concurrents
+               </button>-->
+    <span> <a class="button button-outline button-assertive icon ion-clipboard" ng-disabled="rows.length==1 && rows[0].id===null" style="border-radius: 50%;" ng-click="goToBrand(null)" > </a>
+</span>
+            <br>
+            <span style="font-weight: 300;font-size: 16px;">Prélévement stock confrères </span>
+
+        </div>
+        <div class="item" style="bottom: 45px;
+    background: white; padding: 0; border: none;" ng-if="forChargement">
+            <div class="row">
+                <div class="col col-50">
+                    <a class="button button-outline button-assertive icon ion-log-out" style="border-radius: 50%; float: left;" ng-click="cancelDemande()" ></a>
+                </div>
+                <div class="col col-50" >
+                    <a class="button  button-outline  button-assertive  icon ion-thumbsup" style="border-radius: 50%; float: right;" ng-click="sendDemande()"></a>
                 </div>
             </div>
-          </div>
-	</ion-content>
-     <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+            <div class="row">
+
+                <div class="col col-50">
+                    <span style=" float: left; font-weight: 300; font-size: 16px;"  >Annuler</span>
+                </div>
+                <div class="col col-50" >
+                    <span style=" float: right; font-weight: 300; font-size: 16px;"  >Valider</span>
+                </div>
+
+            </div>
+        </div>
+  </ion-content>
+
+
+
+
+  <div ng-if="!forChargement" class="bar bar-footer bar-balanced" style="background-color: #B71C1C; background-image: none !important;">
     <div class="title">
       
-      <a ng-click="cancelDemande()" ng-if="forChargement" style="font-weight: 900; float: left; font-size: 12px; margin: 0; margin-right: 10px;">
+   <!--   <a ng-click="cancelDemande()" ng-if="forChargement" style="font-weight: 500; float: left; font-size: 14px; margin: 0; margin-left: 10px;">
        annuler
       </a>
+-->
+      <a ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"><i class="icon ion-arrow-left-a"></i></a>
 
-      <a ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
-
-      <span ng-click="goCart()" ng-if="!forChargement"><i class="icon ion-android-cart" style="font-weight: 900;
+      <span ng-click="goCart()" ng-if="!forChargement"><i class="icon ion-android-cart" style="text-align: center; font-weight: 900;
     font-size: 20px;"></i> {{ ' : ' + (total | number : 2) + ' DHS' }} </span>
 
-      <span ng-if="forChargement">Demande de chargement</span>
 
-      <a ng-click="next()" ng-if="hasNext && !prelevement && !retour" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+      <a ng-click="next()" ng-if="hasNext && !prelevement && !retour" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-arrow-right-a"></i>
+      </a>
 
-      <a ng-click="sendDemande()" ng-if="forChargement" style="font-weight: 900; float: right; font-size: 12px; margin: 0; margin-right: 10px;">
-        valider
+    <!--  <a ng-click="sendDemande()" ng-if="forChargement" style="font-weight: 500; float: right; font-size: 13px; margin: 0; margin-right: 10px;">
+          valider</i>
+      </a>-->
+
+      <a ng-click="sendPrelevement()" ng-if="prelevement" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-arrow-right-a"></i>
       </a>
-      <a ng-click="sendPrelevement()" ng-if="prelevement" style="font-weight: 900; float: right; font-size: 12px; margin: 0; margin-right: 10px;">
-        valider
+
+      <a ng-click="sendRetour()" ng-if="retour" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-arrow-right-a"></i>
       </a>
-      <a ng-click="sendRetour()" ng-if="retour" style="font-weight: 900; float: right; font-size: 12px; margin: 0; margin-right: 10px;">
-        valider
+
+      <a ui-sref="app.cartEchange" ng-if="echange" style="float: left; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-checkmark"></i>
+      </a>
+
+      <a ng-click="sortantAction()" ng-if="echange && entrant" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-arrow-up-a"></i>
+      </a>
+
+      <a ng-click="entrantAction()" ng-if="echange && sortant" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;">
+          <i class="icon ion-arrow-down-a"></i>
       </a>
 
     </div>
   </div>
+
+
+
 </ion-view>

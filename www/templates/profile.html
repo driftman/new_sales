@@ -1,4 +1,5 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS" style="font-size: 13px;">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'
+          style="font-size: 10px !important;">
     <ion-content ng-class="{expanded:$scope.isExpanded}">
         <div class="hero slide-up" style="
   background: -webkit-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Chrome 10+, Saf5.1+ */
@@ -9,14 +10,18 @@
   background:           #B71C1C; /* Ila 7madet ga3 */
         ">
             <div class="content">
-                <div class="avatar" style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
-                <h3 style="font-size: 16px;"><a class="light">{{infos.name+' '+infos.second_name | uppercase }} - Vendeur</a></h3>
+                <div class="avatar"
+                     style="margin-bottom: 0px; width: 110px; background-image: url('img/dislog.jpg');"></div>
+                <h3 style="font-size: 16px; font-weight: 900;">{{infos.name+' '+infos.second_name | uppercase }} -
+                    {{fonction}}</h3>
+                <span style="color: white; margin-top: 0px;
+                margin-bottom: 0px; font-size: 16px;">C.A : {{ ( ca | number : 2) + " / " + ( infos.objectif_ca | number : 2 ) + " DHS"}} </span>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; font-size: 16px; ">C.A : {{ ca | number : 2}} DHS</h4>
+                margin-bottom: 0px; font-size: 16px; ">C.A.R : {{  ( infos.ca | number : 2 ) + " / " + ( infos.objectif_ca | number : 2 ) + " DHS"  }} </h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; font-size: 16px;">Golden Points : {{ profile.golden_points }} / 250 pts</h4>
+                margin-bottom: 0px; font-size: 16px;">Golden Points : {{ infos.golden_points + " / " + infos.objectif_golden_points }}</h4>
                 <h4 style="color: white; margin-top: 0px;
-                margin-bottom: 0px; font-size: 16px;">Golden Stores : {{ profile.golden_stores }} / 20</h4>
+                margin-bottom: 0px; font-size: 16px;">Golden Stores : {{ infos.golden_stores + " / " + infos.objectif_golden_stores }}</h4>
             </div>
         </div>
         <!-- <div class="tabs tabs-dark tabs-icon-top static" style="padding: 5px; background: white; border-bottom: 2.5px solid black; border-top: 2.5px solid black;">
@@ -34,43 +39,143 @@
             <button class="button button-full button-assertive" ng-show="unfinished_routes.isTrue" ng-click="all()">Terminer la route précédente</button>
             <button class="button button-full button-balanced" ng-click="today()">Commencer la route d'aujourd'hui</button>
         </div> -->
-        <div style="padding-top: 10px;">
-          <canvas id="pie" class="chart chart-pie"
-            chart-data="data" chart-labels="labels" chart-legend="true" chart-colours="colours">
-          </canvas> 
-        </div>
 
         <div class="card">
-          <div class="item item-divider brand-five">
-            <h2>C.A Brand Five</h2>
-          </div>
-          <div class="item item-text-wrap brand-item repeat-brand" ng-repeat="brand in brandfive | orderBy : '-somme' ">
-            <div class="row row-brand-five">
-              <div class="col col-brand-five" style="border: none;">
-                {{ brand.marque }}
-              </div>
-              <div class="col col-brand-five" style="border: none;">
-                 {{ brand.somme }} DHS
-              </div>
+
+            <div class="item item-divider brand-five">
+                <h2 style="font-size: 16px;">Etats des visites de la journée</h2>
             </div>
-          </div>
+
+            <div style="padding-top: 10px;">
+                <canvas id="pie" class="chart chart-pie"
+                        chart-data="data" chart-labels="labels" chart-legend="true" chart-colours="colours">
+                </canvas>
+            </div>
         </div>
-        
-        <!-- <h4 class="content padding double-padding-x" style="color: #B71C1C;
-    font-weight: 900;">5 dernières visites :</h4>
-        <div class="key_map_container" style="margin: 0 auto;">
-            <span class="key_map" style="text-align: center;">
-                <i style="color: orange;" class="icon ion-flag"></i> avec commande &nbsp;
-                <i style="color: green;" class="icon ion-flag"></i> sans commande
-            </span>
+
+
+        <div class="card" ng-if="brandfive.length">
+
+            <div class="item item-divider brand-five">
+                <h2 style="font-size: 16px;">C.A Brand Five ( DHS ) </h2>
+            </div>
+
+            <div class="item item-text-wrap brand-item repeat-brand"
+                 ng-repeat="brand in brandfive">
+                <div class="row row-brand-five" >
+
+                    <div class="col col-brand-five" style="border: none;">
+
+                        <span>{{ brand.name | uppercase }}</span>
+                    </div>
+                    <div class="col col-brand-five" style="border: none; font-size: 13px;">
+                        <span style="font-size: 12px;" ng-class="{'textGreen':brand.ca_courant>=brand.ca}">{{ (brand.ca_courant | number : 2) }}</span>
+                        <span style="font-size: 12px;" ng-class="{'textGreen':brand.ca_courant>=brand.ca}">{{ " / "+(brand.ca | number : 2) }}</span>
+                    </div>
+
+                </div>
+            </div>
         </div>
-        <div class="list" ng-repeat="mission in finishedMissions" style="border-bottom: 1px solid {{ mission.state | flag }};">
-            <a ng-click="client(mission._id)" class="item item-avatar item-icon-right">
-                <img src="img/mission.png" style="margin-bottom: 10px;">
-                <h2 style="font-weight: 700;">{{ mission.code_mission }}</h2>
-                <p style="font-weight: 900;">{{ mission.address }}</p>
-                <i style="color: {{ mission.state | flag }};" class="icon ion-flag"></i>
-            </a>
-        </div> -->
+
+            <div class="item">
+            </div>
+
+        </div>
     </ion-content>
 </ion-view>
+
+
+            <!-- 
+
+        
+
+        
+
+            <div ng-if="missions.length > 0 && !isVendeur">
+                <br><br>
+                <h4 class="content padding double-padding-x" style="color: #B71C1C;
+    font-weight: 900;">Visites du mois courant :</h4>
+
+                <ion-list show-delete="false" can-swipe="false" style="margin-top: 30px;">
+
+                    <ion-item
+                            ng-repeat="mission in missions"
+                            style="padding: 0 !important; border-bottom: 1px solid rgba(183, 28, 28, 0.29);"
+                            item="mission">
+                        <div class="row" style="max-width: 100%;">
+                            <div class="col col-20"
+                                 style="margin: 0 !important; border-right: 1px solid rgba(183, 28, 28, 0.29);">
+                                <div class="row">
+                                    <h2 style="font-size: 18px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{
+                                        mission.day }}</h2>
+                                </div>
+                                <div class="row">
+                                    <h2 style="font-size: 16px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{
+                                        mission.month | month }}</h2>
+                                </div>
+                            </div>
+
+                            <div class="col" style="max-width: 200px;">
+                                <p style="font-weight: 300;">Client : <span style="color: #B71C1C;">{{ mission.nom+' '+mission.prenom }}</span>
+                                </p>
+
+                                <p style="font-weight: 300;">Etat : <span
+                                        style="color: #B71C1C;">{{ mission.state }}</span></p>
+
+                                <p style="font-weight: 300;">CA: <span style="color: #B71C1C;">{{ (mission.totalTTC | number : 2) + ' DHS' }}</span>
+                                </p>
+
+                                <p style=" margin: 0; font-weight: 300;">Code visite: {{ mission.code }}</p>
+
+                                <p style=" margin: 0; font-weight: 300;">Adresse: {{ mission.address }} </p>
+                            </div>
+
+                            <div class="col col-10" style="margin: 0 !important;">
+                                <div class="row">
+                                    <div class="col" style="color: #B71C1C;">
+                                        <span style="font-size: 18px;">&#8471</span> <span style="font-size: 10px; ">{{mission.promotions }}</span>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin: 0;">
+                                    <div class="col" style="color: #05599D;">
+                                        <span style="font-size: 10px; ">SBD {{ mission.sbds }}</span>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin: 0;">
+                                    <div class="col" style="color: #05599D;">
+                                        <span ng-if="mission.synced == 0"
+                                              style="font-size: 10px; text-decoration: line-through;">sync</span>
+                                        <span ng-if="mission.synced == 1" style="font-size: 10px;">sync</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ion-item>
+
+                </ion-list>
+            </div>
+        
+
+
+
+
+
+
+
+            <h4 class="content padding double-padding-x" style="color: #B71C1C;
+        font-weight: 900;">5 dernières visites :</h4>
+            <div class="key_map_container" style="margin: 0 auto;">
+                <span class="key_map" style="text-align: center;">
+                    <i style="color: orange;" class="icon ion-flag"></i> avec commande &nbsp;
+                    <i style="color: green;" class="icon ion-flag"></i> sans commande
+                </span>
+            </div>
+            <div class="list" ng-repeat="mission in finishedMissions" style="border-bottom: 1px solid {{ mission.state | flag }};">
+                <a ng-click="client(mission._id)" class="item item-avatar item-icon-right">
+                    <img src="img/mission.png" style="margin-bottom: 10px;">
+                    <h2 style="font-weight: 700;">{{ mission.code_mission }}</h2>
+                    <p style="font-weight: 900;">{{ mission.address }}</p>
+                    <i style="color: {{ mission.state | flag }};" class="icon ion-flag"></i>
+                </a>
+            </div> -->
+ 

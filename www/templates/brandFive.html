@@ -1,41 +1,60 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS">
-    <div class="bar bar-subheader bar-balanced" style="background-color: #717070;">
-       <div 
+    
+
+
+        <ion-view view-title='BRAND FIVE' >
+    <div ng-if="currentBrand != null" class="bar bar-subheader bar-balanced" style="background-color: #717070;">
+       <div
        style="
-       position: relative;">
-      <span style="margin-left: 20px;" ng-click = "backward()" ng-show = "back"><i class="icon ion-android-arrow-back" 
-            style="
-            float: left; 
-            color: #F9FFF9;
-            font-size: 45px;
-            margin-left: 8px;"
-            ></i></span>
+       position: relative;
+        margin-bottom: 20px;">
+           <!--don't remove this-->
+            <span ng-click = "backward()" ng-if = "back" class="icon ion-arrow-left-b"  style="
+      float:left;
+        margin-left: 15px;
+             font-size: 30px;
+                margin-top: 8px;
+         "></span>
+           <span   ng-if="!back"  class="icon ion-arrow-right-b" style="
+        float:left;
+            color: #717070;
+            font-size: 30px;
+                margin-top: 8px;
+         ">
+    
+           </span>
+     
 
 
             <label style="
             position: absolute;
-            left: 0;
-            top: 1.5px;
-            margin: 7px;
-            margin-left: 40px;
-            font-size: 15px;
+          
+            
+            margin: 4px;
+            font-size: 12px;
             font-weight: 900;
-            "><!-- <input 
-            ng-model="articleName" 
+            text-align: center;
+            width: 85%;
+            "><!-- <input
+            ng-model="articleName"
             placeholder="Filtrer"
             style="
             border-radius: 5px;
-            max-width: 50%; 
+            max-width: 50%;
             font-weight: 900;
-            font-size: 13px;"/> --> <b style="margin-left: 35px; font-style: italic;">{{ currentBrand.name }}</b> 
+            font-size: 13px;"/> -->  <b style=" font-style: italic;">{{ currentBrand.name }}</b><br> (<span
+                    class="textLightGreen" style="text-align: center;">{{(currentBrand.ca_courant | number : 2)}}/{{currentBrand.ca | number : 2}}</span>
+                        DHS</span>
+                        )
             </label>
 
-            <span ng-click = "forward()" ng-show = "forw" class="icon ion-android-arrow-forward" 
+            <span ng-click = "forward()" ng-show = "forw" class="icon ion-arrow-right-b"
             style="
-            float: right; 
+            margin-right: 15px;
+            float: right;
             color: #F9FFF9;
-            font-size: 45px;
-            margin-right: 8px;"
+            font-size: 30px;
+             margin-top: 8px;
+           "
             ></span>
             </div>
             <div class="row" style="
@@ -45,56 +64,57 @@
                 border: none;
                 min-height: 0px;
                 text-align: left;
-                margin-top: 15px; 
-                background-color: #3F51B5; 
+             
+                background-color: #3F51B5;
                 color: white;
                 font-size: 10px;
-              margin: 0; 
-              margin-top: 30px;
               margin: 0;
-              padding: 0;">
-                <div class="col" 
+           
+              margin: 0;
+              padding: 0;
+              height: 44px">
+                <div class="col"
                 style="
                 border: none;
                 min-width: 50%;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                font-size: 11px; 
+                font-size: 14px;
                 font-weight: 900;
-                text-align: left;">désignation({{ articles.length }})</div>
-                
-                <div class="col col-15" 
+                text-align: left;  margin-top: 12px">Désignation({{ articles.length }})</div>
+
+                <div class="col col-15"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px; 
-                font-weight: 900; 
-                float: left;">cs.</div>
-                <div class="col col-15" 
+                font-size: 14px;
+                font-weight: 900;
+                float: left;  margin-top: 12px">Cs.</div>
+                <div class="col col-15"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px; 
-                font-weight: 900; 
-                float: left;">un.</div>
-                <!-- <div class="col col-15" 
+                font-size: 14px;
+                font-weight: 900;
+                float: left;  margin-top: 12px">Un.</div>
+                <!-- <div class="col col-15"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px; 
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">total</div> -->
-                <div class="col" 
+            <!--     <div class="col"
                 ng-if="isVendeur"
                 style="
                 border: none;
@@ -102,11 +122,11 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px;  
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">stv.</div>
 
-                <div 
+                <div
                 class="col"
                 style="
                 border: none;
@@ -114,33 +134,44 @@
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px;  
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">stc.</div>
 
-                <div 
+                <div
                 ng-if="!isVendeur || forChargement"
-                class="col" 
+                class="col"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px;  
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">quota</div>
-
+ -->
               </div>
     </div>
-    <ion-content 
+    <ion-content
     style = "position: relative;" ng-class="{expanded:$scope.isExpanded}">
-          <div class="list" style="
+
+          <div ng-if="currentBrand == null">
+              <div class="row">
+                  <div class="col col-offset-20"><img style="width: 300px; height: 300px; display: block; margin: auto;" src="img/animat-pencil-color.gif"/></div>
+              </div>
+            <h4 style="text-align: center; color: #496783;"> Aucune marque n'est programmée veuillez passer à l'étape suivante. </h4>
+
+          </div>
+
+          <div ng-if="currentBrand != null" class="list" style="
           height: 300px;
           margin: 0;
-          margin-top: 65px;
-          padding: 0;">
-            <div class="item" 
+        
+          padding: 0;
+
+            margin-top:88px;">
+            <div class="item"
             style="
             margin: 0;
             padding: 0;
@@ -160,32 +191,24 @@
                   padding: 0;
                   text-align: center;
                    overflow: hidden; border: none;">
-                    <p 
+                    <p
                     style="
                     padding: 0;
                     margin: 0;
                     margin-top: -3px;
                     margin-bottom: -3px;
-                    font-size: 10.3px; 
-                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }} ; 
-                    text-align: left; 
-                    color: #060606;">{{ article.nomArticle }}</p>
-                    <p 
-                    style="
-                    padding: 0;
-                    margin: 0;
-                    margin-top: -5px;
-                    font-size: 10.5px; 
-                    font-weight: 900; 
-                    text-align: left;">PPQ: {{ article.past || '0,0,0' }} <span ng-show="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
-                    font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span></p></div>
+                    font-size: 16px;
+                 
+                    text-align: left;
+                    color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement }}"><ion-scroll direction="x">{{ article.nomArticle }}</ion-scroll></p>
+                </div>
                 <div class="col col-15" style="
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" ng-readonly="(isVendeur &&  !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0)) || (!isVendeur && !prelevement && !retour && (!article.quotaVALUE > 0 && !article.quotaQTY > 0))" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur }}; color: green; width: 100%; text-align:center;
+                border: none;"><input type="number"  ng-mousedown="article.packet=article.packet ==0 && !(isVendeur && !forChargement && !retour && !prelevement && article.totalStock <= 0) || (isVendeur && !forChargement && !prelevement && retour && (article.cause == 'none'))?'':article.packet" ng-blur="article.packet=article.packet==''?0:article.packet " ng-readonly="(isVendeur &&  !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0))" ng-change="change(article)" ng-model="article.packet" value="0" style=" background-color: {{ article | backgroundSBD : isVendeur }}; color: green; width: 100%; text-align:center;
                 margin-left: 2.5px;
-                font-size: 11px;
+                font-size: 16px;
                 border-bottom-right-radius: 5px;
                 border-bottom-left-radius: 5px;
                 border-bottom-width: 2px;"></input></div>
@@ -193,9 +216,9 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;"><input type="number" value="0" ng-readonly="(isVendeur && !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0)) || (!isVendeur && !prelevement && !retour && (!article.quotaVALUE > 0 && !article.quotaQTY > 0))" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD : isVendeur }};color: green; width: 100%; text-align:center;
+                border: none;"><input type="number"  ng-mousedown="article.unit=article.unit ==0 && !(isVendeur && !forChargement && !retour && !prelevement && article.totalStock <= 0) || (isVendeur && !forChargement && !prelevement && retour && (article.cause == 'none'))?'':article.unit" ng-blur="article.unit=article.unit==''?0:article.unit " value="0" ng-readonly="(isVendeur && !prelevement && !retour && !forChargement && (!article.packetStock > 0 && !article.unitStock > 0))" ng-change="change(article)" ng-model="article.unit" style=" background-color: {{ article | backgroundSBD : isVendeur }};color: green; width: 100%; text-align:center;
                 margin-left: 2.5px;
-                font-size: 11px;
+                font-size: 16px;
                 border-bottom-right-radius: 5px;
                 border-bottom-left-radius: 5px;
                 border-bottom-width: 2px;"></input>
@@ -208,66 +231,151 @@
                 font-weight: 900;
                 text-align: center;"><span style="font-size: 10px;" ng-bind="(article.packet*article.unitConversion)+(article.unit)"></span>
             </div> -->
-                <div 
-                ng-if="isVendeur" 
-                class="col" 
+<!--                 <div
+                ng-if="isVendeur"
+                class="col"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px;  
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">{{ article.stock }}</div>
-                <div 
-                class="col" 
+                <div
+                class="col"
                 style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 text-align: center;
                 border: none;
-                font-size: 11px;  
-                font-weight: 900; 
+                font-size: 11px;
+                font-weight: 900;
                 float: left;">{{ article.stc }}</div>
 
-                <div 
+                <div
                 ng-if="!isVendeur || forChargement"
                 class="col"
                 style="
                 margin: 0;
                 padding: 0;
-                font-size: 11px;  
+                font-size: 11px;
                 font-weight: 900;
                 text-align: center;
-                border: none;">{{ article | quota }}</div>
+                border: none;">{{ article.quota }}</div>
+ -->
 
+                </div>
+                  <div class="row" style="height: 30px">   <div class="col"  style="
+                    color: inherit;
+                    padding: 0;
+                    margin: 0;
+                 margin-top: 2px;
+                    font-size: 12px; 
+
+                    text-align: left;">   
+                    <span ng-if="!retour && !prelevement">PPQ: {{::article.past || '0,0,0'}}  </span>
+                    <span ng-if="article.promotions != null && article.promotions.length > 0 && !prelevement && !retour" style="margin-right: 15px; float: right; 
+                    font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span>
+                    </div></div>   
+                 <div class="row">
+                    <div class="col"  ng-if="isVendeur && ( ( !prelevement && !retour && !echange ) || ( echange && echangeOUT ) ) " style="
+                  color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement : echange : echangeOUT : echangeIN }}
+                  overflow: scroll;
+                  margin: 0;
+                  padding: 0;
+                  color:blue;
+                  text-align: center;
+                  border: none;">
+                        <p
+                                style="
+                    color: inherit;
+                    overflow: scroll;
+                    padding: 0;
+                    margin: 0;
+                    margin-top: -3px;
+                    margin-bottom: -3px;
+                    font-size: 12px;
+                     text-align: left;
+                    "><ion-scroll direction="x">StockV : {{ ::article.stock }}</ion-scroll></p>
+
+                    </div>
+                    <div class="col"   ng-if="(isVendeur || !isVendeur) && !prelevement && !forChargement && !retour && !echange"  style="
+                  color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement : echange : echangeOUT : echangeIN }}
+                  overflow: scroll;
+                  color:blue;
+                  margin: 0;
+                  padding: 0;
+                  text-align: center;
+                  border: none;">
+                        <p
+                                style="
+                    color: inherit;
+                    overflow: scroll;
+                    padding: 0;
+                    margin: 0;
+                    margin-top: -3px;
+                    margin-bottom: -3px;
+                    font-size: 12px;
+                    text-align: left;
+                    "><ion-scroll direction="x">StockC  : {{ ::article.stc }}</ion-scroll></p>
+
+                    </div>
+                    <div class="col"  ng-if="(isVendeur && forChargement) || (!isVendeur && !prelevement)" style="
+                  color: {{ article | fontColorQuotaStock : isVendeur : prelevement : retour : forChargement : echange : echangeOUT : echangeIN }}
+                  overflow: scroll;
+                  margin: 0;
+
+                  padding: 0;
+                  color:red;
+                  text-align: center;
+                  border: none;">
+                        <p
+                                style="
+                    color: inherit;
+                    overflow: scroll;
+                    padding: 0;
+                    margin: 0;
+                    margin-top: -3px;
+                    margin-bottom: -3px;
+                    font-size: 12px;
+                     text-align: left;
+                    ">
+                            <ion-scroll direction="x">Quota : {{ ::article.quota }}</ion-scroll></p>
+
+                    </div>
 
                 </div>
             </div>
           </div>
-            
-	</ion-content>
+
+    </ion-content>
   <div class="bar bar-footer bar-balanced" ng-show="footerBar" style="background-color: #B71C1C;">
     <!-- <div class="title">
         <a ng-click="goCart()" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-android-cart"></i></a>
         Total : {{totalBill | promotion }} DHS <a ng-show="nextStep" ng-click = "next()" > <i style="float: right;
     font-weight: 900;
-    font-size: 35px;" class="icon ion-android-arrow-forward"></i></a></div>  -->
+    font-size: 35px;" class="icon ion-arrow-right-a"></i></a></div>  -->
     <div class="title">
-      <span ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></span>
+      <span ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"><i class="icon ion-arrow-left-a"></i></span>
 
       <span ng-click="goCart()">
         <i class="icon ion-android-cart" style="font-weight: 900;
         font-size: 20px;"></i>
-        {{ ' : ' + (total | number : 2) + ' DHS' }} 
+        {{ ' : ' + (total | number : 2) + ' DHS' }}
       </span>
 
-      <span ng-click="next()" ng-if="hasNext && done" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></span>
+      <span ng-click="next()" ng-if="hasNext && done" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i class="icon ion-arrow-right-a"></i></span>
     </div>
 
   </div>
 </ion-view>
 
 <!-- ui-sref="app.brands({ mission : idMission })" -->
+
+
+
+
+    

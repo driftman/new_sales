@@ -1,4 +1,4 @@
-<ion-view view-title="Panier">
+<ion-view view-title="{{ 'Panier : '+( (totalTTC - (totalTTC*currentDiscount/100))  | number : 2 ) + ' DHS' }}">
 	<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C;
 	max-height: 20px;">
        <div class="row" style="
@@ -23,7 +23,7 @@
                 border: none;
                 font-size: 10px;  
                 font-weight: 900; 
-                float: left;">unité</div>
+                float: left;">caisse</div>
                 <div class="col col-15" 
                 style="
                 border: none;
@@ -33,7 +33,8 @@
                 border: none;
                 font-size: 10px;  
                 font-weight: 900; 
-                float: left;">caisse</div>
+                float: left;">unité</div>
+                
                 <div class="col" 
                 style="
                 border: none;
@@ -56,6 +57,7 @@
                 font-weight: 900; 
                 float: left;">remise</div>
                 <div class="col" 
+                ng-show="false"
                 style="
                 border: none;
                 margin: 0;
@@ -75,12 +77,7 @@
                 font-size: 10px; 
                 font-weight: 900; 
                 float: left;">stock</div>
-                <div style="
-                border: none;
-                width: 20px;
-                margin: 0;
-                padding: 0;
-                font-weight: 900;"></div>
+                
               </div>
     </div>
     <ion-content ng-class="{expanded:$scope.isExpanded}">
@@ -115,21 +112,25 @@
                     font-weight: 900; 
                     text-align: left; 
                     margin: 0;
-                    color: #060606;">{{ item.designation }}</p></div>
+                    color: #060606;">{{ item.nomArticle }}</p></div>
+                    <div class="col col-15" style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                font-weight: 900;
+                text-align: center;"><input ng-readonly="item.prixVente == 0 || item.totalStock == 0" ng-change="check(item)" type="number" style="background-color: {{ item | redFilter }} font-weight: 600; font-size: 10px; color: black; width: 100%; text-align:center;" ng-model="item.packet"></input>
+            </div>
+
                 <div class="col col-15" style="
                 border: none;
                 margin: 0;
                 padding: 0;
                 font-weight: 400;
-                text-align: center;"><input ng-readonly="item.prixVente == 0" ng-change="check(item)" type="number" style="background-color: {{ item | redFilter:'row' }} font-weight: 600; font-size: 10px; color: black; width: 100%; text-align:center;" ng-model="item.unit"></input>
-            </div>
-            <div class="col col-15" style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                font-weight: 900;
-                text-align: center;"><input ng-readonly="item.prixVente == 0" ng-change="check(item)" type="number" style="background-color: {{ item | redFilter:'total' }} font-weight: 600; font-size: 10px; color: black; width: 100%; text-align:center;" ng-model="item.packet"></input>
-            </div>
+                text-align: center;">
+                <input ng-readonly="item.prixVente == 0 || item.totalStock == 0" ng-change="check(item)" type="number" style="background-color: {{ item | redFilter }} font-weight: 600; font-size: 10px; color: black; width: 100%; text-align:center;" ng-model="item.unit">
+                </input>
+                </div>
+            
             
             
                 <div class="col col-15" style="
@@ -138,7 +139,7 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">{{ item.isGift ? 0 : item.prixVente }}
+                border: none;">{{ item.isGift ? 0 : item.prixVente | number : 0 }}
                 </div>
                 <div class="col col-15" style="
                 font-weight: 600;
@@ -146,32 +147,28 @@
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">{{ item.remise | number:2 }}
+                border: none;">{{ item.remise || 0 | number:2 }}
                 </div>
                 <div class="col"
+                ng-show="false"
                 style="
                 margin: 0;
                 font-size: 10px;
                 padding: 0;
                 text-align: center;
-                border: none;"><span style="color: green; font-weight: 600; font-size: 10px;" ng-bind="((item.packet*item.unitConversion)+(item.unit))*item.prixVente || 0"></span></div>
+                border: none;">
+                <span ng-if="item.uniteMesure == 'Un'" style="color: green; font-weight: 600; font-size: 10px;" ng-bind="(((item.packet*item.unitConversion)+(item.unit))*item.prixVente) | number : 2"></span>
+                <span ng-if="item.uniteMesure == 'CS'" style="color: green; font-weight: 600; font-size: 10px;" ng-bind="(((item.unit/item.unitConversion)+(item.unit))*item.prixVente) | number : 2"></span>
+            </div>
                 <div class="col col-15" style="
                 font-weight: 600;
                 font-size: 10px;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">{{ ( (item.stock - (item.packet * item.unitConversion + item.unit) > 0) ? (item.stock - (item.packet * item.unitConversion + item.unit)) : (item.unitStock + item.packetStock*item.unitConversion) ) || 0}}
+                border: none;">{{ item.totalStock || 0 | number : 0 }}
                 </div>
-                <div style="
-                border: none;
-                max-width: 20px;
-                width: 20px;
-                margin: 0;
-                padding: 0;
-                font-weight: 900;">
-                <i ng-show="(item.stock - (item.packet * item.unitConversion + item.unit) < 0)" class="icon ion-close-circled" ng-click="clicked(item)" style="color: red; float: right;"></i>
-                </div>
+               
 
                </div>
             </div>
@@ -201,6 +198,7 @@
                 float: left;
                 color: black;
                 background-color: transparent;"><span style="float: right; margin-right: 5px;">Total HT : </span></div>
+               
                 <div class="col col-50" 
                 style="
                 border: none;
@@ -213,7 +211,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ data.ht | number:2 }} DHS</div>
+                background-color: #B71C1C;">{{ (totalHT | number:2) + " DHS" }}</div>
               </div>
             </div>
             <div class="item" 
@@ -241,6 +239,7 @@
                 float: left;
                 color: black;
                 background-color: transparent;"><span style="float: right; margin-right: 5px;">ESCOMPTEPMT : </span></div>
+
                 <div class="col col-50" 
                 style="
                 border: none;
@@ -256,6 +255,46 @@
                 background-color: #B71C1C;">{{ '- '+currentDiscount+' %' }}</div>
               </div>
             </div>
+              <div
+            class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 900; 
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">TIMBRE : </span></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 500; 
+                float: left;
+                background-color: #B71C1C;">{{ (timbre | number:2 || 0)+' DHS' }}</div>
+              </div>
             <div class="item" 
             style="
             margin: 0;
@@ -293,7 +332,7 @@
                 font-size: 14px; 
                 font-weight: 900; 
                 float: left;
-                background-color: #B71C1C;">{{ data.ttc - (data.ttc * currentDiscount / 100) | number : 2 }} DHS </div>
+                background-color: #B71C1C;">{{ ( (totalTTC - (totalTTC*currentDiscount/100))  | number : 2 ) + " DHS"}}</div>
               </div>
             </div>
           </div>
@@ -301,41 +340,42 @@
 
       
 
-      <div class="row">
+    <div class="row" style="margin-top: 0 !important;">
+
+    <div class="col" >
+        <button class="button button-block" ng-click="openDatePicker()" style="background-color: #B71C1C; color: white; font-weight: 600;"> DATE ECHEANCE </button>
+    </div>
+
+    </div>
+
+    <div class="row">
 
         <div class="col">
             <h5 style="    
             font-size: 14px;
             font-weight: 600;
-            text-align: center;" >Modalités de paiement</h5>
+            text-align: left;" >Modalités de paiement</h5>
             <ion-list>
-              <ion-radio style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="change(payment.id)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
+              <ion-radio icon="ion ion-cash" style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="paymentChange(payment)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
             </ion-list>
         </div>
-
-        <div class="col" >
-            <h5 style="    
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;" >
-            Date Echéance
-            </h5>
-            <button class="button button-block button-positive" ng-click="openDatePicker()"> DATE </button>
-        </div>
-
-      </div>
+    </div>
       
 
 	</ion-content>
 	
 </ion-view>
 <div ng-show="true" class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+
     <div class="title">
       <a ng-click="cancel()" style="float: left; font-size: 30px; margin: 0; margin-left: 10px;"><i class="icon ion-android-close"></i></a>
-      <span>Total : {{ data.ttc - (data.ttc * currentDiscount / 100) | number : 2}} DHS</span>
-      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
-      <a ng-click="finish()" ng-show="!hasNext" style="float: right; font-size: 30px; margin: 0; margin-right: 10px;"> <i class="icon ion-checkmark-round"></i></a>
+      <span>Total : {{ ( (totalTTC - (totalTTC*currentDiscount/100))  | number : 2 ) + " DHS"}}</span>
       
+      
+      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i class="icon ion-arrow-right-a"></i></a>
+      <a ng-click="finish()" style="float: right; font-size: 30px; margin: 0; margin-right: 10px;"> <i class="icon ion-checkmark-round"></i></a>
+      <a ng-click="print()"><i style="float: right; font-size: 30px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-printer"></i>
+      </a>
     </div>
     <!--<div class="title">
         <a ng-show="true" ng-click = "pay()" ng-show="recovery" style="float: left; font-size: 35px; margin-right: 20px;"> <i class="icon ion-card"></i></a>
@@ -345,6 +385,28 @@
 
     </div>-->
 	</div>
+
+
+    <script id="gratuitesLivreur.html" type="text/ng-template">
+    
+    <div class="list" style="max-length: 500px;"> 
+
+        <div class="item" style="position: relative;">
+            <a ng-if="previousPopUpShow" style="color: #B71C1C; float: left; font-weight: 900; font-size: 30px;" class="icon ion-arrow-left-a" ng-click="previousPopUp()"></a>
+            <a ng-if="nextPopUpShow" style="color: #B71C1C; float: right; font-weight: 900; font-size: 30px;" class="icon ion-arrow-right-a" ng-click="nextPopUp()"></a>
+        </div>
+        
+        <div ng-repeat="sub in group.conflicts track by $index" style="position: relative; padding: 0; margin-bottom: 15px; border-bottom: 1px solid #B71C1C;" ng-click="hello(group, $index)">
+            <i ng-if="checked(group, $index)" style="color: #B71C1C; position: absolute; top: -18px; right: 0px;" class="icon ion-checkmark-round"></i>
+            
+            <div ng-repeat="item in sub" style="  font-size: 11px; min-height: 30px;">
+                <span style="float: left; font-weight: 600; ">{{ item.designation }}</span>
+                <span style="float: right;">{{ item.unit + ' un.'}}</span>
+
+            </div>
+        </div>
+    </div>
+</script>
 
    
 

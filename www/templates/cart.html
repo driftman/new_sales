@@ -1,4 +1,4 @@
-<ion-view view-title="C.A : {{ ca | number : 2 }} DHS">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}' >
 	<div class="bar bar-subheader bar-balanced" style="background-color: #B71C1C;
 	max-height: 20px;">
        <div class="row" style="
@@ -13,7 +13,7 @@
                 padding: 0;
                 text-align: center;
                 font-size: 11px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 text-align: left;">désignation({{ data.items.length }})</div>
                 <div class="col col-15" 
                 style="
@@ -23,7 +23,7 @@
                 text-align: center;
                 border: none;
                 font-size: 11px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;">cs.</div>
                 <div class="col col-15" 
                 style="
@@ -33,7 +33,7 @@
                 text-align: center;
                 border: none;
                 font-size: 11px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;">un.</div>
                 
                 <div class="col" 
@@ -44,10 +44,11 @@
                 text-align: center;
                 border: none;
                 font-size: 11px;
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;">p.u</div>
                 
                 <div class="col" 
+                ng-if="!echange"
                 style="
                 border: none;
                 margin: 0;
@@ -55,7 +56,7 @@
                 text-align: center;
                 border: none;
                 font-size: 11px;
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;">remise</div>
                 <div class="col" 
                 style="
@@ -65,15 +66,16 @@
                 text-align: center;
                 border: none;
                 font-size: 11px;
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;">total</div>
               </div>
     </div>
-    <ion-content ng-class="{expanded:$scope.isExpanded}">
+    <ion-content>
+        <ion-scroll style="height: 80%; width: 100;">
         <div class="list" style="
           margin: 0;
           margin-top: 20px;
-          margin-bottom: 65px;
+          margin-bottom: 43px;
           background-color: white;
           padding: 0;">
             <div class="item" 
@@ -119,7 +121,9 @@
                 text-align: center;"><!--<input type="number" ng-readonly="true" style="font-weight: 600; font-size: 11px;color: black; width: 100%; text-align:center;" ng-model="item.unit" ng-change="change(item)"></input>-->
                 <span style="font-weight: 900; font-size: 10px;color: black; width: 100%; text-align:center;">{{ item.unit }}</span>
             </div>
-                <div class="col col-15" style="
+                <div class="col col-15"
+                 
+                 style="
                 font-weight: 900;
                 font-size: 9px;
                 margin: 0;
@@ -127,13 +131,15 @@
                 text-align: center;
                 border: none;">{{ item.prixVente | number : 2 }}
                 </div>
-                <div class="col col-15" style="
+                <div class="col col-15"
+                ng-if="!echange"
+                 style="
                 font-weight: 900;
                 font-size: 9px;
                 margin: 0;
                 padding: 0;
                 text-align: center;
-                border: none;">{{ (item.remise  || 0)| number : 2}}
+                border: none;">{{ (item.remise  || 0) | number : 2}}
                 </div>
                 <div class="col"
                 style="
@@ -167,10 +173,10 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 color: black;
-                background-color: transparent;"><span style="float: right; margin-right: 5px;">Total HT : </span></div>
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">TOTAL HT : </span></div>
                 <div class="col col-50" 
                 style="
                 border: none;
@@ -181,7 +187,7 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 background-color: #B71C1C;">{{ totalHT | number : 2 }} DHS</div>
               </div>
@@ -207,7 +213,7 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 color: black;
                 background-color: transparent;"><span style="float: right; margin-right: 5px;">ESCOMPTEPMT : </span></div>
@@ -221,12 +227,14 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 background-color: #B71C1C;">{{ '- '+(currentDiscount || 0)+' %' }}</div>
               </div>
             </div>
-            <div class="item" 
+            <div 
+            ng-if="!echange"
+            class="item" 
             style="
             margin: 0;
             padding: 0;
@@ -247,7 +255,89 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">CHARAKA : </span></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 500; 
+                float: left;
+                background-color: #B71C1C;">{{ '- '+(charaka | number:2 || 0)+' DHS' }}</div>
+              </div>
+            </div>
+            <div
+            class="item" 
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 500; 
+                float: left;
+                color: black;
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">TIMBRE : </span></div>
+                <div class="col col-50" 
+                style="
+                border: none;
+                border-bottom: 1px solid #B71C1C;
+                border-left: 1px solid #B71C1C;
+                border-right: 1px solid #B71C1C;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 500; 
+                float: left;
+                background-color: #B71C1C;">{{ '+ '+(timbre | number:2 || 0)+' DHS' }}</div>
+              </div>
+            </div>
+            <div class="item"
+            ng-if="!echange"
+            style="
+            margin: 0;
+            padding: 0;
+            min-height: 0;
+            border: none;
+            min-height: 0px;
+            text-align: left;
+            color: white;">
+              <div class="row" style="
+              margin: 0; 
+              margin-top: 30px;
+              margin: 0;
+              padding: 0;">
+                <div class="col col-50" 
+                style="
+                border: none;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+                font-size: 14px; 
+                font-weight: 500; 
                 float: left;
                 color: black;
                 background-color: transparent;"><span style="float: right; margin-right: 5px;">TOTAL REMISES : </span></div>
@@ -261,11 +351,12 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 background-color: #B71C1C;">{{ '- '+(promotionDiscount | number:2 || 0)+' DHS' }}</div>
               </div>
             </div>
+
             <div class="item" 
             style="
             margin: 0;
@@ -287,10 +378,10 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 color: black;
-                background-color: transparent;"><span style="float: right; margin-right: 5px;">Total TTC : </span></div>
+                background-color: transparent;"><span style="float: right; margin-right: 5px;">TOTAL TTC : </span></div>
                 <div class="col col-50"
                 style="
                 border: none;
@@ -301,56 +392,127 @@
                 padding: 0;
                 text-align: center;
                 font-size: 14px; 
-                font-weight: 900; 
+                font-weight: 500; 
                 float: left;
                 background-color: #B71C1C;">{{ (totalTTC - (totalTTC*currentDiscount/100) | number : 2 )}} DHS </div>
               </div>
             </div>
+
+
+            <div class="row" style="margin-top: 0 !important;">
+
+        <div class="col" >
+            <button class="button button-block" ng-click="openDatePicker()" style="background-color: #B71C1C; color: white; font-weight: 600;"> DATE ECHEANCE </button>
+        </div>
+
+    </div>
+
+    <div class="row">
+
+        <div class="col">
+            <h5 style="
+            padding: 0;    
+            font-size: 14px;
+            font-weight: 600;
+            text-align: left;" >Modalités de paiement : </h5>
+            <ion-list>
+              <ion-radio icon="ion ion-cash" style="font-size: 12px; padding: 0; font-weight: 500; color: #B71C1C;" ng-model="choice.id" ng-change="paymentChange(payment)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name | uppercase }}</ion-radio>
+            </ion-list>
+        </div>
+    </div>
+
+    <div style="font-size: 14px;" ng-if="showModerneProcess && !echange">
+        <div class="row">
+            <div class="col">
+                <h5 style="    
+                font-size: 14px;
+                font-weight: 600;
+                text-align: left;" >Données client moderne : </h5>
+            </div>
+        </div>
+
+        <div class="row">
+         <div class="col col-50" style="padding-left: 20px;"> <span> Dépot : </span> </div>
+         <div class="col">
+            <a ng-click="openDepotPicker()" style="float: right; font-weight: bold;
+    text-decoration: underline;
+    color: #B71C1C;">{{ ( choices.choosen == 0 || choices.choosen == -1 ) ? "choisir" : ( "depot: " + choices.choosen ) }}</a>
+         </div>
+        </div>
+
+        <div class="row">
+         <div class="col col-50" style="padding-left: 20px;"> Date livraison : </div>
+         <div class="col">
+            <a ng-click="openDatePickerLivraison()" style="float: right; font-weight: bold;
+    text-decoration: underline;
+    color: #B71C1C;"> {{ choices.date_livraison == null ? "choisir" : ( choices.date_livraison | date ) }}</a>
+         </div>
+        </div>
+
+        <div class="row">
+         <div class="col" style="padding-left: 20px;"> Adresse Livraison : </div>
+        </div>
+
+
+        <div class="row">
+         <div class="col" style="padding-left: 20px;">
+            <label class="item-input-wrapper" style="background: #DDADAD;">
+                <textarea ng-model="choices.adresse_livraison" ng-value="choices.adresse_livraison" style="font-size: 12px; padding-left: 15px; width: 100%;"></textarea>
+            </label>
+         </div>
+        </div>
+
+
+    </div>
+
+    </div>
+
+
+
           </div>
       </div>
 
-      
-
-      <div class="row">
-
-        <div class="col">
-            <h5 style="    
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;" >Modalités de paiement</h5>
-            <ion-list>
-              <ion-radio style="font-weight: 900; color: #B71C1C;" ng-model="choice.id" ng-change="paymentChange(payment)" ng-repeat="payment in paymentMethods" ng-value="{{payment.id}}">{{ payment.name }}</ion-radio>
-            </ion-list>
+</ion-scroll>
+        <div class="item" style="bottom: 45px;
+    background: white; padding: 0; border:none">
+        <div class="row">
+            <div class="col col-50">
+                <a class="button button-outline button-assertive icon ion-log-out" style="border-radius: 50%; float: left;" ng-click="cancel()" ></a>
+            </div>
+            <div class="col col-50" >
+                <a class="button  button-outline  button-assertive  icon ion-printer" style="border-radius: 50%; float: right;" ng-click="print()"></a>
+            </div>
         </div>
+        <div class="row">
 
-        <div class="col" >
-            <h5 style="    
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;" >
-            Date Echéance
-            </h5>
-            <button class="button button-block button-positive" ng-click="openDatePicker()"> DATE </button>
+            <div class="col col-50">
+                <span style=" float: left; font-weight: 300; font-size: 16px;"  >Annuler</span>
+            </div>
+            <div class="col col-50" >
+                <span style=" float: right; font-weight: 300; font-size: 16px;"  >Imprimer</span>
+            </div>
+
         </div>
-
-      </div>
-      
-
+        </div>
 	</ion-content>
 	
 </ion-view>
 <div ng-show="footerBar" class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
-      <a ng-click="previous()" ng-if="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <a ng-click="previous()" ng-if="!echange && hasPrevious" style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"><i class="icon ion-arrow-left-a"></i></a>
 
-      <a ng-click="next()" ng-if="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+      <a ui-sref="app.in" ng-if="echange" style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"><i class="icon ion-arrow-left-a"></i></a>
 
-      <a ng-click="checkOut()" ng-if="!hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-checkmark-round"></i></a>
+      <a ng-click="next()" ng-if="!echange && hasNext" style="float: right; font-size: 35px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-arrow-right-a"></i></a>
 
-      <a ng-click="print()"><i style="float: right; font-size: 30px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-printer"></i>
+      <a ng-click="checkOut()" ng-if="!echange && !hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-checkmark"></i></a>
+
+      <a ng-click="finishEchange()" ng-if="echange" style="float: right; font-size: 35px; margin: 0; margin-right: 10px; margin-left: 10px;"> <i class="icon ion-checkmark"></i></a>
+
+      <!--<a ng-click="print()"><i style="float: right; font-size: 30px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-printer"></i>
       </a>
 
-      <a ng-click="cancel()"><i style="float: right; font-size: 35px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-android-close"></i></a>
+      <a ng-click="cancel()"><i style="float: right; font-size: 35px; margin: 0; margin-left: 10px; margin-right: 10px;" class="icon ion-android-close"></i></a>-->
       
       
     </div>
@@ -368,8 +530,8 @@
     <div class="list" style="max-length: 500px;"> 
 
         <div class="item" style="position: relative;">
-            <a ng-if="previousPopUpShow" style="color: #B71C1C; float: left; font-weight: 900; font-size: 30px;" class="icon ion-android-arrow-back" ng-click="previousPopUp()"></a>
-            <a ng-if="nextPopUpShow" style="color: #B71C1C; float: right; font-weight: 900; font-size: 30px;" class="icon ion-android-arrow-forward" ng-click="nextPopUp()"></a> 
+            <a ng-if="previousPopUpShow" style="color: #B71C1C; float: left; font-weight: 900; font-size: 30px;" class="icon ion-arrow-left-a" ng-click="previousPopUp()"></a>
+            <a ng-if="nextPopUpShow" style="color: #B71C1C; float: right; font-weight: 900; font-size: 30px;" class="icon ion-arrow-right-a" ng-click="nextPopUp()"></a>
         </div>
 
         <div ng-repeat="sub in group.conflicts track by $index" style="position: relative; padding: 0; margin-bottom: 15px; border-bottom: 1px solid #B71C1C;"ng-click="hello(group, $index)">
@@ -382,6 +544,23 @@
             </div>
         </div>
     </div>
+</script>
+
+
+<script id="depots.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in choices.items track by $index | filter : choice.id">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ choice.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="choices.choosen" ng-value="choice.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
 </script>
 
    

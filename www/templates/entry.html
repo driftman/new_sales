@@ -1,118 +1,122 @@
 <ion-view view-title="MENU">
 
-    <ion-content>
-		<div class="card" style="background-color: #FA4848;">
-		  	<h2 class="item" style="text-align: center;     font-weight: 600; color: white; font-size : 22px;"> Bonjour, {{ infos.second_name+' '+infos.name }} ! </h2>
-		  	<h5 style="font-size: 15px; font-weight: 600; text-align: center; color: white;"> C.A : {{ ca | number : 2}} DHS | G.P: {{ infos.golden_points }} / 250 pts</h5>
+    <ion-content scroll="false">
+
+		<div class="card" style="background-color: #FA4848;" style="max-height: 20%; min-height: 20%;">
+		  	<h2 class="item" style="text-align: center;     font-weight:300; color: white; font-size : 20px;"> Bonjour {{ infos.second_name+' '+infos.name }}</h2>
+		  	<h5 style="font-size: 14px; font-weight: 300; text-align: center; color: white;"> {{ "Objectif mensuel C.A : " + ( infos.ca | number : 2 ) + " / " + ( infos.objectif_ca)  }} </h5>
+		  	<h5 style="font-size: 14px; font-weight: 300; text-align: center; color: white;"> {{ "Objectif mensuel G.P : " + infos.golden_points + " / " + infos.objectif_golden_points }} </h5>
+		  	<h5 style="font-size: 12px; font-weight: 500; text-align: center; color: white;">
+		  		{{ today | date : "dd-MMM-yyyy HH:mm:ss" }}</h5>
 
 		</div>
 
 
+		<ion-scroll style="max-height: 65%; min-height: 65%;">
+
+			<!--<div class="row" style="border: none;">
+				<div class="col col-50" style="border: none;"><div class="card stable-bg ink ink-dark" ui-sref="app.profile" style="position: relative; box-shadow: 0 5px 5px 0 rgba(0, 150, 136, 0.54); background-color: rgb(0, 150, 136); min-height: 130px; max-height: 200px; margin: 0;"> <div class="item item-text-wrap"> <h3 style="    color: rgba(255,255,255,1); font-size: 14px; font-weight: 300;">Mes indicateurs</h3> </div> <i class="icon ion-speedometer" style="font-size: 55px; color: rgba(255,255,255,1); position: absolute; bottom: 10px; right: 10px;"></i> </div> </div>
+				<div class="col col-50" style="border: none;"> <div class="card stable-bg ink ink-dark" ui-sref="app.routes({ code : 0 })" style="position: relative; box-shadow: 0 5px 5px 0 rgba(244, 67, 54, 0.54); background-color: rgb(244, 67, 54); min-height: 130px; max-height: 200px; margin: 0;"> <div class="item item-text-wrap"> <h3 style="    color: rgba(255,255,255,1); font-size: 14px; font-weight: 300;">Ma Journée</h3> </div> <i class="icon ion-map" style="font-size: 55px; color: rgba(255,255,255,1); position: absolute; bottom: 10px; right: 10px;"></i> </div> </div> </div>
 			<div class="row" style="border: none;">
-			<div class="col col-50" style="border: none;">
-				<div class="card stable-bg ink ink-dark" ui-sref="app.profile" style="box-shadow: 0 5px 5px 0 rgba(0, 150, 136, 0.54); background-color: rgb(0, 150, 136); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Mon Espace</h3>
-				    <i class="icon ion-speedometer" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
+				<div class="col col-50" style="border: none;"> <div class="card stable-bg ink ink-dark" ng-click="sbdPopup()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(33, 150, 243, 0.54); background-color: #2196F3; min-height: 130px; max-height: 200px; margin: 0;"> <div class="item item-text-wrap"> <h3 style="    color: rgba(255,255,255,1); font-size: 14px; font-weight: 300;">{{ 'Brochure SBD' + ( infos.parametrage.sbd.sbd_new == 1 ? '(nouveau)' : '' ) }}</h3> </div> <i class="icon ion-pricetag" style="font-size: 55px; position: absolute; bottom: 10px; right: 10px; color: rgba(255,255,255,1); float: right;"></i> </div> </div>
+				<div class="col col-50" style="border: none;"> <div class="card stable-bg ink ink-dark" ui-sref="app.dechargement" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 108, 0, 0.54); background-color: rgb(239, 108, 0); min-height: 130px; max-height: 200px; margin: 0;"> <div class="item item-text-wrap"> <h3 style="    color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Demande de déchargement</h3>
+
+					  </div>
+					  <i class="icon ion-android-bus" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
 				</div>
 			</div>
-			<div class="col col-50" style="border: none;">
-				<div class="card" ui-sref="app.routes({ code : 0 })" style="box-shadow: 0 5px 5px 0 rgba(244, 67, 54, 0.54); background-color: rgb(244, 67, 54); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Mes Routes</h3>
-				    <i class="icon ion-map" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
+			<div class="row" style="border: none;">
+				<div class="col col-50" style="border: none;">
+					<div class="card stable-bg ink ink-dark" ui-sref="app.clients" style="position: relative; box-shadow: 0 5px 5px 0 rgba(255, 87, 34, 0.34); background-color: rgba(255, 87, 34, 0.9); min-height: 130px; max-height: 200px; margin: 0;">
+					  <div class="item item-text-wrap">
+					    <h3 style="    color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Mes Clients</h3>
+
+					  </div>
+					  <i class="icon ion-ios-people" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
+				</div>
+				<div ng-if="isVendeur" class="col col-50" style="border: none;">
+					<div class="card" ng-click="prepareChargement()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(80, 90, 239, 0.54); background-color: rgb(97, 117, 250); min-height: 130px; max-height: 200px; margin: 0;">
+					  <div class="item item-text-wrap">
+					    <h3 style="    color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Demande de chargement</h3>
+
+					  </div>
+					  <i class="icon ion-android-cart" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
+				</div>
+				<div  ng-if="!isVendeur" class="col col-50" style="border: none;">
+					<div class="card stable-bg ink ink-dark" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
+					  <div class="item item-text-wrap">
+					    <h3 style="    color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Synchronisation</h3>
+
+					  </div>
+					  <i class="icon ion-android-upload" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
 				</div>
 			</div>
-		</div>
-		<div class="row" style="border: none;">
-			<div class="col col-50" style="border: none;">
-				<div class="card" ng-click="test()" style="box-shadow: 0 5px 5px 0 rgba(33, 150, 243, 0.54); background-color: #2196F3; min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">SBD</h3>
-				    <i class="icon ion-pricetag" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
+
+
+			<div class="row" ng-if="isVendeur">
+				<div class="col col-50" style="border: none;">
+					<div class="card stable-bg ink ink-dark" ui-sref="menu.configuration" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(206, 67, 101); min-height: 130px; max-height: 200px; margin: 0;">
+					  <div class="item item-text-wrap">
+					    <h3 style="    color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Configuration</h3>
+
+					  </div>
+					  <i class="icon ion-android-options" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
 				</div>
-			</div>
-			<div class="col col-50" style="border: none;">
-				<div class="card" style="box-shadow: 0 5px 5px 0 rgba(239, 108, 0, 0.54); background-color: rgb(239, 108, 0); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Promotions</h3>
-				    <i class="icon ion-home" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
+
+				<div class="col col-50" style="border: none;">
+					<div class="card stable-bg ink ink-dark" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
+					  <div class="item item-text-wrap">
+					    <h3 style="color: rgba(255,255,255,1);
+	    font-size: 14px;
+	    font-weight: 300;">Synchronisation</h3>
+
+					  </div>
+					  <i class="icon ion-android-upload" style="font-size: 55px;
+					    color: rgba(255,255,255,1);
+					    position: absolute;
+					    bottom: 10px;
+					    right: 10px;"></i>
+					</div>
 				</div>
-			</div>
-		</div>
-		<div class="row" style="border: none;">
-			<div class="col col-50" style="border: none;">
-				<div class="card" ui-sref="app.clients" style="box-shadow: 0 5px 5px 0 rgba(255, 87, 34, 0.34); background-color: rgba(255, 87, 34, 0.9); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Mes Clients</h3>
-				    <i class="icon ion-ios-people" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
-				</div>
-			</div>
-			<div ng-if="isVendeur" class="col col-50" style="border: none;">
-				<div class="card" ng-click="prepareChargement()" style="box-shadow: 0 5px 5px 0 rgba(80, 90, 239, 0.54); background-color: rgb(97, 117, 250); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Chargement & Stock</h3>
-				    <i class="icon ion-android-cart" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
-				</div>
-			</div>
-			<div ng-if="!isVendeur" class="col col-50" style="border: none;">
-				<div class="card" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Synchronization</h3>
-				    <i class="icon ion-android-upload" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
-				</div>
-			</div>
-		</div>
-		
-		<div class="row" ng-if="isVendeur">
-			<div class="col col-50" style="border: none;">
-				<div class="card" ng-click="synchronization()" style="position: relative; box-shadow: 0 5px 5px 0 rgba(239, 83, 80, 0.54); background-color: rgb(239, 83, 80); min-height: 130px; max-height: 200px; margin: 0;">
-				  <div class="item item-text-wrap">
-				    <h3 style="    color: rgba(255,255,255,1);
-    font-size: 14px;
-    font-weight: 600;">Synchronization</h3>
-				    <i class="icon ion-android-upload" style="font-size: 55px;
-				    color: rgba(255,255,255,1);
-				    float: right;"></i>
-				  </div>
-				</div>
-			</div>
-		</div>
+
+			</div>-->
+			<div  compile="htmlToRender"></div>
+		</ion-scroll>
 		
     	<!-- <div class="list" style="margin-top: 30px;">
     		<div class="item entry">
@@ -149,3 +153,83 @@
     	</div> -->
 	</ion-content>
 </ion-view>
+
+<script id="choixSync.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in choices.items">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ choice.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="choices.choosen" ng-value="choice.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
+</script>
+
+<script id="brandFiveCongrats.html" type="text/ng-template">
+
+	<h5 style="font-weight: 300; font-size: small" ng-if="brandNames!==''">Bravo, Vous avez atteint votre objectif brand five dans les marques: </h5>
+	<div class="row" ng-if="brandNames!==''">
+
+		{{brandNames}}
+
+
+	</div>
+
+	<h5 style="font-weight: 300;" ng-if="changedTables.length>0">Rapport Synchronisation :</h5>
+
+	<div class="row" ng-if="changedTables.length>0" ng-repeat="item in changedTables">
+		<div class='col col-80'>
+			<span class="ion-checkmark">{{item.displayName}} :</span>
+		</div>
+		<div class='col textGreen' >
+			{{item.diffCount}}
+		</div>
+
+	</div>
+
+
+</script>
+
+<script id="choixWire.html" type="text/ng-template">
+    <ion-list ng-repeat="method in methods.items">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ method.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="methods.choosen" ng-value="method.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
+</script>
+
+
+<script id="sbdChoix.html" type="text/ng-template">
+    <ion-list ng-repeat="sbd in sbdMethods.items">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ sbd.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="sbdMethods.choosen" ng-value="sbd.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
+</script>
+
+<script id="spinner.html" type="text/ng-template">
+    <ion-spinner icon="android"> </ion-spinner> 
+    <br> Téléchargement en cours ...
+    <br> {{ progressValue+"%" }} </br>
+</script>

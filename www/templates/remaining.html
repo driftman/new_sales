@@ -1,231 +1,101 @@
-<ion-view view-title="Reste Promotions/SBD">
-    <div class="bar bar-subheader bar-balanced" style="background-color: #717070; height: 20px;">
+<ion-view
+        view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'>
+
+    <ion-content
+            style="position: relative;" ng-class="{expanded:$scope.isExpanded}" scroll="false">
+        
        
-            <div class="row" style="
-                margin: 0;
-                padding: 0;
-                border: none;
-                min-height: 100%;
-                text-align: left;
-                margin-top: 15px; 
-                background-color: #3F51B5; 
-                color: white;
-                font-size: 10px;
-                margin: 0; 
-                margin-top: 30px;
-                margin: 0;
-                padding: 0;">
-                <div class="col" 
-                style="
-                border: none;
-                min-width: 50%;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                font-size: 11px; 
-                font-weight: 900;
-                text-align: left;">désignation({{ articles.length }})</div>
-                
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px; 
-                font-weight: 900; 
-                float: left;">cs.</div>
-                <div class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px; 
-                font-weight: 900; 
-                float: left;">un.</div>
-                <!-- <div class="col col-15" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px; 
-                font-weight: 900; 
-                float: left;">total</div> -->
-                <div 
-                ng-if="!isVendeur"
-                class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px;  
-                font-weight: 900; 
-                float: left;">quota</div>
 
-                <div class="col"
-                ng-if="isVendeur"
-                style="
-                margin: 0;
-                padding: 0;
-                font-size: 11px;  
-                font-weight: 900;
-                text-align: center;
-                border: none;">stv.</div>
-                
-                <div class="col"
-                style="
-                margin: 0;
-                padding: 0;
-                font-size: 11px;  
-                font-weight: 900;
-                text-align: center;
-                border: none;">stc.</div>
+        <div ng-if="remainings.initiatives.length < 1 && remainings.sbds.length < 1" style="color: #E82C2E;">
+            <!-- <h3 style="text-align: center;"><i class="icon ion-social-dropbox"></i></h3> -->
+            <div class="row">
+                <div class="col"><img style="width: 70%; height: 70%; display: block; margin: auto;" src="img/animat-pencil-color.gif"/></div>
+            </div>
 
-              </div>
-    </div>
-    <ion-content 
-    style = "position: relative;" ng-class="{expanded:$scope.isExpanded}">
-          <div class="list" style="
-          height: 300px;
-          margin: 0;
-          margin-top: 20px;
-          padding: 0;">
-            <div class="item" 
-            style="
-            margin: 0;
-            padding: 0;
-            min-height: 0;
-            border: none;
-            border-bottom: 1px solid rgba(0,0,0,0.2);
-            min-height: 0px;
-            text-align: left;" ng-repeat="article in articles | filter:articleName | orderBy:'groupeSBD' | orderBy: 'promotions' track by $index">
-                <div class="row" style="
-                background-color: {{ article | backgroundSBD }};
-                margin: 0;
-                padding: 0;
-                margin: 0;">
-                   <div class="col" style="
-                  margin: 0;
-                  min-width: 50%;
-                  padding: 0;
-                  text-align: center;
-                   overflow: hidden; border: none;">
-                    <p 
-                    style="
-                    padding: 0;
-                    margin: 0;
-                    margin-top: -3px;
-                    margin-bottom: -3px;
-                    font-size: 10.3px; 
-                    font-weight: {{ article.groupeSBD != null ? 900 : 600 }} ; 
-                    text-align: left; 
-                    color: #060606;">{{ article.nomArticle }}</p>
-                    <p 
-                    style="
-                    padding: 0;
-                    margin: 0;
-                    margin-top: -5px;
-                    font-size: 10.5px; 
-                    font-weight: 900; 
-                    text-align: left;">PPQ: {{ article.past || '0,0,0' }} <span ng-if="article.promotions != null" style="margin-right: 15px; float: right; font-weight: bolder;
-                    font-size: 25px; color: {{ article.promotions | promotionConsumed }};">&#8471</span></p></div>
-                <div class="col" style="
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;"><input type="number" ng-change="change(article)" ng-model="article.packet" value="0" style="font-weight: 900; background-color: {{ article | backgroundSBD }}; color: green; width: 100%; text-align:center;
-                margin-left: 2.5px;
-                font-size: 11px;
-                border-bottom-right-radius: 5px;
-                border-bottom-left-radius: 5px;
-                border-bottom-width: 2px;"></input></div>
-                <div class="col" style="
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;"><input type="number" value="0" ng-change="change(article)" ng-model="article.unit" style="font-weight: 900; background-color: {{ article | backgroundSBD }};color: green; width: 100%; text-align:center;
-                margin-left: 2.5px;
-                font-size: 11px;
-                border-bottom-right-radius: 5px;
-                border-bottom-left-radius: 5px;
-                border-bottom-width: 2px;"></input>
-
-                </div>
-               <!--  <div class="col col-15" style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                font-weight: 900;
-                text-align: center;"><span style="font-size: 10px;" ng-bind="(article.packet*article.unitConversion)+(article.unit)"></span>
-            </div> -->
-                <div class="col"
-                ng-if="!isVendeur"
-                style="
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;">{{ article | quota }}</div>
+            <div class="row">
+                <div class="col"><p style="text-align: center; color: #496783; font-size: 16px;"> Aucune vente jusqu'à l'instant, allez courage et levez la barrière plus haut. </p></div>
+            </div>
+            
+            
+        </div>
 
 
-                <div 
-                ng-if="isVendeur" 
-                class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px;  
-                font-weight: 900; 
-                float: left;">{{ article.stock }}</div>
+        <ion-scroll ng-if="remainings.initiatives.length> 0 || remainings.sbds.length>0">
 
-                <div 
-                class="col" 
-                style="
-                border: none;
-                margin: 0;
-                padding: 0;
-                text-align: center;
-                border: none;
-                font-size: 11px;  
-                font-weight: 900; 
-                float: left;">{{ article.stc }}</div>
+        <h4 style="text-align: center;color: #B71C1C; font-weight: 600;">Initiatives & SBDs</h4>
 
-                
+        <div class="list" style="margin-top: 30px;">
 
+            <div class="item item-divider" style="font-size: 18px; text-decoration: underline;"
+                 ng-if="remainings.initiatives.length > 0">Initiatives({{ remainings.initiatives.length }}) :
+            </div>
+
+            <div class="item" ui-sref="app.remainingBrand({ sbd: false, promotion: true, id: initiative.id  })"
+                 ng-repeat="initiative in remainings.initiatives" style="padding: 0;" style="margin: 0; padding: 0;">
+                <div class="row">
+                    <div class="col col-10">
+
+                        <i ng-if="!initiative.consumed && initiative.cause != ''" class="icon ion-edit"
+                           style="font-size: 16px;"></i>
+
+                        <i ng-if="!initiative.consumed && initiative.cause == ''" class="icon ion-close-circled"
+                           style="color: #F44336; font-size: 16px;"></i>
+
+                        <i ng-if="initiative.consumed" class="icon ion-checkmark-circled"
+                           style="color: green; font-size: 16px;"></i>
+
+                    </div>
+                    <div class="col" style="overflow-x: scroll; color: #000000; font-weight: 600;">
+                        <ion-scroll direction="x"> {{ initiative.title }}</ion-scroll>
+                    </div>
                 </div>
             </div>
-          </div>
-            
+
+            <div class="item item-divider" ng-if="remainings.sbds.length > 0"
+                 style="font-size: 18px; text-decoration: underline;">SBD({{ remainings.sbds.length }}) :
+            </div>
+
+            <div class="item" ui-sref="app.remainingBrand({ sbd: true, promotion: false, id: sbd.id  })"
+                 ng-repeat="sbd in remainings.sbds" style="padding: 0;">
+
+                <div class="row">
+                    <div class="col col-10">
+                        <i ng-if="!sbd.consumed && sbd.cause != ''" class="icon ion-edit" style="font-size: 16px;"></i>
+                        <i ng-if="!sbd.consumed && sbd.cause == ''" class="icon ion-close-circled"
+                           style="color: #F44336; font-size: 16px;"></i>
+                        <i ng-if="sbd.consumed" class="icon ion-checkmark-circled"
+                           style="color: green; font-size: 16px;"></i>
+                    </div>
+                    <div class="col" style="overflow-x: scroll; color: #000000; font-weight: 600;">
+                        <ion-scroll direction="x"> {{ sbd.title }}</ion-scroll>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+</ion-scroll>
     </ion-content>
 
-  <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+    <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
+        <div class="title" style="font-size: 11px !important;">
 
-    <div class="title">
+          <span ng-if="hasPrevious" ng-click="previous()"
+                style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"> <i
+                  class="icon ion-arrow-left-a"></i>
+          </span>
+         
+          <span ng-click="goCart()">
+            <i class="icon ion-android-cart" style="font-weight: 900;
+            font-size: 20px;"></i>
+            {{ ' : ' + (total | number : 2) + ' DHS' }} 
+          </span>
 
-      <span ng-if="hasPrevious" ng-click="previous()" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;">
-        <i class="icon ion-android-arrow-back"></i>
-      </span>
+          <span ng-if="hasNext" ng-click="next()" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i
+                  class="icon ion-arrow-right-a"></i>
+          </span>
 
-      <span>
-        <i class="icon ion-android-cart" style="font-weight: 900;
-        font-size: 20px;"></i>{{ ' : '+(total | number : 2) + ' DHS'}}
-      </span>
-
-      <span ng-if="hasNext" ng-click="next()" style="float: right; font-size: 45px; margin: 0; margin-left: 10px;">
-        <i class="icon ion-android-arrow-forward"></i>
-      </span>
-
+        </div>
     </div>
 
-  </div>
 
 </ion-view>

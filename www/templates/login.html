@@ -7,7 +7,7 @@ background:      -o-linear-gradient(90deg, #870000 10%, #190A05 90%); /* Opera 1
 background:         linear-gradient(90deg, #870000 10%, #190A05 90%); /* W3C */
 background:           #B71C1C; /* Ila 7madet ga3 */
     ">
-        <div class="hero no-header flat">
+        <div class="hero flat">
             <div class="content">
                 <div class="app-icon">
                     <img src="img/logo.png" style="width: 100px; height: 100px;">
@@ -51,16 +51,33 @@ background:           #B71C1C; /* Ila 7madet ga3 */
         </div>
         
         <div class="padding">
-            <button class="button button-full button-assertive ink" ng-click="login(object)">Login</button>
+            <button class="button button-full button-assertive ink" ng-click="login(object)" style="background-color: #E82C2E;">Login</button>
           </div>
         <div class="padding">
             <button class="button button-full button-assertive ink" style="
+            text-transform: none;
             text-decoration: underline;
             border: none;
-            background-color: rgba(0,0,0,.1);
+            letter-spacing: 0;
+            background-color: #E82C2E;
             font-weight: bold;" ng-click="password_forgot()">Mot de passe oublié ?</button>
         </div>
+        <!--younes-->
+        <div class="">
+            <div class="row">
+                <div class="col-20 col-offset-80 ">
+                    <div class="col"><a class="button  button-outline ion-gear-b" style="padding:0;
+                   font-size:2em; color:white;" ui-sref="menu.configuration"></a></div>
+                </div>
+              <!--  <div class="col">qsdf</div>
+                <div class="col">qsdf</div>
+                <div class="col">qsdf</div>
+                <div class="col">qsdf</div>-->
+             <!--   <div class="col"><button class="button button-small" style="" >Mot de passe oublié ?</button></div>-->
+            </div>
 
+        </div>
+        <!--younes-->
         <!-- Success Modal -->
         <script id="modal-password.html" type="text/ng-template">
           <div class="modal">

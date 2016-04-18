@@ -1,0 +1,79 @@
+<ion-view view-title='{{ title }}' >
+
+<ion-content>
+
+        <div ng-if="!echanges.length > 0" style="color: #E82C2E;">
+            <!-- <h3 style="text-align: center;"><i class="icon ion-social-dropbox"></i></h3> -->
+            <div class="row">
+                <div class="col"><img style="width: 70%; height: 70%; display: block; margin: auto;" src="img/animat-linechart-color.gif"/></div>
+            </div>
+
+            <div class="row">
+                <div class="col"><p style="text-align: center; color: #496783; font-size: 16px;"> Aucun échange jusqu'à l'instant</p></div>
+            </div>
+            
+            
+        </div>
+
+         <!-- <div class="row">
+            <div class="col">
+                <div>
+                    <span style="float: left;"> Du : </span>
+                    <span style="float: right; margin-right: 10px;
+    text-decoration: underline;
+    font-weight: 600;
+    color: #B71C1C;"> 2016 - 03 - 04 </span>
+                </div>
+            </div>
+            <div class="col">
+                <div>
+                    <span style="float: left;"> Au : </span>
+                    <span style="float: right; margin-right: 10px;
+    text-decoration: underline;
+    font-weight: 600;
+    color: #B71C1C;"> 2016 - 03 - 05 </span>
+                </div>
+            </div>
+        </div> -->
+
+    	<div ng-if="echanges.length > 0">
+            <ion-list show-delete="false" can-swipe="true" style="margin-top: 30px;">
+
+            <ion-item
+            ng-click="prompt(echange.nom, echange.prenom, echange.print_content)"
+            collection-repeat="echange in echanges"
+            style="padding: 0 !important; border-bottom: 1px solid rgba(183, 28, 28, 0.29);"
+            item="mission">
+                <div class="row" style="max-width: 100%;">
+                    <div class="col col-20" style="margin: 0 !important; border-right: 1px solid rgba(183, 28, 28, 0.29);">
+                        <div class="row">
+                            <h2 style="font-size: 20px; font-weight: 300; margin: 0 auto; color: #B71C1C;">{{ echange.day }}</h2>
+                        </div>
+                        <div class="row">
+                            <h2 style="font-size: 13px; font-weight: 500; margin: 0 auto; color: black;">{{ echange.month | month }}</h2>
+                        </div>
+                    </div>
+
+                    <div class="col" style="max-width: 200px;">
+                        <p style="font-weight: 300;">Magasin : <span style="color: #B71C1C;">{{ echange.nom+' '+echange.prenom }}</span></p>
+                        <p style="font-weight: 300;">Etat : <span style="color: #B71C1C;">{{ echange.state }}</span></p>
+                        <p style="font-weight: 300;">CA: <span style="color: #B71C1C;">{{ (echange.total_ttc | number : 2) + ' DHS' }}</span></p>
+                        <p style=" margin: 0; font-weight: 300;">Code client: {{ echange.codeClient }}</p>
+                        <p style=" margin: 0; font-weight: 300;">Adresse: {{ echange.address }} </p>
+                    </div>
+
+                    <div class="col col-10" style="margin: 0 !important;">
+                        <div class="row" style="margin: 0;">
+                            <div class="col" style="color: #05599D;">
+                                <span ng-if="echange.synced == 0" style="font-size: 10px; text-decoration: line-through;">sync</span> 
+                                <span ng-if="echange.synced == 1" style="font-size: 10px;">sync</span> 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ion-item>
+
+        </ion-list>
+        </div>
+</ion-content>
+</ion-view>

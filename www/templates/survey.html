@@ -1,65 +1,90 @@
 
-<ion-view view-title="SURVEY">
-	<ion-content 
-    scroll="true" style = "position: relative;" >
-   	    <h4 style="text-align: center; color: #B71C1C !important;">Le questionnaire doit être dûment rempli.</h4>
-   	    <h5 style="text-align: center;">(*) champs obligatoires.</h5>
-		<ion-list ng-repeat="survey in surveys | surveyFilter:1 ">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'>
+	<ion-content scroll="false"
+   style = "position: relative;" >
+		
+		<div style="" class="">
+			<div ng-if="!surveys.length > 0" class="row">
+				<div class="col col-offset-20"><img style="width: 70%; height: 70%; display: block; margin: auto;" src="img/animat-pencil-color.gif"/></div>
+			</div>
+			<div ng-if="!surveys.length > 0">
+				<!--<h1 style="text-align: center; color: #E82C2E;">VIDE</h1>-->
+				<h5 style="text-align: center; color: #496783; font-weight: 300;"> Aucun questionnaire n'est programmé. <br>Veuillez passer à l'étape suivante. </h5>
+			</div>
+		</div>
+		<ion-scroll ng-if="surveys.length > 0" style="height: 80%; width: 100;">
+
+		<h4 style="text-align: center;color: #B71C1C; font-weight: 600;">Questionnaire </h4>
+
+   	    <h5 style="text-align: center;" 	>(*) reponse obligatoires.</h5>
+
+   	    <div ng-if="surveys.length > 0">
+			<ion-list ng-repeat="survey in surveys">
+			</ion-list>
+   	    	<ion-list ng-repeat="survey in surveys | surveyFilter:1 ">
+
 				  <div class="item item-divider" style="color: #B71C1C;">
 				    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
 				    font-weight: 900;
 	    			font-size: 20px;">*</span>
-				  </div><input  ng-click="clicked()" type="checkbox" class="regular-radio" ng-model="survey.choosen" ng-value="answer">
-		</ion-list>
-		<ion-list ng-repeat="survey in surveys | surveyFilter:2 ">
-				  <div class="item item-divider" style="color: #B71C1C;">
-				    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
-				    font-weight: 900;
-	    			font-size: 20px;">*</span>
+	    			<span style="vertical-align: middle;">
+	    			  <input  ng-click="clicked()" type="checkbox" class="regular-check"  ng-model="survey.choosen" ng-value="true"> 
+	    			  </span>
 				  </div>
-				 	<label ng-repeat="answer in survey.answers" style="display: block; margin-top: 6px; color: black; font-weight: 600;">
-				  		<input  ng-click="clicked()" type="radio" class="regular-radio" ng-model="survey.choosen" ng-value="answer">
-				  		{{ answer }}
-				  </label>
-		</ion-list>
-		<ion-list ng-repeat="survey in surveys | surveyFilter:3 ">
-				  <div class="item item-divider" style="color: #B71C1C;">
-				    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
-				    font-weight: 900;
-	    			font-size: 20px;">*</span>
-				  </div>
-				  <input  style="width: 100%;
-							    font-size: 15px;
-							    margin-left: 15px;
-								border-bottom: 2px solid #B71C1C;" ng-click="clicked()" type="number" ng-model="survey.choosen" ng-value="answer">
-		</ion-list>
-		<ion-list ng-repeat="survey in surveys | surveyFilter:4 ">
-				  <div class="item item-divider" style="color: #B71C1C;">
-				    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
-				    font-weight: 900;
-	    			font-size: 20px;">*</span>
-				  </div>
-				  <input  style="width: 100%;
-							    font-size: 15px;
-							    margin-left: 15px;
-								border-bottom: 2px solid #B71C1C;" 
-								ng-click="clicked()" type="text" ng-model="survey.choosen" ng-value="answer">
-		</ion-list>
+				
+			</ion-list>
+			<ion-list ng-repeat="survey in surveys | surveyFilter:2 ">
+					  <div class="item item-divider" style="color: #B71C1C;">
+					    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
+					    font-weight: 900;
+		    			font-size: 20px;">*</span>
+					  </div>
+					 	<label ng-repeat="answer in survey.answers" style="display: block; margin-top: 6px; color: black; font-weight: 600;">
+					  		<input  ng-click="clicked()" type="radio" class="regular-radio" ng-model="survey.choosen" ng-value="answer">
+					  		{{ answer }}
+					  </label>
+			</ion-list>
+			<ion-list ng-repeat="survey in surveys | surveyFilter:3 ">
+					  <div class="item item-divider" style="color: #B71C1C;">
+					    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
+					    font-weight: 900;
+		    			font-size: 20px;">*</span>
+					  </div>
+					  <input  style="width: 100%;
+								    font-size: 15px;
+								    margin-left: 15px;
+									border-bottom: 2px solid #B71C1C;" ng-click="clicked()" type="number" ng-model="survey.choosen" ng-value="answer">
+			</ion-list>
+			<ion-list ng-repeat="survey in surveys | surveyFilter:4 ">
+					  <div class="item item-divider" style="color: #B71C1C;">
+					    {{ (survey.question + ' ? ')}} <span ng-if="survey.required" style="
+					    font-weight: 900;
+		    			font-size: 20px;">*</span>
+					  </div>
+					  <input  style="width: 100%;
+								    font-size: 15px;
+								    margin-left: 15px;
+									border-bottom: 2px solid #B71C1C;" 
+									ng-click="clicked()" type="text" ng-model="survey.choosen" ng-value="answer">
+			</ion-list>
+   	    </div>
+		</ion-scroll>
 	    </ion-content>
 </ion-view>
 
 <div class="bar bar-footer bar-balanced" style="background-color: #B71C1C;">
     <div class="title">
 
-      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 45px; margin: 0; margin-left: 10px;"><i class="icon ion-android-arrow-back"></i></a>
+      <a ng-click="previous()" ng-show="hasPrevious" style="float: left; font-size: 35px; margin: 0; margin-left: 10px;"><i class="icon ion-arrow-left-a"></i></a>
 
       <span ng-click="pay()">
       	<i class="icon ion-android-cart" style="font-weight: 900;
-    font-size: 20px;"></i>
+    font-size: 20px;">
+		</i>
     {{ ' : ' + (total | number : 2) + ' DHS' }} 
 	  </span>
 
-      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 45px; margin: 0; margin-right: 10px;"> <i class="icon ion-android-arrow-forward"></i></a>
+      <a ng-click="next()" ng-show="hasNext" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i class="icon ion-arrow-right-a"></i></a>
 
       <a ng-click="next()" ng-show="!hasNext" style="float: right; font-size: 35px; margin: 0; margin-right: 10px;"> <i class="icon ion-checkmark"></i></a>
 

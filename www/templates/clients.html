@@ -1,4 +1,4 @@
-<ion-view view-title="G.P: {{ infos.golden_points }} / 250 pts | G.S: {{ infos.golden_stores }} / 20.">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'>
     <div class="bar bar-subheader bar-balanced" style="text-align: right; border-color: #D14949; padding: 5px; background-color:#AE2121; box-shadow: none; height: auto;">
      
       <!-- <div class="button-bar">
@@ -6,8 +6,8 @@
         <a class="button" style="    font-weight: 900; background-color: #CE1515; font-size: 12.5px; text-transform: none; white-space: normal; max-width: 100%; min-height: 15px; max-height: 30px;">en retard</a>        
       </div> -->
   
-      <label for="date" style="margin: 7px; font-size: 16px; font-weight: 600;"> route: </label>
-        <select id="date" style="font-size: 14px;" ng-model="search.route">
+      <label for="date" style="margin: 7px; font-size: 16px; font-weight: 500;"> route: </label>
+        <select id="date" style="font-size: 14px;" ng-model="search.code_route">
           <option ng-repeat="route in routes" value="{{ route }}">{{ route }}</option>
         </select>
       </label>
@@ -15,21 +15,29 @@
     <ion-content>
     <br><br>
         <ion-list>
-        <ion-item class="item-thumbnail-left"
+        <ion-item 
                   collection-repeat="client in clients | filter:search" 
                   collection-item-width="'100%'"
                   item="client"
                   ng-click="goClient(client.id_db)"
-                  style="border-bottom : 2px solid #B71C1C;;">
-          <img ng-src="img/red.png">
-          <h2 style="font-weight: 700; color: #B71C1C;">Nom : {{ client.prenom }} {{ client.nom}}</h2>
-                <p><b>Adresse :</b> {{ client.address }}</p>
-                <p><b>Code Client : </b>{{ client.code_client }}</p>
-                <p><b>C.A : </b> {{ client.chiffreAffaire }} DHS</p>
-                <p><b>Points Golden Store : </b> {{ client.golden_store != 'undefined' ? client.golden_store : 0 }}</p>
+                  style="border-bottom : 1px solid #B71C1C; padding: 0 !important; margin: 0 !important;">
+                  <div class="row" style="padding: 0 !important; margin: 0 !important;">
+
+                    <div class="col">
+                      <h2 style="font-weight: 500; color: #B71C1C;">Nom : {{ client.prenom }} {{ client.nom}}</h2>
+                      <p>Adresse : {{ client.address || "--" }}</p>
+                      <p>Code Client :{{ client.code_client || "--" }}</p>
+                      <p>C.A : {{ ( ( client.ca || 0 ) | number:2 ) + " DHS"}} </p>
+                      <p>Points Golden Store : {{ client.golden_store != 'undefined' ? client.golden_store : 0 }}
+                      </p>
+                    </div>
+                    <div ng-if="client.authorized == 1" class="col col-10" style="color: #B71C1C; font-size: 22px;"><i class="icon ion-map"></i>
+                    </div>
+
+                  </div>
         </ion-item>
 
-      </ion-list>
+        </ion-list>
       
 
 

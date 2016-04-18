@@ -62,7 +62,7 @@
 			      Route
 			    </div>
 			    <select ng-model="client.route" class="input-content">
-			      <option ng-repeat="route in routes">{{ route }}</option>
+			      <option ng-repeat="route in routes track by $index">{{ route }}</option>
 			    </select>
 			</label>
     	</div>
@@ -102,7 +102,7 @@
 				</button>
     		</div>
     		<div class="col" style="border: none;">
-    			<button class="button button-full button-assertive form">
+    			<button ng-click="cancel()" class="button button-full button-assertive form">
 				  Annuler
 				</button>
 			</div>

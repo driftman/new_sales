@@ -1,68 +1,180 @@
-<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; box-shadow: none;">
-  
-  <div class="buttons">
-    <button class="button" style="box-shadow: none; margin: 5px; background: transparent;"><i class="icon ion-android-arrow-back"></i></button>
-  </div>
+<ion-view view-title='{{  stockOnly ? "Mon Stock" : "Demande de déchargement" }}' >
 
-  <h1 class="title">{{ 'STOCK-DECHARGEMENT' }}</h1>
+	<div ng-if="stock.length > 0" class="bar bar-subheader bar-assertive" style="box-shadow: none; background-color: #B71C1C; height: 40px;">
 
-  <div class="buttons">
-    <button class="button" style="box-shadow: none; background: transparent;"><i class="icon ion-android-print"></i></button>
-  </div>
 
-</ion-header-bar>
+		<div class="row" style="font-size: 14px;">
 
-<div class="bar bar-subheader bar-balanced" style="box-shadow: none; background-color: #B71C1C; height: 40px;">
+			<div class="col">
 
-	<div class="row" style="font-size: 10px; font-weight: 900;">
-	    			
-		<div class="col">
+				<div class="row chargement">
+					<div class="col col-20" style="text-align: left; padding: 0 !important;">Code</div>
+					<div class="col" style="text-align: left; padding: 0 !important;">{{ 'Désignation ('+stock.length+')'}}</div>
+					<div ng-if="!stockOnly" class="col col-10" style="text-align: left; padding: 0 !important;">Cs.</div>
+					<div ng-if="!stockOnly" class="col col-10" style="text-align: left; padding: 0 !important;">Un.</div>
+					<div ng-if="stockOnly" class="col col-20" style="text-align: left; padding: 0 !important;">Cs.</div>
+					<div ng-if="stockOnly" class="col col-20" style="text-align: left; padding: 0 !important;">Un.</div>
+					<!--<div ng-if="!stockOnly" class="col col-10" style="text-align: left; padding: 0 !important;">Total</div>-->
+				</div>
 
-			<div class="row chargement">
-				<div class="col" style="text-align: left; padding-left: 15px; text-align: left;">Code</div>
-				<div class="col" style="text-align: center; padding-left: 15px; min-width: 50%; max-width: 50%; text-align: center;">{{ 'Désignation ('+stock.length+')'}}</div>
-				<div class="col" style="text-align: center; padding-left: 15px;">Cs.</div>
-				<div class="col" style="text-align: center; padding-left: 15px;">Un.</div>
-				<div class="col" style="text-align: center; padding-left: 15px;">Total</div>
 			</div>
 
 		</div>
 
 	</div>
 
-</div>
+	<ion-content  direction="y" class="has-footer" >
+		
+		<div ng-if="stock.length <= 0" style="color: #E82C2E;">
+			<!-- <h3 style="text-align: center;"><i class="icon ion-social-dropbox"></i></h3> -->
+			<div class="row">
+				<div class="col"><img style="width: 70%; height: 70%; display: block; margin: auto;" src="img/animat-rocket-color.gif"/></div>
+			</div>
 
-<ion-content>
-    	<div class="rapport" style=" border-bottom: 2px solid #B71C1C; font-size: 10px; font-weight: 600;">
-    		<div class="row chargement" ng-repeat="input in stock track by $index" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
-
-    			<div class="col chargement" style="font-weight: 900;">{{input.code}}</div>
-				<div class="col chargement" style="font-weight: 900; min-width: 50%; max-width: 50%; text-align: center;">{{input.designation}}</div>
-				<div class="col chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
-					<input ng-readonly="input.totalStock == 0" type="number" value="item.packet" ng-change="change(input)" ng-model="input.packet" style="background-color: transparent; font-weight: 900; color: green; width: 100%; text-align:center;
-                margin-left: 2.5px;
-                font-size: 11px;
-                border-bottom-right-radius: 5px;
-                border-bottom-left-radius: 5px;
-                border-bottom-width: 2px;"></input>
-				</div>
-				<div class="col chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
-					<input ng-readonly="input.totalStock == 0" type="number" value="input.unit" ng-change="change(input)" ng-model="input.unit"  style="background-color: transparent; font-weight: 900; color: green; width: 100%; text-align:center;
-                margin-left: 2.5px;
-                font-size: 11px;
-                border-bottom-right-radius: 5px;
-                border-bottom-left-radius: 5px;
-                border-bottom-width: 2px;"></input>
-				</div>
-				<div class="col chargement" style="text-align: center; font-weight: 900;">{{ input.csUn }}</div>
-				
-    		</div>
-    		
-    		
-    	</div>
-    	
-		<div class="button-bar">
-		  <a class="button button-clear button-assertive" ng-click="discard()" style="font-weight: 900;">ANNULER</a>
-		  <a class="button button-clear button-balanced" ng-click="confirm()" style="font-weight: 900;">VALIDER</a>
+			<div class="row">
+				<div class="col"><p style="text-align: center; color: #496783; font-size: 16px;"> Votre stock est vide, le mieux et de faire une demande de chargement. </p></div>
+			</div>
+			
+			
 		</div>
-</ion-content>
+
+		<div ng-if="stock.length > 0" style="margin-top: 40px;">
+			<div class="rapport" style=" border-bottom: 2px solid #B71C1C; font-size: 14px;">
+				<div class="row chargement" ng-repeat-start="input in stock track by $index" style="margin: 0; background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+
+					<div class="col col-20 chargement" style="text-align: left;">{{input.code}}</div>
+
+					<div class="col chargement" style=" text-align: left;">{{input.designation}}</div>
+
+					<div ng-if="!stockOnly" class="col col-10 chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+						<input ng-if="!stockOnly" ng-readonly="input.totalStock == 0" type="number" value="item.packet" ng-change="change(input)" ng-model="input.packet" ng-mousedown="input.packet=input.packet ==0 && !input.totalStock == 0 ?'':input.packet" ng-blur="input.packet=input.packet==''?0:input.packet "  style="background-color: transparent; color: green; width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;"></input>
+						<span ng-if="stockOnly"  style="background-color: transparent;width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;">{{input.stockPacket}}</span>
+					</div>
+					<div ng-if="stockOnly" class="col col-20 chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+						<span ng-if="stockOnly"  style="background-color: transparent;width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;">{{input.stockPacket}}</span>
+					</div>
+
+					<div ng-if="!stockOnly" class="col col-10 chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+						<input ng-if="!stockOnly" ng-readonly="input.totalStock == 0"  type="number" value="input.unit" ng-change="change(input)" ng-model="input.unit" ng-mousedown="input.unit=input.unit ==0 && !input.totalStock == 0 ?'':input.unit" ng-blur="input.unit=input.unit==''?0:input.unit "  style="background-color: transparent;  color: green; width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;"></input>
+						<span ng-if="stockOnly" style="background-color: transparent; width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;">{{input.stockUnit}}</span>
+					</div>
+					<div ng-if="stockOnly" class="col col-20 chargement" style="background-color: {{ input | backgroundSBD : isVendeur : prelevement : retour : forChargement }};">
+						<span ng-if="stockOnly" style="background-color: transparent; width: 100%; text-align: left;
+                    margin-left: 2.5px;
+                    font-size: 14px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 5px;
+                    border-bottom-width: 2px;">{{input.stockUnit}}</span>
+					</div>
+
+
+				<!--	<div ng-if="!stockOnly" class="col col-10 chargement" style="text-align: left; font-weight: 900;">{{ input.csUn }}</div>
+-->
+
+				</div>
+				<div class="row" ng-repeat-end>
+					<div ng-if="!stockOnly" class="col chargement" style="text-align: left;">Total :{{ input.csUn }}</div>
+
+				</div>
+
+			</div>
+		<!--	<div  ng-if="stockOnly" class="button-bar">
+				<a class="button button-clear button-assertive" ng-click="discard()" style="font-weight: 900;">ACCEUIL</a>
+			</div>
+			<div  ng-if="!stockOnly" class="button-bar">
+				<a class="button button-clear button-assertive" ng-click="discard()" style="font-weight: 900;">ANNULER</a>
+				<a ng-if="!stockOnly" class="button button-clear button-balanced" ng-click="confirm()" style="font-weight: 900;">VALIDER</a>
+			</div>-->
+
+		</div>
+	
+
+		<!-- <div class="item" style="bottom:35px; border:none;">
+		<div  class="row">
+			<div class="col col-50">
+				<a class="button button-outline button-assertive icon ion-log-out" style="border-radius: 50%; float: left;" ng-click="discard()" ></a>
+			</div>
+			<div ng-if="!stockOnly" class="col col-50" >
+				<a class="button  button-outline  button-assertive  icon ion-android-done" style="border-radius: 50%; float: right;" ng-click="confirm()"></a>
+			</div>
+			<div ng-if="stockOnly" class="col col-50" >
+				<a class="button  button-outline  button-assertive  icon ion-android-print" style="border-radius: 50%; float: right;" ng-click="print()"></a>
+			</div>
+		</div>
+		<div class="row">
+
+			<div class="col col-50">
+				<span style=" float: left; font-size: 16px;"  >Annuler</span>
+			</div>
+			<div ng-if="!stockOnly" class="col col-50" >
+				<span style=" float: right; font-size: 16px;"  >Valider</span>
+			</div>
+			<div ng-if="stockOnly" class="col col-50" >
+				<span style=" float: right;  font-size: 16px;"  >Imprimer</span>
+			</div>
+
+		</div>
+		</div> -->
+
+	</ion-content>
+	 
+         <ion-footer-bar class="bar-subfooter" class="bar-assertive" >    
+	      
+
+     <div class="" style="background: white;">
+
+		<div  class="row">
+			<div class="col col-50">
+				<a class="button button-outline button-assertive icon ion-log-out" style="border-radius: 50%; float: left;" ng-click="discard()" ></a>
+			</div>
+			<div ng-if="!stockOnly" class="col col-50" >
+				<a class="button  button-outline  button-assertive  icon ion-android-done" style="border-radius: 50%; float: right;" ng-click="confirm()"></a>
+			</div>
+			<div ng-if="stockOnly" class="col col-50" >
+				<a class="button  button-outline  button-assertive  icon ion-android-print" style="border-radius: 50%; float: right;" ng-click="print()"></a>
+			</div>
+		</div>
+		<div class="row">
+
+			<div class="col col-50">
+				<span style=" float: left; font-size: 16px;"  >Annuler</span>
+			</div>
+			<div ng-if="!stockOnly" class="col col-50" >
+				<span style=" float: right; font-size: 16px;"  >Valider</span>
+			</div>
+			<div ng-if="stockOnly" class="col col-50" >
+				<span style=" float: right;  font-size: 16px;"  >Imprimer</span>
+			</div>
+
+		</div>
+		</div>
+	
+        </ion-footer-bar>    
+	
+
+</ion-view>

@@ -1,8 +1,22 @@
-<ion-view view-title="C.A : {{ caVendeur | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts" ng-class="{expanded:$scope.isExpanded}">
-	
-	<ion-tabs class="tabs-assertive tabs-icon-top">
+<ion-view view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + " -- GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}' ng-class="{expanded:$scope.isExpanded}">
 
-	  		<ion-tab href="#/reports/chargements" title="chargements" icon-on="ion-ios-filing" icon-off="ion-ios-filing-outline">
+	<ion-header-bar align-title="center" class="bar-assertive" style="background-color: #B71C1C; font-family: RobotoDraft,Roboto,sans-serif;">
+  
+	  <div class="buttons">
+	    <button ng-click="menu()" class="button" style="margin: 5px; background: transparent; box-shadow: none;"><i class="icon ion-arrow-left-a"></i></button>
+	  </div>
+
+	  <h1 class="title">Rapports</h1>
+
+	  <div class="buttons">
+	    <button ng-click="print()" class="button" style="background: transparent; box-shadow: none;"><i class="icon ion-android-print"></i></button>
+	  </div>
+
+	</ion-header-bar>
+	
+	<ion-tabs class="tabs-assertive tabs-icon-top" style="">
+
+	  		<ion-tab href="#/reports/chargements" ng-if="!isLivreur" title="chargements" icon-on="ion-ios-filing" icon-off="ion-ios-filing-outline">
 	    		<ion-nav-view name="chargements-tab"></ion-nav-view>
 		  	</ion-tab>
 
@@ -17,3 +31,19 @@
 	</ion-tabs>
 
 </ion-view>
+
+<script id="choix.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in choices.items">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ choice.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="choices.choosen" ng-value="choice.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
+</script>

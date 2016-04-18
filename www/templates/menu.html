@@ -1,23 +1,127 @@
 <ion-side-menus enable-menu-with-back-views="true">
+
     <ion-side-menu-content>
         <ion-nav-bar class="bar-assertive-900" style="font-size: 13px;" ng-class="{expanded: isExpanded, 'has-header-fab-left': hasHeaderFabLeft, 'has-header-fab-left': hasHeaderFabLeft}" align-title="left">
-            <ion-nav-back-button class="no-text">
-            </ion-nav-back-button>
+            <!-- <ion-nav-back-button class="no-text" ng-click="log()">
+            </ion-nav-back-button> -->
             <ion-nav-buttons side="left">
                 <button class="button button-icon button-clear ion-navicon-round" menu-toggle="left">
                 </button>
             </ion-nav-buttons>
         </ion-nav-bar>
         <ion-nav-view name="fabContent"></ion-nav-view>
-        <ion-nav-view name="menuContent" ng-class="{expanded: isExpanded}" ></ion-nav-view>
+        <ion-nav-view animation="slide-left-right" name="menuContent" ng-class="{expanded: isExpanded}" style="font-size: 10px;"></ion-nav-view>
     </ion-side-menu-content>
+
     <ion-side-menu side="left">
-        <ion-header-bar class="dark-bg expanded" style="background: url('img/delivery.jpg'); background-position : left;">
+
+        <ion-header-bar class="dark-bg expanded">
+            <img src="img/delivery.jpg"/ style="
+            -webkit-filter: blur(2px);
+            filter: blur(2px);">
             <span class="avatar" style="background: url('img/avatar.png'); background-size: cover;"></span>
-            <h2>{{profile.second_name+' '+profile.name}}</h2>
+            <h2 style="font-weight: 500;">{{ profile.second_name+' '+profile.name | uppercase }}</h2>
+            
         </ion-header-bar>
-        <ion-content class="stable-bg has-expanded-header">
+
+
+        <ion-content scroll="true" class="stable-bg has-expanded-header" style="background-color: #757575;">
+            
+            <div ng-if=" profile.fonction != 'livreur' " class="row" style="border-bottom: 1px solid #956363; background-color: #B71C1C;">
+                <div class="col col-25" style=" border-right: 1px solid #956363; font-weight: 300;"  > <span style="font-size: 12px;"> Visites </span> <br> <span style="font-size: 16px; font-weight: 300;"> 2000 <span> </div>
+                <div class="col" style=" border-right: 1px solid #956363;font-weight: 300;"> <span style="font-size: 12px;"> C.A </span> <br> <span style="font-size: 16px; font-weight: 100;"> {{ ( profile.ca | number : 2 ) + " dhs" }} <span> </div>
+                <div class="col"> <span style="font-size: 12px;" > G.P </span> <br> <span style="font-size: 16px; font-weight: 300;"> {{ (profile.golden_points || 0) + " pts."}} <span> </div>
+            </div>
+
             <ion-list>
+
+                <ion-item nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ng-click="goHome()">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Mon éspace de travail </span>
+                        <i class="icon ion-calendar" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+                <ion-item nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ng-click="goProfile()">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Mes indicateurs </span>
+                        <i class="icon ion-speedometer" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+                <ion-item nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ui-sref="app.ventes">
+                        <span style="font-weight: 400; color: #FFFFFF;"> {{isLivreur?'Mes livraisons':'Mes ventes'}} </span>
+                        <i class="icon ion-briefcase" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+                <ion-item ng-if="isVendeur" nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ui-sref="app.echanges">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Mes échanges </span>
+                        <i class="icon ion-arrow-swap" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+                <ion-item ng-if="!isPrevendeur" nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ui-sref="app.stock">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Mon stock </span>
+                        <i class="icon ion-android-bus" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+
+
+                <ion-item ng-if="isVendeur" nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ui-sref="app.chargements">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Dérnier chargement </span>
+                        <i class="icon ion-android-download" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+                <ion-item ng-if="!isPrevendeur" nav-clear menu-close class="item item-icon-left stable-bg ink ink-dark" ui-sref="app.chargements">
+                        <span style="font-weight: 400; color: #FFFFFF;"> Dérnier déchargement </span>
+                        <i class="icon ion-android-upload" style="color: #FFFFFF; font-size: 25px"></i>
+                </ion-item>
+
+
+                <!-- <ion-item style="padding: 0;" ng-if=" profile.fonction == 'vendeur' " nav-clear menu-close class="item item-icon-left">
+
+                        <button ui-sref="app.chargements" class="button button-block icon-left ion-android-download" style=" color: white; padding: 0; padding-left: 10px;font-weight: 300; background-color: rgba(0, 0, 0, 0.11);" ng-click="goProfile()"> Dérnier Chargement
+                        </button>
+                </ion-item> -->
+
+                <!-- <ion-item style="padding: 0;" ng-if=" profile.fonction == 'vendeur' " nav-clear menu-close class="item item-icon-left">
+
+                        <button ui-sref="app.chargements" class="button button-block icon-left ion-android-upload" style=" color: white; padding: 0; padding-left: 10px;font-weight: 300; background-color: rgba(0, 0, 0, 0.11);" ng-click="goProfile()"> Dérnier Déchargement
+                        </button>
+                </ion-item> -->
+
+
+                <ion-item nav-clear style="border-top: solid white 1px;">
+                        <div class="row">
+
+                            <div class="col">
+                                <span style="text-align: center; font-size: 25px;float: right; font-weight: 600; color: #FFFFFF;" ng-click="logout()" class="ion ion-log-out"></span>
+                            </div>
+                        </div>
+                        
+                </ion-item>
+
+            </ion-list>
+
+
+        </ion-content>
+
+    </ion-side-menu>
+</ion-side-menus>
+
+<script id="choix.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in choices.items">
+
+        <div class="row">
+
+            <div class="col col-75" style="font-size: 11px; font-weight: 300;">{{ choice.title | uppercase }}</div>
+
+            <div class="col">
+            <input style="width: 12px;" ng-click="checked(choice.code)" ng-model="choices.choosen" ng-value="choice.code" type="radio" class="regular-radio">
+            </div>
+
+        </div>
+
+    </ion-list>
+</script>
+
+
+            <!-- <ion-list>
                 <ion-item style="border-bottom: 1.5px solid #B71C1C; color: #B71C1C;" class="item item-icon-right" nav-clear menu-close ng-click="goProfile()">
                         Mon Espace
                         <i style="color: rgb(0, 150, 136);" class="icon ion-ios-pulse-strong red-ionicon "></i>
@@ -57,9 +161,5 @@
                 ">
                     <span style="padding: 10px;">New Sales V0.3 ALPHA</span>
                 </ion-item>
-            </ion-list>
-        </ion-content>
-
-    </ion-side-menu>
-</ion-side-menus>
+            </ion-list> -->
 

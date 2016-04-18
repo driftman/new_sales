@@ -1,94 +1,93 @@
-<ion-view view-title="C.A : {{ caVendeur | number : 2 }} DHS | G.P: {{ infos.golden_points }} / 250 pts" ng-class="{expanded:$scope.isExpanded}">
+<ion-view  view-title='{{ "CA : " + ( infos.ca | number : 2 ) + " / " + infos.objectif_ca + ", GP : " + infos.golden_points + " / " + infos.objectif_golden_points }}'  style="font-size: 15px;" ng-class="{expanded:$scope.isExpanded}">
     <ion-content >
-    <div class="list card" style="box-shadow: 0px 10px 10px 0 #B71C1C;">
+    <div class="list card" style="box-shadow: 0 2px 5px 0 rgba(183, 28, 28, 0.38);">
   <div class="item">
-  	<h1 style="color: #F12424; font-size: 25px;">{{ client.prenom }} {{ client.nom }}</h1>
+  	<h1 style="color: #B71C1C; font-size: 20px; text-align: center; text-shadow: none;">{{ client.prenom +" "+ client.nom | uppercase }}</h1>
   </div>
   <div class="item item-image">
     <img src="img/marjane.jpg">
   </div>
   <div class="item">
+
     <div class="row">
-        <div class="col"><b>Points Golden Store : </b></div>
-        <div class="col">{{ client.golden_store }}</div>
+        <div class="col" ><h3 style="text-align: center; font-weight: 500; color: #B71C1C;">INFOS CLIENTS</h3></div>
+    </div>
+
+    <div class="row">
+        <div class="col">Points Golden Store :</div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    ">{{ client.golden_store }}</div>
     </div>
     <div class="row">
-        <div class="col"><b><b>Adresse : </b></b></div>
-        <div class="col" style="overflow: hidden;">{{ client.address }}</div>
+        <div class="col">Adresse : </div>
+        <div class="col" style="overflow: hidden; text-align: center;     font-size: 12px;"> <ion-scroll direction="x"> {{ ( client.address || "") | uppercase }} </ion-scroll></div>
     </div>
     <div class="row">
-        <div class="col"><b>Telephone : </b></div>
-        <div class="col">{{ client.telephone }}</div>
+        <div class="col">Telephone :</div>
+        <div class="col" style="text-align: center;     font-size: 12px;">{{ client.telephone || '--' }}</div>
     </div>
     <div class="row">
-        <div class="col"><b>Cumul C.A : </b></div>
-        <div class="col">{{ ca | number : 2 }} DHS</div>
+        <div class="col">Cumul C.A : </div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    ">{{ (ca || 0) | number : 2 }} DHS</div>
     </div>
     <div class="row">
-        <div class="col"><b>Gifts en attente : </b></div>
-        <div class="col">-</div>
+        <div class="col">Gifts en attente :</div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    ">--</div>
     </div>
     <div class="row">
-        <div class="col"><b>Moyenne C.A : </b></div>
-        <div class="col">{{ avg | number : 2 }} DHS</div>
+        <div class="col">Moyenne C.A : </div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    ">{{ (avg || 0) | number : 2 }} DHS</div>
     </div>
     <div class="row">
-        <div class="col" style="border-bottom: 1px solid grey;"><b>Dernière visite : </b></div>
-        <div class="col" style="border-bottom: 1px solid grey;">10/10/2015 12:32:00</div>
+        <div class="col">Dernière visite : </div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    ">{{ client.last }}</div>
     </div>
-    <div class="row">
-        <div class="col"></div>
-        <div class="col"></div>
+
+    <div class="row" ng-if="client.osb != null">
+        <div class="col" ><h3 style="text-align: center; font-weight: 500; color: #B71C1C;">INFOS FINANCE</h3></div>
     </div>
+
+    <div class="row" ng-if="client.osb != null">
+        <div class="col">MESSAGE OSB </div>
+        <div class="col" style="text-align: center;     font-size: 12px;
+    color: {{ client.authorized == 1 ? '#4CAF50' : '#B71C1C' }};"> <ion-scroll direction="x"> {{ client.message }} </ion-scroll></div>
+    </div>
+
+    <div class="row" ng-if="client.osb != null">
+        <div class="col">PRISE DE COMMANDE </div>
+        <div class="col" style="text-align: center;     font-size: 14px;
+    color: {{ client.authorized == 1 ? '#4CAF50' : '#B71C1C' }};">{{ client.authorized == 1 ? "OUI" : "NON" }}</div>
+    </div>
+    
   </div>
  </div>
 <br><br>
   <div class="card">
-  	<h2 class="item" style="color: #B71C1C; font-size : 20px;"> 5 dernières factures : </h2>
+  	<h2 class="item" style="color: #B71C1C; font-size : 20px;" ng-if="commandes.length>0"> 5 dernières factures : </h2>
   </div>
-        <ion-slide-box show-pager="true" on-slide-changed="onSlideChanged(index)" active-slide="currentIndex">
-          <ion-slide ng-repeat = "commande in commandes">
+
+        <ion-slide-box show-pager="true" ng-if="commandes.length>0" on-slide-changed="onSlideChanged(index)" active-slide="currentIndex">
+            <ion-slide ng-repeat = "commande in commandes">
             <div class="row header">
                 <div class="col" style="
                 font-size: 11.5px;
                 padding: 0;
                 overflow: hidden;
-                text-align: center;">Article</div>
+                text-align: center;">Designation</div>
                 <div class="col" style="
                 font-size: 11.5px;
                 padding: 0;
                 overflow: hidden;
-                text-align: center;">Libellé</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">Qte Cs</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">Qte Un</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">PU Brut</div>
+                text-align: center;">Cs/Un</div>
                 <div class="col" style="
                 font-size: 11.5px;
                 padding: 0;
                 overflow: hidden;
                 text-align: center;">PU Net</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">Valeur HT</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">Valeur TVA</div>
                 <div class="col" style="
                 font-size: 11.5px;
                 padding: 0;
@@ -105,32 +104,7 @@
                 font-size: 11.5px;
                 padding: 0;
                 overflow: hidden;
-                text-align: center;">{{ ligne.designation}}</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">{{ ligne.packets }}</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">{{ ligne.units }}</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">{{ ligne.prixVente }}</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">{{ ligne.prixVente + (ligne.prixVente * 0.20) }}</div>
-                <div class="col" style="
-                font-size: 11.5px;
-                padding: 0;
-                overflow: hidden;
-                text-align: center;">{{ ligne.total }}</div>
+                text-align: center;">{{ ligne.packets+"/"+ligne.units }}</div>
                 <div class="col" style="
                 font-size: 11.5px;
                 padding: 0;
@@ -144,34 +118,92 @@
 
             </div>
             
-            <div class="row" style="border: none;">
+            <!-- <div class="row" style="border: none;">
                 <div class="col offset" style="border-left: 1px solid black; border-top: 1px solid black; border: none;"></div>
                 <div class="col offset" style="border-top: 1px solid black; border: none;"></div>
                 <div class="col" style="background-color: #ADA7A7; border: none;">TOTAL H.T</div>
                 <div class="col" style="border: none;">{{ 0 | number : 2 }} DHS</div>
-            </div>
+            </div> -->
 
           </ion-slide>
           
         </ion-slide-box>
         <div>
-            <div class="card">
-                <h2 style="color: #B71C1C; font-size : 20px;" class="item"> Localisation du client : </h2>
+            <div class="card" ng-click="launchNavigator()">
+                <h2 style="color: #B71C1C; font-size : 20px;" class="item"> Localisation du client : <span style="float: right;"><i class="icon ion-android-navigate"></i></span></h2>
+                
             </div>
             <leaflet markers="markers" center="center" defaults="defaults" width="100%" height="300px"></leaflet>
-      </div>
+        </div>
 
     </ion-content>
 
-    <div class="bar bar-footer bar-assertive" ng-if="!vente && !chargement">
-        <div class="title" ng-click="checkPoint()">Finir la vente </div>
+    <!-- <div class="bar bar-footer bar-assertive" ng-if="!vente && !chargement" style="background-color: #B71C1C;">
+        <div class="title"  style="font-weight: 500; font-size: 16px;" ng-click="checkPoint()">Visite en cours <span style="font-size: 12px;"> ( {{ mission.nom || "--" }} ) </span> </div>
     </div>
 
-    <div class="bar bar-footer bar-balanced" ng-if="vente">
-        <div class="title" ng-click="goClient()">Commencer la vente</div>
+    <div class="bar bar-footer bar-balanced" ng-if="vente && client.authorized == 1" style="background-color: #B71C1C;">
+        <div class="title" style="font-weight: 500; font-size: 16px;" ng-click="goClient()">Commencer la vente</div>
     </div>
 
-    <div class="bar bar-footer bar-assertive" ng-if="!vente && chargement">
-        <div class="title" ui-sref="app.brands({ vendeur: true, chargement: true})">Finir demande de chargement</div>
+    <div class="bar bar-footer bar-assertive" ng-if="!vente && chargement" style="background-color: #B71C1C;">
+        <div class="title"  style="font-weight: 500; font-size: 16px;">Demande de chargement en cours</div>
+    </div> -->
+
+    <div class="bar bar-footer bar-assertive" ng-if="!chargementEnCours && venteEnCours" style="background-color: #B71C1C;">
+        <div class="title"  style="font-weight: 500; font-size: 16px;" ng-click="checkPoint()">Visite en cours </div>
     </div>
+
+    <div class="bar bar-footer bar-assertive" ng-if="isVendeur && !chargementEnCours && !venteEnCours && echangeEnCours && client.authorized == 1" style="background-color: #B71C1C;">
+        <div class="title"  style="font-weight: 500; font-size: 16px;" ui-sref="app.in">Echange en cours </div>
+    </div>
+
+    <div class="bar bar-footer bar-balanced" ng-if="isVendeur && !chargementEnCours && !venteEnCours && !echangeEnCours && !chargementEnCours && client.authorized == 1" style="background-color: #B71C1C;">
+        <div class="title" style="font-weight: 500; font-size: 16px;" ng-click="chooseAction()">Choisir une action</div>
+    </div>
+
+    <div class="bar bar-footer bar-balanced" ng-if="!isVendeur && !venteEnCours && !chargementEnCours && !echangeEnCours && client.authorized == 1" style="background-color: #B71C1C;">
+        <div class="title" style="font-weight: 500; font-size: 16px;" ng-click="goClient()">Commencer la vente</div>
+    </div>
+
+    <div class="bar bar-footer bar-assertive" ng-if="isVendeur && !venteEnCours && chargementEnCours && !echangeEnCours" style="background-color: #B71C1C;">
+        <div class="title"  style="font-weight: 500; font-size: 16px;">Demande de chargement en cours</div>
+    </div>
+
 </ion-view>
+
+<script id="charaka.html" type="text/ng-template">
+    <div class="row">
+        <div class="col" style="font-weight: 600;">Prime</div>
+        <div class="col" style="font-weight: 600;">Reste</div>
+    </div>
+
+    <ion-list ng-repeat="charaka in charakas">
+
+        <div class="row" style="border-bottom: 1px solid #B71C1C;">
+            <div class="col">{{ (charaka.prime | number : 2)+" DHS" }}</div>
+            <div class="col">{{ (charaka.reste | number : 2)+" DHS" }}</div>
+        </div>
+
+    </ion-list>
+</script>
+
+<script id="causes.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in choices.items">
+        <div class="row">
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ choice.title | uppercase }}</div>
+            <div class="col">
+            <input style="width: 12px;" ng-click="clicked()" ng-model="choices.choosen" ng-value="choice.title" type="radio" class="regular-radio"></div>
+        </div>
+    </ion-list>
+</script>
+
+<script id="actions.html" type="text/ng-template">
+    <ion-list ng-repeat="choice in actions.items">
+        <div class="row">
+            <div class="col col-75" style="font-size: 11px; font-weight: 900;">{{ choice.title | uppercase }}</div>
+            <div class="col">
+            <input style="width: 12px;" ng-click="clicked()" ng-model="actions.choosen" ng-value="choice.code" type="radio" class="regular-radio"></div>
+        </div>
+    </ion-list>
+</script>
